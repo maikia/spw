@@ -207,7 +207,6 @@ def up_extraspikes(save_folder, save_file = "ex_spikes", load_file = "data_dspl.
         spike_idxs, spikes_ampl, fs_espikes = ispw.update_extraspikes(data, fs, save_folder, save_file = save_file)
     else:
         print 'spikes were already found'
-    return spike_idxs, spikes_ampl, fs_espikes
 
 def up_spws(save_folder, save_file = 'spw_data.npz', load_file = 'spw_data.npz', reanalize = False):
     """ updates details of the spws"""
