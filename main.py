@@ -14,7 +14,8 @@ import folder_manager as fold_mng
 # to select the settings go to induc_SPW
 def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], intr_electrode = 1, data_part = 'all'):
     """ work on given data file - proceed all the variables and save them """
-
+    
+    ext = '.pdf'  
     print 'working on: ' +  filename
     reanalize = True # set to true if to analyze the data no matter if it was already analysed or not
     
@@ -43,7 +44,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     #updater.up_SPW_ipsp(save_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_spwsspike = SPWs_spikes, reanalize = reanalize)
     
     SPWs_ipsps_beg  = 'spw_ipsps_beg.npz'
-    updater.up_spws_ipsp_beg(save_folder, save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = SPWs_spikes_ampl, reanalize = reanalize)
+    updater.up_spws_ipsp_beg(save_folder,  save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = SPWs_spikes_ampl, reanalize = reanalize, ext = ext)
  
     #SPWs_ipsps_ampl = 'spw_ipsps_ampl.npz'
     #updater.up_spws_ipsp_ampl(save_folder, save_file = SPWs_ipsps_ampl, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, reanalize = reanalize)

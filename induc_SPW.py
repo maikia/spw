@@ -726,14 +726,14 @@ def update_SPW_spikes_ampl(save_folder, save_name, spw_spikes, spike_idxs, ampls
     np.savez(save_folder + save_name, chosen_spikes = chosen_spikes)        
 
 
-def update_SPW_ipsp_correct(save_folder, save_file, data, fs, spw_ipsps, spw_spike):
+def update_SPW_ipsp_correct(save_folder, save_fig, save_file, data, fs, spw_ipsps, spw_spike, ext):
     """ checks all the ipsps and corrects them for each spw"""
     plot_it = True
     add_it = 100
     shift_ipsp = 1 # ms
     in_min_electrodes = 3 # ipsp has to be found in at least that many electrodes
     shift_spike= 0.15 # ms
-    
+    proper_ipsps = []
     
     # go through all the spws
     for spw in np.unique(spw_ipsps['spw_no']):
@@ -748,6 +748,7 @@ def update_SPW_ipsp_correct(save_folder, save_file, data, fs, spw_ipsps, spw_spi
         ipsps_temp, spikes_temp = [], []
         ipsp_old = -1
         beginnings = []
+        fig = plt.figure()
         for ipsp in ip_sorted:
             ipsp_time = ipsp['ipsp_start']
             if ipsp_time <= ipsp_old + shift_ipsp or len(ipsps_temp) == 0:
@@ -789,6 +790,13 @@ def update_SPW_ipsp_correct(save_folder, save_file, data, fs, spw_ipsps, spw_spi
             #beginnings = np.unique(beginnings)
             begs_pts = beginnings['spikes']
             begs_pts = ms2pts(begs_pts, fs).astype(int)
+            #import pdb; pdb.set_trace()
+            
+            proper_ipsps.append(np.rec.fromarrays([beginnings['electrode'], beginnings['trace'], beginnings['spw_no'],
+                                                        beginnings['spikes']], 
+                                                       names='electrode,trace, spw_no, ipsp_start'))
+            
+            
         spw_min_start = 9000000000
         spw_max_end = -1
         #import pdb; pdb.set_trace() 
@@ -818,10 +826,14 @@ def update_SPW_ipsp_correct(save_folder, save_file, data, fs, spw_ipsps, spw_spi
                 plt.vlines(a, -200, 1200)
             #plt.plot(t[begs_pts], data_used[begs_pts], 'bo')
             #import pdb; pdb.set_trace() 
-        plt.show()
-    #pa
-    #import pdb; pdb.set_trace() 
-        
+        tit = 'spw: ' + str(spw) 
+        plt.title(tit)
+        fig.savefig(save_folder + save_fig + str(spw) + ext,dpi=600)
+        fig.savefig(save_folder + save_fig + str(spw) + '.png',dpi=600)        
+        #plt.show()
+        plt.clf()
+    proper_ipsps = np.concatenate(proper_ipsps)
+    np.savez(save_folder + save_file, ipsps = proper_ipsps) 
         
         
         
