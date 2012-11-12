@@ -102,7 +102,7 @@ def up_spws_spikes_ampl(save_folder, save_file = 'data.npz', load_spwsspike = 'S
     else:
         print 'spws were already analysed'        
     
-def up_spws_ipsp_beg(save_folder, save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False):       
+def up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf'):       
     """analyse the ipsps in each SPWs - finds the beginnings, and removes those which are not correct"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -110,6 +110,8 @@ def up_spws_ipsp_beg(save_folder, save_file = 'save_it.npz', load_datafile = 'da
     # check if this file already exists
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
+        fig_fold_name = 'SPW_IPSPs/'
+        fold_mng.create_folder(save_folder + fig_fold_name)
         # load the data
         npzfile         = np.load(save_folder + load_datafile)
         data            = npzfile['data']
@@ -123,7 +125,7 @@ def up_spws_ipsp_beg(save_folder, save_file = 'save_it.npz', load_datafile = 'da
         npzfile         = np.load(save_folder + load_spwsspike)
         spw_spikes      = npzfile['chosen_spikes']  
                 
-        ispw.update_SPW_ipsp_correct(save_folder, save_file, data, fs, spw_ipsps, spw_spikes)  
+        ispw.update_SPW_ipsp_correct(save_folder, fig_fold_name + save_fig, save_file, data, fs, spw_ipsps, spw_spikes, ext)  
         
 def up_spws_ipsp_ampl(save_folder, save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', reanalize = False):       
     """analyse the ipsps and checks in which electrode it has the highest amplitude"""
@@ -205,7 +207,6 @@ def up_extraspikes(save_folder, save_file = "ex_spikes", load_file = "data_dspl.
         spike_idxs, spikes_ampl, fs_espikes = ispw.update_extraspikes(data, fs, save_folder, save_file = save_file)
     else:
         print 'spikes were already found'
-    return spike_idxs, spikes_ampl, fs_espikes
 
 def up_spws(save_folder, save_file = 'spw_data.npz', load_file = 'spw_data.npz', reanalize = False):
     """ updates details of the spws"""

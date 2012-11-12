@@ -1,12 +1,12 @@
 import numpy as np
 import data_mang as dat
 import pylab as plt
-import read_data as reader
+#import read_data as reader
 import update_data as updater
 import induc_SPW as ispw
 import scipy.signal as signal
 import b_analyser as ba
-import cluster as clust
+#import cluster as clust
 from matplotlib.ticker import NullFormatter
 from mpl_toolkits.mplot3d import Axes3D
 

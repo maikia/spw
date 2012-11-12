@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot
 import pylab as py
 import filtit as filt
-import plotting as plt
+#import plotting as plt
 import detect_waves as dw
 from scipy import signal
 import data_mang as dat
