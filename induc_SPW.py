@@ -348,16 +348,16 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
         np.savez(folder_save + filename_save, data = data_filt, fs = fs)
         
     return data_filt, fs
+
+
+def update_extraspikes(data_load, save_folder, save_file = "ex_spikes"):
+    """ finds and updates the detection of extracellular spikes"""
     
-        
-
-
-
-
-
-
-def update_extraspikes(data, fs, save_folder, save_file = "ex_spikes"):
-    """ finds and updates the detection of extracellular spikes"""      
+    npzfile = np.load(save_folder + data_load)
+    data = npzfile['data']
+    fs = npzfile['fs'] 
+    npzfile.close()
+       
     freq_fast = 500.
     # find extracellular spikes
     f_d = 'filtered/'
@@ -377,32 +377,36 @@ def update_extraspikes(data, fs, save_folder, save_file = "ex_spikes"):
             filename_fast = 'fast_data' + str(electr) + "_" + str(trace)
             data_fast, fs = load_create(folder_name, filename_fast, freq_fast, fs, data_used, N)
             spike_ampl, spike_idxs = fes.find_extra_spikes(data_used, data_fast, fs) #(data[electr][trace], fs)
+            del data_fast
             
             spike_idxs = pts2ms(spike_idxs, fs)
             electrodes = np.ones(len(spike_idxs), dtype=np.int32)*electr
             traces = np.ones(len(spike_idxs), dtype=np.int32)*trace    
             idx_all.append(np.rec.fromarrays([electrodes, traces, spike_idxs], names='electrode,trace,time'))
             ampl_all.append(np.rec.fromarrays([electrodes, traces, spike_ampl], names='electrode,trace,time'))
+            del data_used
     ampl_all = np.concatenate(ampl_all)         
     idx_all = np.concatenate(idx_all)            
         
     np.savez(save_folder + save_file, spike_idx = idx_all, spike_ampl = ampl_all, fs = fs)
-    return idx_all, ampl_all, fs
+    del data, idx_all, ampl_all, fs
 
 
-
-def update_expikes_params(data, fs, save_folder, spike_idxs, save_file = "ex_sparamas"):
+def update_expikes_params(load_datafile, load_spikefile, save_folder, save_file = "ex_sparamas"):
     """calculate following variables for each spike:
     a =alley to peak
     b =half valley width
     c =half peak width
     
     """
-#    all_valley_to_peak_norm = []
-#    all_half_valley_width_norm = []
-#    all_ampls = []
-#    all_left_most = []
-#    all_right_most = []
+    npzfile = np.load(save_folder + load_datafile)
+    data = npzfile['data']
+    fs = npzfile['fs'] 
+    npzfile.close()
+    
+    npzfile = np.load(save_folder + load_spikefile)
+    spike_idxs = npzfile['spike_idx']
+    npzfile.close()
 
     print
     print "finding parameters of extracellular spikes, working on electrode:", 
@@ -438,10 +442,6 @@ def update_expikes_params(data, fs, save_folder, spike_idxs, save_file = "ex_spa
             data_smooth, fs = load_create(folder_name, filename_smooth, freq_smooth, fs, data_used, N)
             
             val_to_peak, half_val_width, ampl, As, Bs, norm_factor =fes.find_halfampl(data_used, data_fast, data_smooth, fs, spikes_used) #rang = [1, 2], fast_freq = 500.) #, fast_freq = 750.)
-            
-            
-            
-            
 
             v1, v2 = [], []
             for change in range(len(val_to_peak)):
@@ -452,9 +452,6 @@ def update_expikes_params(data, fs, save_folder, spike_idxs, save_file = "ex_spa
             
             electrodes = np.ones(len(v1), dtype=np.int32)*electr
             traces = np.ones(len(v1), dtype=np.int32)*trace                 
-            
-            #for idx_sep in range(len(v1))
-            #import pdb; pdb.set_trace()
             
             typ = 'f8'
             valley_to_peak_norm.append(np.rec.fromarrays([electrodes, traces, np.array(v1, dtype=typ)], names='electrode,trace,time'))   
@@ -472,16 +469,11 @@ def update_expikes_params(data, fs, save_folder, spike_idxs, save_file = "ex_spa
     right_most = np.concatenate(right_most)   
     norm_factors = np.concatenate(norm_factors)   
         
-     
-    #np.savez(save_folder + 'params_' + save_file ,As = all_left_most, Bs = all_right_most, norm_factor = all_norm_factors,fs = fs)
     np.savez(save_folder + save_file, spike_idxs = spike_idxs
              , valley2peak = valley_to_peak_norm, halfValleyWidht = half_valley_width_norm
-             , left_most = left_most, right_most = right_most, ampls =  ampls, fs = fs) #c_s = all_half_peak_width_norm, ampls = all_ampls, fs = fs)
+             , left_most = left_most, right_most = right_most, ampls =  ampls, fs = fs)
    
-    return spike_idxs, valley_to_peak_norm, half_valley_width_norm, ampls, fs
-
-
-
+    del data, spike_idxs
 
 def update_filtered(data, fs, save_folder, freq, data_file):
     """ updates filtered data files"""
@@ -554,6 +546,7 @@ def update_datafile(filename, ex_electr, save_folder, data_file = 'data', data_p
     data_all = np.concatenate(data_all)
     np.savez(save_folder + data_file, data = data_all, fs = fs)
     return data_all, fs
+    del data_all
 
 
 def update_upsample(data, fs, save_folder, uspl = 10, data_file = 'data_uspl_intra'):
@@ -585,8 +578,13 @@ def find_nearest(array,value):
     idx=(np.abs(array-value)).argmin()
     return idx, array[idx]
 
-def update_highWaves(data, fs, save_folder, data_file, atten_len = 25):
+def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
     """ performs moving average and based on this calculates probable beginning and end of the wave"""
+    npzfile = np.load(save_folder + load_datafile)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close()
+
     
     thres_level = 20
     print
@@ -646,15 +644,26 @@ def update_highWaves(data, fs, save_folder, data_file, atten_len = 25):
     spws_ends = np.concatenate(spws_ends)    
     
     np.savez(save_folder + data_file, starts = spws_starts, ends = spws_ends, fs = fs)   
+    del data
 
 def get_var_used(var, electr, trace):
     var_used = var[(var['electrode'] == electr) & (var['trace'] == trace)]['time']
     return var_used
 
 
-def update_SPW_spikes_ampl(save_folder, save_name, spw_spikes, spike_idxs, ampls, fs):
+def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_name):
     """ finds in which of the electrodes spike has the largest amplitude and possibly plot the traces"""
+    npzfile         = np.load(save_folder + load_spikefile)
+    spike_idxs      = npzfile['spike_idxs']
+    ampls           = npzfile['ampls']
+    fs              = npzfile['fs']
+    npzfile.close()
 
+    # load starts of spws
+    npzfile         = np.load(save_folder + load_spwsspike)
+    spw_spikes      = npzfile['spw_details']  
+    npzfile.close()
+    
     # load the parameters of extracellular spikes
     allow_shift = 0.15 # ms
     win         = (-5, 5)
@@ -724,10 +733,23 @@ def update_SPW_spikes_ampl(save_folder, save_name, spw_spikes, spike_idxs, ampls
                                                        names='electrode,trace, spikes, spike_ampl, spw_start, spw_end, spw_no'))    
     chosen_spikes = np.concatenate(chosen_spikes)
     np.savez(save_folder + save_name, chosen_spikes = chosen_spikes)        
+    del spike_idxs, ampls, spw_spikes
 
-
-def update_SPW_ipsp_correct(save_folder, save_fig, save_file, data, fs, spw_ipsps, spw_spike, ext):
+def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext):
     """ checks all the ipsps and corrects them for each spw"""
+    npzfile         = np.load(save_folder + load_datafile)
+    data            = npzfile['data']
+    fs              = npzfile['fs']
+    npzfile.close()   
+    
+    npzfile         = np.load(save_folder + load_spwsipsp)
+    spw_ipsps       = npzfile['spw_ipsps']
+    npzfile.close()   
+    
+    npzfile         = np.load(save_folder + load_spwsspike)
+    spw_spikes      = npzfile['chosen_spikes']  
+    npzfile.close()     
+    
     plot_it = False
     add_it = 100
     shift_ipsp = 1 # ms
@@ -840,7 +862,7 @@ def update_SPW_ipsp_correct(save_folder, save_fig, save_file, data, fs, spw_ipsp
             plt.clf()
     proper_ipsps = np.concatenate(proper_ipsps)
     np.savez(save_folder + save_file, ipsps = proper_ipsps) 
-
+    del spw_ipsps, spw_spikes, data
 
 def update_SPW_ipsp_ampl(save_folder, save_file, data, fs):
     pass
@@ -848,9 +870,19 @@ def update_SPW_ipsp_ampl(save_folder, save_file, data, fs):
 def update_ipsp_exSpikes(save_folder, save_file):
     pass
 
-def update_SPW_ipsp(data, fs, save_folder, save_file, spw_spikes):
+def update_SPW_ipsp(load_datafile, load_spwsspike, save_folder, save_file):
     # it looks for the ipsps within detected spws - separate for each electrode
     # it take very long to analyse so be patient!
+    npzfile         = np.load(save_folder + load_datafile)
+    data            = npzfile['data']
+    fs              = npzfile['fs']
+    npzfile.close()
+    
+    # load starts of spws
+    npzfile         = np.load(save_folder + load_spwsspike)
+    spw_spikes      = npzfile['spw_details']
+    npzfile.close()
+    
     print
     print "analyzing SPWs in electrode:",
     plot_it = True
@@ -938,174 +970,25 @@ def update_SPW_ipsp(data, fs, save_folder, save_file, spw_spikes):
             plt.show()
     spw_ipsps = np.concatenate(spw_ipsps)
     np.savez(save_folder + save_file, spw_ipsps = spw_ipsps) 
-       
+    del data, spw_spikes 
       
-            
-#            
-#            
-#    for trace in np.unique(data['trace']):
-#        import pdb; pdb.set_trace()
-#        
-#        
-#        # get spws for each electrode and check if it's the same
-#        spw_st_trace = spw_starts[(spw_starts['trace'] == trace)]
-#        spw_en_trace = spw_ends[(spw_ends['trace'] == trace)]
-#        
-#        sort_idx = np.argsort(spw_st_trace['time'])
-#        spw_st_sorted = spw_st_trace[:,:,sort_idx]
-#        spw_en_sorted = spw_en_trace[:,:,sort_idx]
-#        
-#        #next_spw = len(spw_st_sorted)
-#        same = 0
-#        start_init, end_init = 0, 0 #float('Inf')
-#        # analize every single SPW
-#        for idx, next_spw_st in enumerate(spw_st_sorted):
-#
-#            next_spw_en = spw_en_sorted[idx]
-#            
-#            # check if start is enclosed between start and end of previous one and beginning is not 
-#            # further than max_move from new beginning
-#            st_same = (start_init < next_spw_st['time']) 
-#            en_same = (end_init > next_spw_st['time'])
-#            dist_same = abs(next_spw_st['time'] - start_init) < max_move
-#            
-#            if st_same and en_same and dist_same:
-#                same = same + 1
-#                start_init = min(start_init, next_spw_st['time'])
-#                end_init = max(end_init, next_spw_en['time'])              
-#
-#            elif same >= min_no_wav - 1:
-#                # checks if this wave was detected in enough electrodes
-#                same = 0
-#                # save previous spws
-#                #import pdb; pdb.set_trace()
-#                spw_details.append(spw_details_temp)
-#                #plt.show()
-#                #plt.clf()
-#                start_init = next_spw_st['time']
-#                end_init = next_spw_en['time']        
-#                spw_details_temp = []
-#                spw_no = spw_no + 1
-#                        
-#            else:
-#                spw_details_temp = []
-#                start_init = next_spw_st['time']
-#                end_init = next_spw_en['time']
-#                #plt.clf()
-#                same = 0
-#
-#                
-#            # find all the parameters of the SPW
-#            # check the beginning of this SPWs
-#            spw_st_used = ms2pts(next_spw_st['time'], fs).astype(int)
-#            spw_en_used = ms2pts(next_spw_en['time'], fs).astype(int)
-#            
-#            electr = next_spw_st['electrode']
-#            trace = next_spw_st['trace']
-#            
-#            # read all the spikes for this electrode between start and end
-#            spikes_used  = get_var_used(spike_idx, electr, trace)
-#            spikes_usedMs = spikes_used[(spikes_used < next_spw_en['time'])&(spikes_used > next_spw_st['time'])]
-#            dist = np.diff(spikes_usedMs) # check distance between the two spikes
-#            #print dist
-#            spikes_used = ms2pts(spikes_usedMs, fs).astype(int)
-#            
-#            
-#            data_used = get_var_used(data, electr, trace)
-#            data_used = data_used[spw_st_used:spw_en_used]
-#            
-#            spike_hight = data_used[spikes_used - spw_st_used]
-#            ampl = np.diff(spike_hight)
-#            #print ampl
-#            
-#            
-#            # check if (this spike - its amplitude) is higher or lower than (next spike - its amplitude)
-#    
-#            # check max point between the two spikes
-#            
-#
-#            
-#            # transform to pts and plot
-#            add_it = 300 * electr
-#            
-#            st = spw_st_used
-#            spikes = spikes_used - st
-#            en = spw_en_used - st
-#           
-#            
-##            t = dat.get_timeline(data_used, fs, 'ms')
-##            t = np.add(t,next_spw_st['time'])
-##            if len(data_used) != len(t):
-##                import pdb; pdb.set_trace()
-##            st = st-st
-##            plt.plot(t, data_used+add_it)
-##            plt.plot(t[spikes], data_used[spikes]+add_it, 'om')
-##            
-##            # write exact coordinates of each spike
-###            for sp in spikes:
-###                tex = "%10.1f" % t[sp] #repr(amp_temp)
-###                plt.text(t[sp], data_used[sp]+add_it, tex, fontsize=11, ha='center', va='top')
-##            
-##            plt.plot(t[st], data_used[st]+add_it, 'om')
-##            plt.plot(t[en-1], data_used[en-1]+add_it, 'om')
-#
-#            # save temp details of this spw
-#            spiki = spikes_usedMs
-#            start = next_spw_st['time']
-#            end = next_spw_en['time']
-#            #import pdb; pdb.set_trace()
-#            for sp in spiki:
-#                spw_details_temp.append(np.rec.fromarrays([electr, trace, sp, start, end, sp, spw_no], names='electrode,trace, spiki, start, end, spw_no'))
-#            
-#            plt.show()
-#    spw_details = np.concatenate(spw_details)   
-    #print spw_details   
-    #np.savez(save_folder + data_file, spw_details = spw_details) 
-    
-            
-#        spikes_used      = get_var_used(spike_idx, electr, trace)
-#        spikes_used      = ms2pts(spikes_used, fs).astype(int)
-#        spikes_used      = spikes_used[(spikes_used > rang[0]) & (spikes_used < rang[1])]
-#        
-#        
-#        spws_starts_used = get_var_used(spw_starts, electr, trace)
-#        spws_starts_used = ms2pts(spws_starts_used, fs).astype(int)
-#        
-#        spws_ends_used   = get_var_used(spw_ends, electr, trace)
-#        spws_ends_used   = ms2pts(spws_ends_used, fs).astype(int)
-#        
-#        
-#        #spws_starts_used = spike_idx[(spike_idx['electrode'] == electr) & (spike_idx['trace'] == trace) & (spike_idx['time'] > rang[0]) & (spike_idx['time'] < rang[1])]['time']
-#        
-#        t = dat.get_timeline(data_used, fs, 'ms')
-#        #import pdb; pdb.set_trace()
-#        #spw_starts_used = 
-#        
-#        starts_used = spws_starts_used[np.where(spws_starts_used > rang[0])] # and np.where(spw_starts < rang[1])]
-#        starts_used2 = starts_used[np.where(starts_used < rang[1])]
-#        
-#        ends_used = spws_ends_used[np.where(spws_ends_used > rang[0])] # and np.where(spw_starts < rang[1])]
-#        ends_used2 = ends_used[np.where(ends_used < rang[1])]   
-#        
-#        plt.plot(t[rang[0]: rang[1]], data_used[rang[0]: rang[1]]+add_it , 'b')           
-#        plt.plot(t[spikes_used], data_used[spikes_used]+add_it, 'mo')     
-#        plt.plot(t[starts_used2], data_used[starts_used2]+add_it, 'oy')
-#        plt.plot(t[ends_used2], data_used[ends_used2]+add_it, 'or')
-       
 
 
-        
-    
-   
-#downsampling jest dlatego wazny, ze pozwala zastosowac filtry o mniejszym rzedzie (N). bardzo dlugie filtry (o wysokim rzedzie) beda z koniecznosci dluzsze.
-#
-#funcja butter dziala jak FilterDesign, tylko argumenty sa zamienione kolejnoscia (sorry, nie myslalem o tym jak  pisalem te funkcje) i zeby miec bandpass filter to musisz podac argument btype='band'. Uwaga! Dla N>20 ten filtr jest bardzo wolny. poza tym jak czestotliwosci sa bardzo niskie/wysokie albo zakres jest bardzo waski, to moze byc niestabilny (tzn. dostaniesz sygnal dazacy do nieskonczonosci). Dlatego tez downsampling jest bardzo istotny, jesli chcesz sie skupic na niskich czestotliwosciach.
-
-
-
-def update_SPWspikes(fs, save_folder, data_file, spw_starts, spw_ends, spike_idx):
+def update_SPWspikes(load_spikefile, load_spwsfile, save_folder, data_file):
     # reject all the SPWs where there is less than min_no_wave spws detected, 
     # check which spws belog together and save them
+    npzfile         = np.load(save_folder + load_spikefile)
+    spike_idxs      = npzfile['spike_idxs']
+    fs              = npzfile['fs']
+    npzfile.close()
+    
+    # load starts of spws
+    npzfile         = np.load(save_folder + load_spwsfile)
+    spw_starts      = npzfile['starts']
+    spw_ends        = npzfile['ends']
+    npzfile.close()
+    
+    
     print
     print "analyzing SPWs in electrode:",
     spw_details = []
@@ -1194,14 +1077,20 @@ def update_SPWspikes(fs, save_folder, data_file, spw_starts, spw_ends, spike_idx
         spw_details = spw_details + spw_details_temp
     spw_details = np.concatenate(spw_details)   
     np.savez(save_folder + data_file, spw_details = spw_details) 
-  
+    del spike_idxs, spw_starts, spw_ends
 
-def update_databas(data, fs, save_folder, data_file = 'data_bas'):
+def update_databas(data_load, save_folder, data_file = 'data_bas'):
     """ to stay constant in all the data, it will not only update the data file, but all the
     files which are defined by this data as well
     """
     print
     print "setting the data to baseline, working on electrode:",
+    
+    npzfile = np.load(save_folder + data_load)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close()
+    
     data_bas = []
     for electr in np.unique(data['electrode']): 
         # remove all mean from each electrode 
@@ -1212,16 +1101,9 @@ def update_databas(data, fs, save_folder, data_file = 'data_bas'):
         
         for trace in np.unique(data[data['electrode'] == electr]['trace']):
             data[(data['electrode'] == electr) & (data['trace'] == trace)]['time'] = data[(data['electrode'] == electr) & (data['trace'] == trace)]['time'] - mean_datatime
-            #electrodes = np.ones(len(dat), dtype=np.int32)*electr
-            #traces = np.ones(len(dat), dtype=np.int32)*trace
-        
-            #data_bas.append(np.rec.fromarrays([electrodes, traces, dat], names='electrode,trace,time'))
-    #data_bas = np.concatenate(data_bas)
   
     np.savez(save_folder + data_file, data = data, fs = fs)   
-
-
-
+    del data
     
 def update_spws(data, fast_data = [], spw_data = [], fs = 0, save_folder = '', save_file = 'SPWs', thresh_mult= 2):
     """finds all the spws in the data """

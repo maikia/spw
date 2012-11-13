@@ -4,6 +4,7 @@ import numpy as np
 import pylab as py
 import data_mang as dat
 import folder_manager as fold_mng
+import gc #garbage collector
 
 def up_datafile(filename, save_folder, save_file = 'data.npz', ext_electrodes = [1], intr_electrode = 1, data_part = 'all', reanalize = False):
     """ updates only the datafile for the given values """
@@ -13,10 +14,10 @@ def up_datafile(filename, save_folder, save_file = 'data.npz', ext_electrodes = 
     # check if this file already exists
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
-        data_all, fs = ispw.update_datafile(filename, ext_electrodes, save_folder, data_file = save_file, data_part = data_part)
+        ispw.update_datafile(filename, ext_electrodes, save_folder, data_file = save_file, data_part = data_part)
     else:
         print 'raw data file already exists'
-
+    gc.collect()
 
 def up_databas(save_folder, save_file = "data_dspl.npz", load_file = 'data.npz', reanalize = False):
     """ it downsamples the data taken from the given file and saves it in another file"""
@@ -27,14 +28,10 @@ def up_databas(save_folder, save_file = "data_dspl.npz", load_file = 'data.npz',
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
         # load the data
-        npzfile = np.load(save_folder + load_file)
-        data = npzfile['data']
-        fs = npzfile['fs']
-        npzfile.close()
-        
-        ispw.update_databas(data, fs, save_folder, data_file = save_file)
+        ispw.update_databas(data_load = load_file, save_folder = save_folder, data_file = save_file)
     else:
         print 'raw data was already moved to the baseline'    
+    gc.collect()
 
 def up_highWaves(save_folder, save_file = "data_movavg.npz", load_datafile = 'data.npz', reanalize = False):
     """ it subtracts moving average from the data"""
@@ -44,16 +41,12 @@ def up_highWaves(save_folder, save_file = "data_movavg.npz", load_datafile = 'da
     # check if this file already exists
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
-        # load the data
-        npzfile = np.load(save_folder + load_datafile)
-        data = npzfile['data']
-        fs = npzfile['fs']
-        npzfile.close()
-        
-        ispw.update_highWaves(data, fs, save_folder, data_file = save_file, atten_len = 25)
+        # load the data       
+        ispw.update_highWaves(load_datafile, save_folder, data_file = save_file, atten_len = 25)
     else:
         print 'raw data was already moved to the baseline' 
-
+    gc.collect()
+    
 def up_spws_spikes(save_folder, save_file = 'spws_params.npz', load_spwsfile = 'spws_potential', load_spikefile = 'spikes_params.npz', reanalize = False):
     """ it finds the characteristics of each spw"""
     # check if folder already exists
@@ -63,21 +56,12 @@ def up_spws_spikes(save_folder, save_file = 'spws_params.npz', load_spwsfile = '
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:   
         # load spike params
-        npzfile         = np.load(save_folder + load_spikefile)
-        spike_idxs      = npzfile['spike_idxs']
-        fs              = npzfile['fs']
-        npzfile.close()
-        
-        # load starts of spws
-        npzfile         = np.load(save_folder + load_spwsfile)
-        spw_starts      = npzfile['starts']
-        spw_ends        = npzfile['ends']
-        npzfile.close()
-        
-        ispw.update_SPWspikes(fs, save_folder, save_file, spw_starts, spw_ends, spike_idxs)
+       
+        ispw.update_SPWspikes(load_spikefile, load_spwsfile, save_folder, save_file)
     else:
         print 'spws were already analysed'    
-
+    gc.collect()
+        
 def up_spws_spikes_ampl(save_folder, save_file = 'data.npz', load_spwsspike = 'SPWs_spikes.npz', load_spikefile = 'spikes_params.npz', reanalize = False):
     """ Finds which of the spikes detected is of the same amplitude as coresponding highest spike - it returns only the highest amplitude spikes"""
     
@@ -85,23 +69,12 @@ def up_spws_spikes_ampl(save_folder, save_file = 'data.npz', load_spwsspike = 'S
     
     # check if this file already exists
     exists = fold_mng.file_exists(save_folder, save_file)
-    if reanalize or not exists:
-        # load spike params
-        npzfile         = np.load(save_folder + load_spikefile)
-        spike_idxs      = npzfile['spike_idxs']
-        ampls           = npzfile['ampls']
-        fs              = npzfile['fs']
-        npzfile.close()
-
-        # load starts of spws
-        npzfile         = np.load(save_folder + load_spwsspike)
-        spw_spikes      = npzfile['spw_details']  
-        npzfile.close()
-        
-        ispw.update_SPW_spikes_ampl(save_folder, save_file, spw_spikes, spike_idxs, ampls, fs)  
+    if reanalize or not exists:      
+        ispw.update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_file)  
     else:
         print 'spws were already analysed'        
-    
+    gc.collect()
+        
 def up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf'):       
     """analyse the ipsps in each SPWs - finds the beginnings, and removes those which are not correct"""
     # check if folder already exists
@@ -112,21 +85,10 @@ def up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.np
     if reanalize or not exists:
         fig_fold_name = 'SPW_IPSPs/'
         fold_mng.create_folder(save_folder + fig_fold_name)
-        # load the data
-        npzfile         = np.load(save_folder + load_datafile)
-        data            = npzfile['data']
-        fs              = npzfile['fs']
-        npzfile.close()   
-        
-        npzfile         = np.load(save_folder + load_spwsipsp)
-        spw_ipsps       = npzfile['spw_ipsps']
-        npzfile.close()   
-        
-        npzfile         = np.load(save_folder + load_spwsspike)
-        spw_spikes      = npzfile['chosen_spikes']  
-                
-        ispw.update_SPW_ipsp_correct(save_folder, fig_fold_name + save_fig, save_file, data, fs, spw_ipsps, spw_spikes, ext)  
-        
+        # load the data   
+        ispw.update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_folder, fig_fold_name + save_fig, save_file, ext)  
+    gc.collect()
+            
 def up_spws_ipsp_ampl(save_folder, save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', reanalize = False):       
     """analyse the ipsps and checks in which electrode it has the highest amplitude"""
     # check if folder already exists
@@ -142,11 +104,12 @@ def up_spws_ipsp_ampl(save_folder, save_file = 'save_it.npz', load_datafile = 'd
         npzfile.close()   
         
         npzfile         = np.load(save_folder + load_spwsipsp)
-        
+        npzfile.close()
         import pdb; pdb.set_trace()
              
         ispw.update_SPW_ipsp_ampl(save_folder, save_file, data, fs) 
-         
+    gc.collect()
+             
 def update_ipsp_exSpikes(save_folder, save_file):
     pass
 
@@ -159,22 +122,11 @@ def up_SPW_ipsp(save_folder, save_file = 'spws_params.npz', load_datafile = "dat
     # check if this file already exists
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
-        # load the data
-        npzfile         = np.load(save_folder + load_datafile)
-        data            = npzfile['data']
-        fs              = npzfile['fs']
-        npzfile.close()
-        
-        # load starts of spws
-        npzfile         = np.load(save_folder + load_spwsspike)
-        spw_spikes      = npzfile['spw_details']
-
-        npzfile.close()
-        
-        ispw.update_SPW_ipsp(data, fs, save_folder, save_file, spw_spikes)
+        # load the data        
+        ispw.update_SPW_ipsp(load_datafile, load_spwsspike, save_folder, save_file)
     else:
         print 'spws were already analysed'    
-
+    gc.collect()
 
 
 def up_filtered(save_folder, save_file = 'spw_data.npz', load_file = "data_dspl.npz", freq = [1.5, 500.0], reanalize = False):
@@ -188,11 +140,13 @@ def up_filtered(save_folder, save_file = 'spw_data.npz', load_file = "data_dspl.
         npzfile = np.load(save_folder + load_file)
         data = npzfile['data']
         fs = npzfile['fs']        
-
+        npzfile.close()
+        
         data_filt, freq, fs_data = ispw.update_filtered(data, fs, save_folder, freq, data_file = save_file)   
     else:
         print 'raw data was already filtered' 
-
+    gc.collect()
+    
 def up_extraspikes(save_folder, save_file = "ex_spikes", load_file = "data_dspl.npz", reanalize = False):
     """ finding extracellular spikes in the data """
     # check if folder already exists
@@ -200,13 +154,11 @@ def up_extraspikes(save_folder, save_file = "ex_spikes", load_file = "data_dspl.
     
     # check if this file already exists
     exists = fold_mng.file_exists(save_folder, save_file)
-    if reanalize or not exists:
-        npzfile = np.load(save_folder + load_file)
-        data = npzfile['data']
-        fs = npzfile['fs'] 
-        spike_idxs, spikes_ampl, fs_espikes = ispw.update_extraspikes(data, fs, save_folder, save_file = save_file)
+    if reanalize or not exists:  
+        ispw.update_extraspikes(data_load = load_file, save_folder = save_folder, save_file = save_file)
     else:
         print 'spikes were already found'
+    gc.collect()
 
 def up_spws(save_folder, save_file = 'spw_data.npz', load_file = 'spw_data.npz', reanalize = False):
     """ updates details of the spws"""
@@ -219,11 +171,13 @@ def up_spws(save_folder, save_file = 'spw_data.npz', load_file = 'spw_data.npz',
         npzfile = np.load(save_folder + load_file)
         data = npzfile['data']
         fs = npzfile['fs']        
-
+        npzfile.close()
+        
         spw_idxs, spw_maxs, starts_spw, ends_spw, lengths_spw, fs_spws = ispw.update_spws(data, fs = fs, save_folder = save_folder, save_file = save_file) 
     else:
         print 'raw data was already filtered' 
-
+    gc.collect()
+    
 def up_expikes_params(save_folder, save_file = 'spw_data.npz', load_datafile = 'spw_data.npz', load_spikefile = 'spikefile.npz', reanalize = False):
     """ finds different parameters of the spike and returns them in ms"""
     # check if folder already exists
@@ -231,18 +185,11 @@ def up_expikes_params(save_folder, save_file = 'spw_data.npz', load_datafile = '
     
     # check if this file already exists
     exists = fold_mng.file_exists(save_folder, save_file)
-    if reanalize or not exists:
-        npzfile = np.load(save_folder + load_datafile)
-        data = npzfile['data']
-        fs = npzfile['fs'] 
-        
-        npzfile = np.load(save_folder + load_spikefile)
-        spike_idx = npzfile['spike_idx']
-        
-        ispw.update_expikes_params(data, fs, save_folder, spike_idx, save_file = save_file)  
+    if reanalize or not exists:       
+        ispw.update_expikes_params(load_datafile, load_spikefile, save_folder, save_file = save_file)  
     else:
         print 'spikes parameters were already calculated'
-
+    gc.collect()
 
 
 
