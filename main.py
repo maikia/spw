@@ -23,10 +23,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     #updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, data_part = 'all', reanalize = reanalize)
 
     raw_baselined   = "data_bas.npz"
-    updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
+    #updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
     
     spikes_raw      = 'spikes.npz'
-    updater.up_extraspikes(save_folder, save_file = spikes_raw, load_file = raw_baselined, reanalize = reanalize)
+    #updater.up_extraspikes(save_folder, save_file = spikes_raw, load_file = raw_baselined, reanalize = reanalize)
     
     spikes_params   = 'spikes_params.npz'
     updater.up_expikes_params(save_folder, save_file = spikes_params, load_datafile = raw_baselined, load_spikefile = spikes_raw, reanalize = reanalize)
@@ -44,7 +44,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     updater.up_SPW_ipsp(save_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_spwsspike = SPWs_spikes, reanalize = reanalize)
     
     SPWs_ipsps_beg  = 'spw_ipsps_beg.npz'
-    updater.up_spws_ipsp_beg(save_folder,  save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = SPWs_spikes_ampl, reanalize = reanalize, ext = ext)
+    #updater.up_spws_ipsp_beg(save_folder,  save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = SPWs_spikes_ampl, reanalize = reanalize, ext = ext)
  
     #SPWs_ipsps_ampl = 'spw_ipsps_ampl.npz'
     #updater.up_spws_ipsp_ampl(save_folder, save_file = SPWs_ipsps_ampl, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, reanalize = reanalize)
@@ -253,16 +253,6 @@ def find_folders(cell_no = 1, part = 1, oscil = 0):
     save_folder = save_data + save_folder
     return read_name, save_folder, intra  
         
-#test_correctness()
-
-#
-
-#
-#f_name = ''
-
-  
-#save_folder = '/home/maja/PhDProject/SPWs/SPWs/saved_data/cell5/part1_test/'
-#save_folder = '/home/maja/PhDProject/SPWs/SPWs/saved_data/cell6/test'
 
 if __name__=='__main__':
     all = ((1, 1, 0), (1, 1, 1), (1, 2, 1), (3, 1, 0), (3, 1, 1), (4, 1, 1),
@@ -276,7 +266,7 @@ if __name__=='__main__':
     if update == 1:
         #for nex in [15]:
         #for nex in range(len(all)):
-        for nex in [4, 15, 16, 17, 18]: #range(5, 16): #[14, 15]: #range(7, len(all)):
+        for nex in [14]: #[4, 15, 16, 17, 18]: #range(5, 16): #[14, 15]: #range(7, len(all)):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             
             ex_electr = range(1+intra, 8+intra)
@@ -290,128 +280,5 @@ if __name__=='__main__':
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             analyse_all(filename, save_folder, intra)
         
-#import pdb; pdb.set_trace()
 
-
-
-#ispw.update_all(read_name, ext_electrodes, save_folder, int_electrode, data_part)
-#test_corect(save_folder)
-#work_on_spws(save_folder)
-
-#group_spws(save_folder)
-#work_on_swp_spikes(save_folder)
-#corr_spws_electrwise(save_folder)
-
-#corr_spws_electrwise(save_folder, data_file = 'spw_corr')
-#plot_distance_meancorrSPW(save_folder)
-
-#all_corr, all_move = correlate_spw(save_folder, 1)
-#group_corr(save_folder)
-
-
-
-
-#f_name = ['25102011_0019_gap free.abf', '08112011_0000_gap free.abf', '17112011_0000_gap free_p1.abf', '17112011_0000_gap free_p2.abf', '17112011_0000_gap free_p3.abf', '17112011_0000_gap free_p4.abf', '17112011_0000_gap free_p5.abf', '02122011_0000_gap free stim.abf', '02122011_0006_gap free stim.abf', '08122011_0013_stim gap free_same slice as cell 4.abf'] 
-## cell1, cell3, cell5_p1, cell5_p2, cell5_p3, cell5_p4, cell5_p5, cell6, cell7,  cell9
-#f_dir = '/home/maja/PhDProject/SPWs/data/induced/'
-#f_dir_cell = ['Cell 1/', 'Cell 3/', 'Cell 5/', 'Cell 5/', 'Cell 5/', 'Cell 5/', 'Cell 5/', 'Cell 6/', 'Cell 7/', 'Cell 9/']
-#save_folder = '/home/maja/PhDProject/SPWs/SPWs/saved_data/'
-#fave_folder_cell = ['cell1/', 'cell3/', 'cell5/part1/', 'cell5/part2/', 'cell5/part3/', 'cell5/part4/', 'cell5/part5/', 'cell6/', 'cell7/', 'cell1/', 'cell1/']
-#for i in range(len(f_name)):
-#
-#read_name = f_dir + f_name  
-#
-#print len(f_name)
-#print len(f_dir_cell)
-#
-#
-#
-#ispw.update_all(read_name, ext_electrodes, save_folder, int_electrode, data_part)
-#
-#
-#
-#
-#int_electrode = 1
-#f_dir = '/home/maja/PhDProject/SPWs/data/induced/Cell 7/'
-#f_name = '02122011_0006_gap free stim.abf' # cell7 - error check!
-#save_folder = '/home/maja/PhDProject/SPWs/SPWs/saved_data/cell7/'
-#read_name = f_dir + f_name  
-#ispw.update_all(read_name, ext_electrodes, save_folder, int_electrode, data_part)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#data_uspl_extra, fs_new_up = read_upsample(save_folder)
-#distances, min_distances, fs = read_dist_fromSpike(save_folder)
-#spike_idxs, spikes_ampl, whole_spikes, fs_new = read_extraspikes(save_folder)
-#if fs_new_up != fs:
-#    fs_div = fs_new_up / fs # if the sampling rate is different
-#    spike_idxs = [spike_idxs[i] / fs_div for i in range(len(spike_idxs))]
-#data_uspl_extra, fs_new_up = ispw.update_upsample(data_all, fs, save_folder, uspl = 5, data_file = 'data_uspl_extra')
-
-#
-#work_on_extraspikes(save_folder)
-#plotting(save_folder)
-#work_on_spws(save_folder)
-
-#sp_idx_first, sp_idx_all, fs = read_intra_spikes(save_folder)
-#spike_idxs, spikes_ampl, whole_spikes, fs_new = read_extraspikes(save_folder)
-#
-#if fs_new != fs:
-#    fs_div = fs_new / fs # if the sampling rate is different
-#    spike_idxs = [spike_idxs[i] / fs_div for i in range(len(spike_idxs))]
-#
-#
-#ispw.update_dist_fromSpike(sp_idx_all, spike_idxs, fs, save_folder)
-
-
-#work_on_all(save_folder, read_name)
-#work_on_spws(save_folder)
-#work_on_extraspikes(save_folder)
-#work_on_spikes(save_folder)
-# run again all the settings
-
-#work_on_extraspikes(save_folder)   
-
-#work_on_all(save_folder, f_cell)
-
-#work_on_spikes(save_folder, f_cell)
-#py.show()
-
-#ispw.update_extraspikes(data, fs, save_name)
-#npzfile = np.load(save_name + "distances.npz")
-#print npzfile.files
-#files =  npzfile.files
-#for i in range(len(files)):
-#    #print npzfile[files[i]]
-#    print np.shape(npzfile[files[i]])
-#    print npzfile[files[i]]
-    #print len(npzfile[files[i]])
-    #print npzfile[files[i]][0]
-    #print npzfile[files[i]][1]            
-    #print np.size(data)
-    #pass
-    
-
-
-#Nevertheless, if you calculate for exemple the mean half duration of extracellular spikes in function of latency from intracellular spike, 
-#I think that you will find at least for the first 3ms a mean value that is less than what you will find after. That means that at this point mostly interneurons are actives. What you can do is also to take as interneurons only spikes that have a half duration less than ... something. And exclude others. You will have in this way the timing of inteurneurons discharges in respect with intracellular spikes and space (spikes taken independently from each electrode)
-#It is clear that all electrodes do not record spikes with the same quality, so do what you can, not more.
-#I will discuss it better later. In conclusion, do what you can, but since it is not the main purpose for now, do not spend too much time on it.
-#
-#To be continued
-#
-#Michael
     
