@@ -741,6 +741,7 @@ def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_nam
 
 def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext):
     """ checks all the ipsps and corrects them for each spw"""
+
     npzfile         = np.load(save_folder + load_datafile)
     data            = npzfile['data']
     fs              = npzfile['fs']
@@ -755,6 +756,7 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
     npzfile.close()     
     
     plot_it = False
+
     add_it = 100
     shift_ipsp = 1 # ms
     in_min_electrodes = 3 # ipsp has to be found in at least that many electrodes
@@ -899,7 +901,7 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
             tit = 'spw: ' + str(spw) 
             plt.title(tit)
             fig.savefig(save_folder + save_fig + str(spw) + ext,dpi=600)
-            fig.savefig(save_folder + save_fig + str(spw) + '.png',dpi=600)        
+            #fig.savefig(save_folder + save_fig + str(spw) + '.png',dpi=600)        
             #plt.show()
             plt.clf()
     proper_ipsps = np.concatenate(proper_ipsps)
