@@ -29,7 +29,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     #updater.up_extraspikes(save_folder, save_file = spikes_raw, load_file = raw_baselined, reanalize = reanalize)
     
     spikes_params   = 'spikes_params.npz'
-    updater.up_expikes_params(save_folder, save_file = spikes_params, load_datafile = raw_baselined, load_spikefile = spikes_raw, reanalize = reanalize)
+    #updater.up_expikes_params(save_folder, save_file = spikes_params, load_datafile = raw_baselined, load_spikefile = spikes_raw, reanalize = reanalize)
      
     SPWs_potential  = 'potential_SPWs.npz'
     updater.up_highWaves(save_folder, save_file = SPWs_potential, load_datafile = raw_baselined,reanalize = reanalize)
@@ -266,7 +266,7 @@ if __name__=='__main__':
     if update == 1:
         #for nex in [15]:
         #for nex in range(len(all)):
-        for nex in [14]: #[4, 15, 16, 17, 18]: #range(5, 16): #[14, 15]: #range(7, len(all)):
+        for nex in [4, 15, 16, 17, 18]: #range(5, 16): #[14, 15]: #range(7, len(all)):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             
             ex_electr = range(1+intra, 8+intra)
