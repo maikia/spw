@@ -1,20 +1,17 @@
-
+import os
+import shutil
 
 def remove_folder(folder_name):
     """ removes all the files from the given folder;
     folder_name: name of the folder from which to remove files (it will not remove subfolders)
     remove_from_subs: if True all the subfolders will be cleared as well"""
-    import shutil
     shutil.rmtree(folder_name)
     
-    
-
 
 def remove_content(folder_name):
     """ removes all the files from the given folder;
     folder_name: name of the folder from which to remove files (it will not remove subfolders)"""    
-    import os
-    import shutil
+
     
     for filename in os.listdir(folder_name):
         filepath = os.path.join(folder_name, filename)
@@ -26,8 +23,6 @@ def remove_content(folder_name):
             
 def create_folder(folder_name):
     """ checks if given folder exists, if not it creates it"""
-    import os
-    import numpy as np
     
     # checks if the given folder/file exists and if not calculates the data
     if not os.path.exists(folder_name):
@@ -36,7 +31,7 @@ def create_folder(folder_name):
 
 def file_exists(folder_name, filename):  
     """ checks if given file exists in given folder, and returns True or False"""
-    import os.path
+
     filepath = os.path.join(folder_name, filename)
     exists = os.path.isfile(filepath)
 
