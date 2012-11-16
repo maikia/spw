@@ -763,7 +763,7 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
     min_electr_other = 2 # for the first ipsp (also beginning of SPW, check should be stronger
     shift_spike= 0.5 #0.15 # ms
     proper_ipsps = []
-    expected_min_ipsp_ampl = 15 # microV
+    expected_min_ipsp_ampl = 20 # microV
     
     # go through all the spws
     for spw in np.unique(spw_ipsps['spw_no']):
@@ -825,10 +825,7 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
                             spike =  ipsps_temp[max_idx]
                             
                         
-                        if spw_start == 0: # if the it's beginning of the SPW
-                            spw_start = spike
-                            min_electr = min_electr_other # change to different constraint (for IPSP and not beginning of SPW)   
-                            spw_electr_st = electr_temp[max_idx]
+                        ipstarts_temp = []
                             
                         # add all this information to temporary lists
                         for el in range(int(min(electr_temp)), int(max(electr_temp))+ 1):
@@ -862,9 +859,10 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
                             el_ipsp_spw.append(el)
                             tr_ipsp_spw.append(trace)
                             spwno_ipsp_spw.append(spw_no)
-                            spwstart_isps_spw.append(spw_start)
+                            
                             ipspno_ipsp_spw.append(ipsp_count)
                             ipspstrt_ipsp_spw.append(sp)
+                            ipstarts_temp.append(sp)
                             
                             sp_end = sp_sp_used[sp_sp_used['electrode'] == el]['spw_end']
                             if len(sp_end) == 0:
@@ -874,8 +872,17 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
                                 spwend_ipsp_spw.append(sp_end[0])
                             
                             ampl_ipsp_spw.append(ipsp_ampl)
+                        
+                        if spw_start == 0: # if the it's beginning of the SPW
+                            #import pdb; pdb.set_trace()  
+                            min_idx = np.argmin(ipstarts_temp)
+                            spw_start = ipstarts_temp[min_idx]
+                            #min_electr = min_electr_other # change to different constraint (for IPSP and not beginning of SPW)   
+                            spw_electr_st = electr_temp[min_idx] 
                             
+                        spwstart_isps_spw.append(np.ones(len(ipstarts_temp)) * spw_start)
                         ipsp_count = ipsp_count + 1
+                    
                 ipsps_temp, spikes_temp, ipsp_ampl_temp, electr_temp, increase_temp, ipsp_ends = [], [], [], [], [], []
 
             # collect all IPSPs
@@ -911,20 +918,20 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
         el_ipsp_spw = np.array(el_ipsp_spw, dtype='i4')
         tr_ipsp_spw = np.array(tr_ipsp_spw, dtype='i4')
         spwno_ipsp_spw = np.array(spwno_ipsp_spw, dtype='i4')
-        spwstart_isps_spw = np.array(spwstart_isps_spw, dtype='i4')
         ipspno_ipsp_spw = np.array(ipspno_ipsp_spw, dtype='i4') 
         ipspstrt_ipsp_spw = np.array(ipspstrt_ipsp_spw, dtype='f8')
         ampl_ipsp_spw = np.array(ampl_ipsp_spw, dtype='f8')
         spwend_ipsp_spw = np.array(spwend_ipsp_spw, dtype='f8')
         spw_electr_start = np.ones(len(el_ipsp_spw), dtype=np.int32)*spw_electr_st
-        
+        spwstart_isps_spw = np.concatenate(spwstart_isps_spw)
+        spwstart_isps_spw = np.array(spwstart_isps_spw, dtype='i4')
         temp_spw = np.rec.fromarrays([el_ipsp_spw, tr_ipsp_spw, spwno_ipsp_spw, spw_electr_start, spwstart_isps_spw,
                                                spwend_ipsp_spw,ipspno_ipsp_spw, ipspstrt_ipsp_spw, ampl_ipsp_spw], 
                                            names='electrode, trace, spw_no, spw_electr_start, spw_start, spw_end, ipsp_no, ipsp_start, ipsp_ampl')
         proper_ipsps.append(temp_spw)
          
         #import pdb; pdb.set_trace()    
-        if plot_it and (spw_electr_start) > 0: 
+        if plot_it and len(spw_electr_start) > 0: 
             fig = plt.figure()   
             spw_min_start = 9000000000
             spw_max_end = -1
@@ -956,7 +963,7 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
             plt.title(tit)
             fig.savefig(save_folder + save_fig + str(spw) + ext,dpi=600)
             fig.savefig(save_folder + save_fig + str(spw) + '.eps',dpi=600)        
-            #plt.show()
+            plt.show()
             plt.clf()
     proper_ipsps = np.concatenate(proper_ipsps)
     np.savez(save_folder + save_file, ipsps = proper_ipsps) 
