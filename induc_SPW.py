@@ -819,15 +819,17 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
                                 if ipsp_ampl_temp[spike_idx] > expected_min_ipsp_ampl:
                                     spike = spikes_temp[spike_idx]
                                 used = used+1
-                        #import pdb; pdb.set_trace() 
+
                         max_idx = np.argmax(ipsp_ampl_temp)    
                         if spike == float('Inf'): # otherwise use the beginning where the electrode has the highest IPSP
                             spike =  ipsps_temp[max_idx]
+                            
                         
                         if spw_start == 0: # if the it's beginning of the SPW
                             spw_start = spike
-                            min_electr = min_electr_other # change to different constraint (for IPSP and not beginning of SPW)        
-                                           
+                            min_electr = min_electr_other # change to different constraint (for IPSP and not beginning of SPW)   
+                            spw_electr_st = electr_temp[max_idx]
+                            
                         # add all this information to temporary lists
                         for el in range(int(min(electr_temp)), int(max(electr_temp))+ 1):
                             # if this electrode had IPSP detected:
@@ -914,20 +916,24 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
         ipspstrt_ipsp_spw = np.array(ipspstrt_ipsp_spw, dtype='f8')
         ampl_ipsp_spw = np.array(ampl_ipsp_spw, dtype='f8')
         spwend_ipsp_spw = np.array(spwend_ipsp_spw, dtype='f8')
+        spw_electr_start = np.ones(len(el_ipsp_spw), dtype=np.int32)*spw_electr_st
         
-        
-        temp_spw = np.rec.fromarrays([el_ipsp_spw, tr_ipsp_spw, spwno_ipsp_spw, spwstart_isps_spw,
+        temp_spw = np.rec.fromarrays([el_ipsp_spw, tr_ipsp_spw, spwno_ipsp_spw, spw_electr_start, spwstart_isps_spw,
                                                spwend_ipsp_spw,ipspno_ipsp_spw, ipspstrt_ipsp_spw, ampl_ipsp_spw], 
-                                           names='electrode, trace, spw_no, spw_start, spw_end, ipsp_no, ipsp_start, ipsp_ampl')
+                                           names='electrode, trace, spw_no, spw_electr_start, spw_start, spw_end, ipsp_no, ipsp_start, ipsp_ampl')
         proper_ipsps.append(temp_spw)
          
         #import pdb; pdb.set_trace()    
-        if plot_it: 
+        if plot_it and (spw_electr_start) > 0: 
             fig = plt.figure()   
             spw_min_start = 9000000000
             spw_max_end = -1
             
             for el in np.unique(el_ipsp_spw):
+                if el == spw_electr_st:
+                    colr = 'r'
+                else:
+                    colr = 'k'
                 idxs = np.where(el_ipsp_spw == el)
                 
                 spw_start = spwstart_isps_spw[np.where(el_ipsp_spw == el)][0]
@@ -942,26 +948,15 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
                 spw_max_end = max(spw_en_pts, spw_max_end)
                 
                 t = dat.get_timeline(data_used, fs, 'ms') + spw_start
-                plt.plot(t,data_used + add_it * el)
+                plt.plot(t,data_used + add_it * el, colr)
                 plt.plot(t[spikes],data_used[spikes] + add_it * el, 'r<')
                 plt.plot(t[ipsp_start],data_used[ipsp_start] + add_it * el, 'go')
-#            import pdb; pdb.set_trace() 
-#            
-#            
-#            data_used = data_temp[data_temp['electrode'] == electr]['time'][spw_min_start:spw_max_end]
-#            t = dat.get_timeline(data_used, fs, 'ms') + pts2ms(spw_min_start, fs)
-#            if len(beginnings) > 0:
-#                begs_pts = begs_pts - spw_min_start
-#                #t_beg =
-#                for a in t[begs_pts]:
-#                    plt.vlines(a, -200, 1200)
-#                #plt.plot(t[begs_pts], data_used[begs_pts], 'bo')
-#                #import pdb; pdb.set_trace() 
-            tit = 'spw: ' + str(spw) 
+
+            tit = 'spw: ' + str(spw)
             plt.title(tit)
             fig.savefig(save_folder + save_fig + str(spw) + ext,dpi=600)
             fig.savefig(save_folder + save_fig + str(spw) + '.eps',dpi=600)        
-            plt.show()
+            #plt.show()
             plt.clf()
     proper_ipsps = np.concatenate(proper_ipsps)
     np.savez(save_folder + save_file, ipsps = proper_ipsps) 
