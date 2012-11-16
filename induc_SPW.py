@@ -841,8 +841,8 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
                             sp_temp = np.array(spikes_temp)
                             notInf = sp_temp[sp_temp < float('Inf')]
                             
-                            if ipsp_count == 2:
-                                import pdb; pdb.set_trace() 
+                            #if ipsp_count == 2:
+                            #    import pdb; pdb.set_trace() 
                             if spikes_temp[el_idx] != float('Inf'):
                                 sp = spikes_temp[el_idx]
                             elif len(notInf) > 0:
