@@ -171,7 +171,7 @@ if __name__=='__main__':
         #for nex in range(12, len(all)):
         #for nex in [5]: #range(12, len(all)):
         #for nex in [11]:
-        for nex in range(14, 15):
+        for nex in range(15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             analyse_all(filename, save_folder, intra)
         
