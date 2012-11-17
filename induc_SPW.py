@@ -836,7 +836,6 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
                             if el in (electr_temp):
                                 el_idx = electr_temp.index(el)
                                 #if spikes_temp[el_idx] != np.inf:
-
                                 sp = spikes_temp[el_idx]
                                 # if amplitude was already found for this electrode
                                 ipsp_idx = electr_temp.index(el)
