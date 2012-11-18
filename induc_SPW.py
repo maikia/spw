@@ -766,7 +766,7 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
     expected_min_ipsp_ampl = 20 # microV
     
     # go through all the spws
-    for spw in np.unique(spw_ipsps['spw_no']):
+    for spw in [16]: #np.unique(spw_ipsps['spw_no']):
         # save detected ipsps and spikes for each spw
         print 'updating spw:' + str(spw)
         
@@ -879,7 +879,7 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
                             min_idx = np.argmin(ipstarts_temp)
                             spw_start = ipstarts_temp[min_idx]
                             #min_electr = min_electr_other # change to different constraint (for IPSP and not beginning of SPW)   
-                            spw_electr_st = electr_temp[min_idx] 
+                            spw_electr_st = el_ipsp_spw[min_idx] 
                             
                         spwstart_isps_spw.append(np.ones(len(ipstarts_temp)) * spw_start)
                         ipsp_count = ipsp_count + 1
@@ -914,25 +914,26 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
             electr_temp.append(electr) 
             
             ipsp_old = ipsp_time
-
-        # change type of all data, so that it can be added to rec array
-        el_ipsp_spw = np.array(el_ipsp_spw, dtype='i4')
-        tr_ipsp_spw = np.array(tr_ipsp_spw, dtype='i4')
-        spwno_ipsp_spw = np.array(spwno_ipsp_spw, dtype='i4')
-        ipspno_ipsp_spw = np.array(ipspno_ipsp_spw, dtype='i4') 
-        ipspstrt_ipsp_spw = np.array(ipspstrt_ipsp_spw, dtype='f8')
-        ampl_ipsp_spw = np.array(ampl_ipsp_spw, dtype='f8')
-        spwend_ipsp_spw = np.array(spwend_ipsp_spw, dtype='f8')
-        spw_electr_start = np.ones(len(el_ipsp_spw), dtype=np.int32)*spw_electr_st
-        spwstart_isps_spw = np.concatenate(spwstart_isps_spw)
-        spwstart_isps_spw = np.array(spwstart_isps_spw, dtype='i4')
-        temp_spw = np.rec.fromarrays([el_ipsp_spw, tr_ipsp_spw, spwno_ipsp_spw, spw_electr_start, spwstart_isps_spw,
-                                               spwend_ipsp_spw,ipspno_ipsp_spw, ipspstrt_ipsp_spw, ampl_ipsp_spw], 
-                                           names='electrode, trace, spw_no, spw_electr_start, spw_start, spw_end, ipsp_no, ipsp_start, ipsp_ampl')
-        proper_ipsps.append(temp_spw)
+        #import pdb; pdb.set_trace()    
+        if spw_start != 0:
+            # change type of all data, so that it can be added to rec array
+            el_ipsp_spw = np.array(el_ipsp_spw, dtype='i4')
+            tr_ipsp_spw = np.array(tr_ipsp_spw, dtype='i4')
+            spwno_ipsp_spw = np.array(spwno_ipsp_spw, dtype='i4')
+            ipspno_ipsp_spw = np.array(ipspno_ipsp_spw, dtype='i4') 
+            ipspstrt_ipsp_spw = np.array(ipspstrt_ipsp_spw, dtype='f8')
+            ampl_ipsp_spw = np.array(ampl_ipsp_spw, dtype='f8')
+            spwend_ipsp_spw = np.array(spwend_ipsp_spw, dtype='f8')
+            spw_electr_start = np.ones(len(el_ipsp_spw), dtype=np.int32)*spw_electr_st
+            spwstart_isps_spw = np.concatenate(spwstart_isps_spw)
+            spwstart_isps_spw = np.array(spwstart_isps_spw, dtype='i4')
+            temp_spw = np.rec.fromarrays([el_ipsp_spw, tr_ipsp_spw, spwno_ipsp_spw, spw_electr_start, spwstart_isps_spw,
+                                                   spwend_ipsp_spw,ipspno_ipsp_spw, ipspstrt_ipsp_spw, ampl_ipsp_spw], 
+                                               names='electrode, trace, spw_no, spw_electr_start, spw_start, spw_end, ipsp_no, ipsp_start, ipsp_ampl')
+            proper_ipsps.append(temp_spw)
          
         #import pdb; pdb.set_trace()    
-        if plot_it and len(spw_electr_start) > 0: 
+        if spw_start != 0 and plot_it and len(spw_electr_start) > 0: 
             fig = plt.figure()   
             spw_min_start = 9000000000
             spw_max_end = -1
@@ -966,7 +967,8 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
             fig.savefig(save_folder + save_fig + str(spw) + '.eps',dpi=600)        
             plt.show()
             plt.clf()
-    proper_ipsps = np.concatenate(proper_ipsps)
+    if len(proper_ipsps) > 0:
+        proper_ipsps = np.concatenate(proper_ipsps)
     np.savez(save_folder + save_file, ipsps = proper_ipsps) 
     del spw_ipsps, data
 
