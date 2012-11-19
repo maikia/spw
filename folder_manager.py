@@ -5,7 +5,8 @@ def remove_folder(folder_name):
     """ removes all the files from the given folder;
     folder_name: name of the folder from which to remove files (it will not remove subfolders)
     remove_from_subs: if True all the subfolders will be cleared as well"""
-    shutil.rmtree(folder_name)
+    if os.path.exists(folder_name):
+        shutil.rmtree(folder_name)
     
 
 def remove_content(folder_name):

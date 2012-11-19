@@ -7,7 +7,20 @@ import folder_manager as fold_mng
 import gc #garbage collector
 
 
-def up_intrafile(filename, save_folder, save_file = 'data_intra.npz', data_part = 'all', reanalize = False):
+def up_intraSpikes(save_folder, save_file = 'intra_spikes.npz', load_file = 'data_intra.npz', reanalize = False):
+    """ finds the spikes in the intracellular data"""
+    # check if folder already exists
+    fold_mng.create_folder(save_folder)
+    # check if this file already exists
+    exists = fold_mng.file_exists(save_folder, save_file)
+    if reanalize or not exists:
+        # load the data
+        ispw.update_intraSpikes(save_folder, save_file = save_file, load_file = load_file, pulse_len = 500)
+    else:
+        print 'intracellular spikes were already found previously'    
+    gc.collect()    
+
+def up_intrafile(filename, save_folder, save_file = 'data_intra.npz', int_electrodes = [1], reanalize = False):
     """ read intracellular data"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -16,13 +29,13 @@ def up_intrafile(filename, save_folder, save_file = 'data_intra.npz', data_part 
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
         # load the data
-        ispw.update_datafile(filename, [1], save_folder, data_file = 'intra', data_part = data_part)
+        ispw.update_datafile(filename, int_electrodes, save_folder, data_file = save_file)
     else:
-        print 'raw data was already moved to the baseline'    
+        print 'raw intracellular data was already loaded'    
     gc.collect()
     
 
-def up_datafile(filename, save_folder, save_file = 'data.npz', ext_electrodes = [1], intr_electrode = 1, data_part = 'all', reanalize = False):
+def up_datafile(filename, save_folder, save_file = 'data.npz', ext_electrodes = [1], intr_electrode = 1, reanalize = False):
     """ updates only the datafile for the given values """
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -30,7 +43,7 @@ def up_datafile(filename, save_folder, save_file = 'data.npz', ext_electrodes = 
     # check if this file already exists
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
-        ispw.update_datafile(filename, ext_electrodes, save_folder, data_file = save_file, data_part = data_part)
+        ispw.update_datafile(filename, ext_electrodes, save_folder, data_file = save_file)
     else:
         print 'raw data file already exists'
     gc.collect()
@@ -286,10 +299,7 @@ def up_downsample_intra(save_folder, dspl = 2):
     data_dspl_intra, fs_new_down = ispw.update_downsample(data_intra, fs, save_folder, dspl = 2, data_file = 'data_dspl_intra')
     return data_dspl_intra, fs_new_down
         
-def up_intraSpikes(save_folder):
-    data_intra, fs = reader.read_datafile(save_folder, save_file = "intra.npz")
-    sp_idx_first, sp_idx_all, fs = ispw.update_intraSpikes(data_intra[0], fs, save_folder, save_file = "intra_spikes", pulse_len = 500)
-    return sp_idx_first, sp_idx_all, fs
+
     
 def up_dist_fromSpike(save_folder, intra = 0):
     

@@ -21,7 +21,7 @@ def get_timeline(data, fs, scale='ms'):
     return np.linspace(0, t, len(data))
 
 
-def get_electrdata(data, no_segments, electrode=[1], data_part = 'all'):
+def get_electrdata(data, no_segments, electrode=[1]):
     """ for given analogdata get the array of data for only one electrode and
     it's sampling rate"""
     electr = []
@@ -33,17 +33,11 @@ def get_electrdata(data, no_segments, electrode=[1], data_part = 'all'):
             el = electr - 1
             dat[el, trace, :] = data[trace][el].magnitude
         
-        #electrodes = np.ones(len(dat), dtype=np.int32)*electrode
-        #traces = np.ones(len(dat), dtype=np.int32)*i
-        #electr.append(np.rec.fromarrays([electrodes, traces, dat], names='electrode,trace,time'))
-    #electr = np.concatenate(electr)
     
     fs = data[0][0].sampling_rate
     fs = fs.magnitude
 
-    #if data_part != 'all':
-    #    # if data_part is 'all' then the whole data will be used
-    #    electr = electr[:][data_part[0]: data_part[1]]
+
     return dat, fs
                                                                                                                                    
 def generate_dummy(sim_time=60, fs=20):

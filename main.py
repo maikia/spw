@@ -11,6 +11,7 @@ import folder_manager as fold_mng
 from configure_path import find_folders
 from convert_data_bas import rec2array
 
+
 # if new settings applied - it will rerun everything again
 # to select the settings go to induc_SPW
 def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], intr_electrode = 1, data_part = 'all'):
@@ -19,9 +20,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     
     print 'working on: ' +  filename
     reanalize = True # set to true if to analyze the data no matter if it was already analysed or not
+    fold_mng.remove_folder(save_folder)
     
     raw_data        = 'data.npz'
-    updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, data_part = 'all', reanalize = reanalize)
+    updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, reanalize = reanalize)
 
     raw_baselined   = "data_bas.npz"
     updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
@@ -50,10 +52,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     print intr_electrode
     if intr_electrode == 1:
         data_intra = 'data_intra.npz'
-        updater.up_intrafile(filename, save_folder, save_file = data_intra, data_part = 'all', reanalize = reanalize)
+        updater.up_intrafile(filename, save_folder, save_file = data_intra, int_electrodes = [intr_electrode], reanalize = reanalize)
         
-        intra_spikes = 'spw_ipsps_ampl.npz'
-        #updater.up_spws_ipsp_ampl(save_folder, save_file = SPWs_ipsps_ampl, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, reanalize = reanalize)
+        intra_spikes = 'intra_spikes.npz'
+        updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra, reanalize = reanalize)
         
     #ipsp_exSpikes = 'ipsp_exSpikes.npz'
     #updater.update_ipsp_exSpikes(save_folder, save_file = ipsp_exSpikes)
@@ -167,7 +169,7 @@ if __name__=='__main__':
     if update == 1:
         #for nex in [15]:
         #for nex in range(len(all)):
-        for nex in [15]: #range(5, 16): #[14, 15]: #range(7, len(all)):
+        for nex in [15]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             
             ex_electr = range(1, 9)

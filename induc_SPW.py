@@ -298,33 +298,44 @@ def update_ripples(ripple_data, fs, save_folder, data_file = 'ripples'):
 
 
 
-
-def update_intraSpikes(data, fs, save_folder, save_file = "intra_spikes", pulse_len = 500, ):
+def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
+#(data, fs, save_folder, save_file = "intra_spikes", pulse_len = 500, ):
     """ pulse_len in ms - length of the stimulation pulse in intracellular electrode"""
-#    print 'data'
-#    print np.shape(data)
-    #print np.shape(data)
-    sp_idx_first_all = []
-    sp_idx_all = []
-    for trace in range(len(data)):
-        spiking_thres = -10 #mV
-        #pulse_len 
-        # detect only the first spike in the row 
-        sp_idx_first = detect_1spike(data[trace][:], spiking_thres, fs, pulse_len)
-        sp_idx_a = detect_spikes(data[trace][:], spiking_thres) # for detecting all the spikes 
-        #print np.shape(sp_idx_first)
-        #print np.shape(sp_idx_a)
-        sp_idx_first_all.append(sp_idx_first)
-        sp_idx_all.append(sp_idx_a)
-#    print 'all'
-#    print sp_idx_first_all
-#    print np.size(sp_idx_first_all,0)
-#    print sp_idx_all
-#    print np.size(sp_idx_all,0)
+    npzfile = np.load(save_folder + load_file)
+    data = npzfile['data']
+    fs = npzfile['fs'] 
+    npzfile.close()
     
+    
+    sp_all = []
+    sp_first = []
+    
+    print 'Detecting intracellular spikes'
+    for trace in range(np.size(data,1)):
+        spiking_thres = -10 #mV
+
+        # detect only the first spike in the row 
+        sp_idx_first = detect_1spike(data[0, trace, :], spiking_thres, fs, pulse_len)
+        sp_idx_a = detect_spikes(data[0, trace, :], spiking_thres) # for detecting all the spikes 
+        #import pdb; pdb.set_trace()
+        
+        typ = 'f8'
+        spike_idxs_first = pts2ms(sp_idx_first, fs).astype(typ)
+        electrodes_first = np.zeros(len(spike_idxs_first), dtype=np.int32)
+        traces_first = np.ones(len(spike_idxs_first), dtype=np.int32)*trace
+        
+        sp_idxs_all = pts2ms(sp_idx_a, fs).astype(typ)
+        electrodes_all = np.zeros(len(sp_idxs_all), dtype=np.int32)
+        traces_all = np.ones(len(sp_idxs_all), dtype=np.int32)*trace
+            
+        sp_all.append(np.rec.fromarrays([electrodes_all, traces_all, np.array(sp_idxs_all, dtype=typ)], names='electrode,trace,time'))
+        sp_first.append(np.rec.fromarrays([electrodes_first, traces_first, np.array(spike_idxs_first, dtype=typ)], names='electrode,trace,time'))
+    
+    sp_all = np.concatenate(sp_all)
+    sp_first = np.concatenate(sp_first)    
        
-    np.savez(save_folder + save_file, sp_idx_first_all, sp_idx_all, fs) 
-    return sp_idx_first_all, sp_idx_all, fs
+    np.savez(save_folder + save_file, spikes_first = sp_first, spikes_all = sp_all, fs = fs) 
+    
 
 def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
     # checks if the given folder/file exists and if not calculates the data
@@ -531,7 +542,7 @@ def update_filtered(data, fs, save_folder, freq, data_file):
     np.savez(save_folder + data_file, data = data_filtered, freq = freq, fs = fs)  
     return freq_data, freq, fs
    
-def update_datafile(filename, ex_electr, save_folder, data_file = 'data', data_part = 'all'):
+def update_datafile(filename, ex_electr, save_folder, data_file = 'data'):
     """ reads given file and saves the data read into rec array (numpy file format)"""
 
     data_all = []
@@ -540,7 +551,7 @@ def update_datafile(filename, ex_electr, save_folder, data_file = 'data', data_p
     
     print
     print "reading the data",
-    data, fs = dat.get_electrdata(all_data, no_segments, ex_electr, data_part)  
+    data, fs = dat.get_electrdata(all_data, no_segments, ex_electr)  
     
     np.savez(save_folder + data_file, data = data, fs = fs)
     return data_all, fs
