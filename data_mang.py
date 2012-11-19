@@ -8,6 +8,7 @@ import numpy as np
 import neo.io
 import math
 
+
 def get_timeline(data, fs, scale='ms'):
     """ returns the timeline of the given data 
     in prefered scale: 'sec' (defoult), 'min' or 'ms'

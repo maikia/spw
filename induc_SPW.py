@@ -186,65 +186,7 @@ def round_spike_idxs(spike_idxs):
         s_p.append(s_p2)
     return s_p
 
-def update_dist_fromSpike(sp_idx_intr, sp_idx_extr, fs, save_folder, data_file = 'dist_fromSpike', max_dist = 3, intra = 0, allowms = 0):
-    """ updates all the distances from extracellular spikes to the preceeding it intracellular spike,
-    it also returns the indexes of those spikes which are closer than min_dist (in ms) to intracellular spike"""
-    distances = []
-    min_distances = []
-    # allow is variable which alows to count allow ms before the spike
-    allow = ms2pts(allowms, fs)
-    
-    
-    for electr in range(np.size(sp_idx_extr,0)):
-        dist_all = []
-        min_dist_all = []
-        for trace in range(np.size(sp_idx_extr[electr],0)):
-          
 
-            #print np.size(sp_idx_intr[0][0])
-            if intra == 1:
-            #if np.size(sp_idx_intr[0][0]) > 10:
-                
-                dist = dist_fromSpike(sp_idx_intr[trace], sp_idx_extr[electr][trace], fs)
-               
-#                plt.plot(sp_idx_intr[trace], 'ro')
-#                plt.plot(sp_idx_extr[electr][trace], 'go')
-#                plt.show()                
-            else:
-                #print sp_idx_intr[trace]
-                #a = b
-#                if allow > 0:
-#                    sp_chaged = []
-#                    for i in range(len(sp_idx_intr[electr][trace])):
-#
-#                        sp_chaged.append(sp_idx_intr[electr][trace][i] - allow)
-#                        #[sp_idx_intr[trace][i] - allow for )]
-#                sp_idx_intr[electr][trace] = sp_chaged
-                #print sp_idx_intr[trace] 
-
-                
-                dist = dist_fromSpike(sp_idx_intr[electr][trace] - allow, sp_idx_extr[electr][trace], fs)
-            if allowms > 0:
-                dist = [dist[i]-allowms for i in range(len(dist))]
-            #print sp_idx_extr[electr][trace]
-            #print dist
-
-            inter = [sp_idx_extr[electr][trace][i] for i in range(len(dist)) if dist[i] <=max_dist]
-            dist_all.append(dist)
-            min_dist_all.append(inter)
-        distances.append(dist_all)
-        min_distances.append(min_dist_all)
-
-    np.savez(save_folder + data_file, distances, min_distances, fs, max_dist) 
-    return distances, min_distances, fs, max_dist
-
-    
-#
-#def update_inter_extr_spike():
-#    """ not tested,
-#    it finds and saves the distances of all of the extracellular spikes to closest, proceeding 
-#    intracellular spike"""
-#    pass
 
 def update_spw_ripple(starts, ends, spw_idx, save_folder, data_file = 'spw_ripple'):
     """updates the analysis on spw- ripple relation; it saves the indexes of ripples for each SPW, 
@@ -595,7 +537,7 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
     npzfile.close()
 
     
-    thres_level = 20
+    thres_level = 10
     print
     print "removing averaged baseline and finding possible SPWs:",
     spws_starts = []
@@ -729,9 +671,6 @@ def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_nam
                 am.append(considered_ampls[highest_ampl])
 
                 #import pdb; pdb.set_trace() 
-                #chosen_spikes.append(np.rec.fromarrays([el, tr, sp, am, st, en, sp_no],
-                #                                       names='electrode,trace, spikes, spike_ampl, spw_start, spw_end, spw_no'))                
-                
                 considered_ampls = []
                 considered_spikes = []
                 considered_spikes.append(spike)
@@ -743,6 +682,62 @@ def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_nam
     chosen_spikes = np.concatenate(chosen_spikes)
     np.savez(save_folder + save_name, chosen_spikes = chosen_spikes)        
     del spike_idxs, ampls, spw_spikes
+
+def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfile,  max_dist = 3, allowms = 0):
+    """ updates all the distances from extracellular spikes to the preceeding it intracellular spike,
+    it also returns the indexes of those spikes which are closer than min_dist (in ms) to intracellular spike"""
+    
+    npzfile         = np.load(save_folder + load_intrafile)
+    spike_idxs      = npzfile['spikes_first'] # spikes_all
+    fs              = npzfile['fs']
+    npzfile.close()
+
+    # load starts of spws
+    npzfile         = np.load(save_folder + load_spwfile)
+    ipsps      = npzfile['ipsps']  
+    npzfile.close()    
+    
+    spw_no = []
+    dist_all = []    
+    electrodes = []
+    traces = []
+    print 'checking distance in electrode: '
+    for electr in np.unique(ipsps['electrode']):
+        print electr,
+        #min_dist_all = []
+        ipsps_electr = ipsps[ipsps['electrode'] == electr]
+        
+        #spike_electr = spike_idxs[spike_idxs['electrode'] == electr]
+        for trace in np.unique(ipsps_electr['trace']):
+                spw_electr_trace = np.unique(ipsps_electr[ipsps_electr['trace'] == trace]['spw_start'])
+                spike_electr_trace = spike_idxs[spike_idxs['trace'] == trace]['time']
+                #idx, en_value = find_nearest(spw_electr_trace, spike_electr_trace)
+                if len(spike_electr_trace) > 0:
+                    for spw in spw_electr_trace:
+                        largest_spikes = spike_electr_trace[spike_electr_trace > spw]
+                        if len(largest_spikes) == 0:
+                            spike_used = spike_electr_trace[0]
+                        else:
+                            spike_used = largest_spikes[0]
+                        dist = spw -spike_used
+                        
+                        dist_all.append(dist)
+                        spw_no.append(spw)
+                        electrodes.append(electr)
+                        traces.append(trace)
+    type = 'f8'
+    dists = np.array(dist_all, dtype=type)
+    numbers = np.array(dist_all, dtype='i4')
+    electrode = np.array(electrodes, dtype='i4')
+    traces = np.array(traces, dtype='i4')    
+    
+    temp_spw = np.rec.fromarrays([electrode, traces, numbers, dists], 
+                                               names='electrode, trace, spw_no, distance')                
+    import pdb; pdb.set_trace()
+    
+    
+    
+    np.savez(save_folder + save_file, dist_spwspike = temp_spw) 
 
 
 

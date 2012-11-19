@@ -142,8 +142,25 @@ def up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.np
 def update_ipsp_exSpikes(save_folder, save_file):
     pass
 
-        
-def up_SPW_ipsp(save_folder, save_file = 'spws_params.npz', load_datafile = "data_movavg.npz", load_spwsspike = 'spws_potential', reanalize = False):
+
+
+def up_dist_SpwfromSpike(save_folder, save_file = 'spw_dist.npz', load_intrafile = 'intra_data.npz', load_spwfile = 'spw_data.npz', reanalize = False):
+    """ it finds the distance intracellular spike to each spw"""
+    # check if folder already exists
+    fold_mng.create_folder(save_folder)
+    
+    # check if this file already exists
+    exists = fold_mng.file_exists(save_folder, save_file)
+
+    if reanalize or not exists:
+        # load the data        
+        ispw.update_dist_SPWfromSpike(save_folder = save_folder, save_file = save_file, load_intrafile = load_intrafile, load_spwfile = load_spwfile, max_dist = 10)
+    else:
+        print 'distances of spws to intracellular spikes were already calculated'    
+    gc.collect()    
+    
+    
+def up_SPW_ipsp(save_folder, save_file = 'spws_params.npz', load_datafile = "data_movavg.npz", load_spwsspike = 'spws_potential', induced_dist = 7, reanalize = False):
     """ it finds the characteristics of each spw"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -313,33 +330,7 @@ def up_dist_fromSpike(save_folder, intra = 0):
 
     return distances, min_distances, fs, max_dist
         
-def up_dist_SpwfromSpike(save_folder):
-    sp_intra_first, sp_intra_all, fs_intra = reader.read_intra_spikes(save_folder)
-    spw_idxs, spw_maxs, starts_spw, ends_spw, lengths_spw, fs_spw = reader.read_SPWs(save_folder)
-    print 'spws'
-    print len(spw_idxs[0][0])
-    # 
 
-    data_intra, fs = reader.read_datafile_intra(save_folder, save_file = "intra.npz")
-#    print sp_intra_first
-#    print sp_intra_all
-
-    values, fs = update_fs(fs_spw, fs_intra, values = [starts_spw])
-    starts_spw = values[0]
-
-    #py.plot(t[sp_intra_first[0]], data_intra[0][0][sp_intra_first[0]], 'go')
-
-#    t = dat.get_timeline(data_intra[0][0], fs, 'ms')
-#    py.plot(t, data_intra[0][0])
-#
-#    py.plot(t[sp_intra_first[0]], data_intra[0][0][sp_intra_first[0]], 'go')
-#    py.figure()
-#   
-#    #
-#    py.show()
-    # check if fs are the same!!!
-    distances, min_distances, fs, max_dist = ispw.update_dist_fromSpike(sp_intra_first, starts_spw, fs, save_folder, data_file = 'dist_SpwfromSpike', max_dist = 10, intra = 1)
-    
 def update_all(filename, ext_electrodes, save_folder, intr_electrode = 1, data_part = 'all'):
     """ should be done each time the data is to be run from the beginning to the end again"""
     # read all the data
