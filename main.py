@@ -20,28 +20,28 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     reanalize = True # set to true if to analyze the data no matter if it was already analysed or not
     
     raw_data        = 'data.npz'
-    #updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, data_part = 'all', reanalize = reanalize)
+    updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, data_part = 'all', reanalize = reanalize)
 
     raw_baselined   = "data_bas.npz"
-    #updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
+    updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
     
     spikes_raw      = 'spikes.npz'
-    #updater.up_extraspikes(save_folder, save_file = spikes_raw, load_file = raw_baselined, reanalize = reanalize)
+    updater.up_extraspikes(save_folder, save_file = spikes_raw, load_file = raw_baselined, reanalize = reanalize)
     
     spikes_params   = 'spikes_params.npz'
-    #updater.up_expikes_params(save_folder, save_file = spikes_params, load_datafile = raw_baselined, load_spikefile = spikes_raw, reanalize = reanalize)
+    updater.up_expikes_params(save_folder, save_file = spikes_params, load_datafile = raw_baselined, load_spikefile = spikes_raw, reanalize = reanalize)
      
     SPWs_potential  = 'potential_SPWs.npz'
-    #updater.up_highWaves(save_folder, save_file = SPWs_potential, load_datafile = raw_baselined,reanalize = reanalize)
+    updater.up_highWaves(save_folder, save_file = SPWs_potential, load_datafile = raw_baselined,reanalize = reanalize)
     
     SPWs_spikes     = 'spws_spikes.npz'
-    #updater.up_spws_spikes(save_folder, save_file = SPWs_spikes, load_spwsfile = SPWs_potential, load_spikefile = spikes_params, reanalize = reanalize)
+    updater.up_spws_spikes(save_folder, save_file = SPWs_spikes, load_spwsfile = SPWs_potential, load_spikefile = spikes_params, reanalize = reanalize)
     
     SPWs_spikes_ampl= 'spw_spikes_ampl.npz'
-    #updater.up_spws_spikes_ampl(save_folder, save_file = SPWs_spikes_ampl, load_spwsspike = SPWs_spikes, load_spikefile = spikes_params, reanalize = reanalize)
+    updater.up_spws_spikes_ampl(save_folder, save_file = SPWs_spikes_ampl, load_spwsspike = SPWs_spikes, load_spikefile = spikes_params, reanalize = reanalize)
     
     SPWs_ipsps      = 'spws_params.npz' #'spws_ipsps.npz'
-    #updater.up_SPW_ipsp(save_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_spwsspike = SPWs_spikes, reanalize = reanalize)
+    updater.up_SPW_ipsp(save_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_spwsspike = SPWs_spikes, reanalize = reanalize)
     
     SPWs_ipsps_beg  = 'spw_ipsps_beg.npz'
     updater.up_spws_ipsp_beg(save_folder,  save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = SPWs_spikes_ampl, reanalize = reanalize, ext = ext)
@@ -161,7 +161,7 @@ if __name__=='__main__':
     if update == 1:
         #for nex in [15]:
         #for nex in range(len(all)):
-        for nex in [14]: #[4, 15, 16, 17, 18]: #range(5, 16): #[14, 15]: #range(7, len(all)):
+        for nex in [14, 15, 16, 17, 18]: #range(5, 16): #[14, 15]: #range(7, len(all)):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             
             ex_electr = range(1+intra, 8+intra)
