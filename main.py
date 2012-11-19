@@ -22,7 +22,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     raw_data        = 'data.npz'
     #updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, data_part = 'all', reanalize = reanalize)
 
-    raw_baselined   = "data_bas.npz"
+    raw_baselined   = "data_bas_3d.npz"
     #updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
     
     spikes_raw      = 'spikes.npz'
