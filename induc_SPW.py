@@ -367,13 +367,14 @@ def update_extraspikes(data_load, save_folder, save_file = "ex_spikes"):
     print "finding extracellular spikes, working on electrode:",
     idx_all = []
     ampl_all = []
-    for electr in np.unique(data['electrode']):
+    
+    for electr in range(np.size(data,0)):
         print electr,  
 
         if len(data[electr]) > 1:
             N = 100
-        for trace in np.unique(data[(data['electrode'] == electr)]['trace']):
-            data_used = data[(data['electrode'] == electr) & (data['trace'] == trace)]['time']
+        for trace in range(np.size(data,1)):
+            data_used = data[electr, trace, :]
             filename_fast = 'fast_data' + str(electr) + "_" + str(trace)
             data_fast, fs = load_create(folder_name, filename_fast, freq_fast, fs, data_used, N)
             spike_ampl, spike_idxs = fes.find_extra_spikes(data_used, data_fast, fs) #(data[electr][trace], fs)
@@ -426,15 +427,15 @@ def update_expikes_params(load_datafile, load_spikefile, save_folder, save_file 
     norm_factors = []
     ampls = []    
     
-    for electr in np.unique(data['electrode']):
+    for electr in range(np.size(data,0)):
         print electr,
 
         if len(data[electr]) > 1:
             N = 100
 
-        for trace in np.unique(data[(data['electrode'] == electr)]['trace']):
+        for trace in range(np.size(data,1)): 
             
-            data_used = data[(data['electrode'] == electr) & (data['trace'] == trace)]['time']
+            data_used = data[electr, trace, :]
             spikes_used = spike_idxs[(spike_idxs['electrode'] == electr) & (spike_idxs['trace'] == trace)]['time']
             spikes_used = ms2pts(spikes_used, fs)
             
@@ -532,21 +533,16 @@ def update_filtered(data, fs, save_folder, freq, data_file):
    
 def update_datafile(filename, ex_electr, save_folder, data_file = 'data', data_part = 'all'):
     """ reads given file and saves the data read into rec array (numpy file format)"""
-    
+
     data_all = []
-    
     # do the same for every electrode given - read data
     all_data, no_segments = dat.get_data(filename) 
     
     print
-    print "reading the data, working on electrode:",
+    print "reading the data",
+    data, fs = dat.get_electrdata(all_data, no_segments, ex_electr, data_part)  
     
-    for electr in ex_electr:
-        print electr,
-        data, fs = dat.get_electrdata(all_data, no_segments, electr, data_part)
-        data_all.append(data)
-    data_all = np.concatenate(data_all)
-    np.savez(save_folder + data_file, data = data_all, fs = fs)
+    np.savez(save_folder + data_file, data = data, fs = fs)
     return data_all, fs
     del data_all
 
@@ -593,13 +589,13 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
     print "removing averaged baseline and finding possible SPWs:",
     spws_starts = []
     spws_ends = []
-    for electr in np.unique(data['electrode']): 
+    for electr in range(np.size(data,0)): 
         print electr,
         
-        for trace in np.unique(data[data['electrode'] == electr]['trace']):
+        for trace in range(np.size(data,1)):
 
             window = ms2pts(atten_len, fs) # define the size of the window for removing the baseline
-            data_used = data[(data['electrode'] == electr) & (data['trace'] == trace)]['time']
+            data_used = data[electr, trace, :]
             
             new_dat, moved_avg = filt.remove_baseloc(data_used, window)     
             
@@ -739,7 +735,7 @@ def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_nam
 
 
 
-def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext):
+def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext):
     """ checks all the ipsps and corrects them for each spw"""
 
     npzfile         = np.load(save_folder + load_datafile)
@@ -869,7 +865,7 @@ def  update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_
                             sp_end = sp_sp_used[sp_sp_used['electrode'] == el]['spw_end']
                             #if len(sp_end) == 0:
                                 #if end was not calculated, the longest SPW end will be reused
-                            approx_spw_end = [max(sp_sp_used['spw_end'])
+                            approx_spw_end =max(sp_sp_used['spw_end'])
                             spwend_ipsp_spw.append(approx_spw_end) 
                             #else:
                             #    spwend_ipsp_spw.append(sp_end[0])
@@ -1008,7 +1004,7 @@ def update_SPW_ipsp(load_datafile, load_spwsspike, save_folder, save_file):
         print str(spw) + '/' + str(spw_len)
         
         spw_spike_used = spw_spikes[spw_spikes['spw_no'] == spw]
-        for electr in np.unique(data['electrode']):
+        for electr in range(np.size(data,0)):
             # check if in this electrode spw was recorded
 
             exists = electr in np.unique(spw_spike_used['electrode'])                
@@ -1023,7 +1019,7 @@ def update_SPW_ipsp(load_datafile, load_spwsspike, save_folder, save_file):
                 end = ms2pts(end_ms, fs).astype(int)
                 spw_no = spw_electr_used['spw_no'][0]
                 
-                data_used = data[(data['electrode'] == electr) & (data['trace'] == trace)]['time'][start:end]
+                data_used = data[electr, trace, start:end]
                           
                 # calculate moving average  
                 temp, moved_avg = filt.remove_baseloc(data_used, window)  
@@ -1201,18 +1197,15 @@ def update_databas(data_load, save_folder, data_file = 'data_bas'):
     data = npzfile['data']
     fs = npzfile['fs']
     npzfile.close()
-    
-    data_bas = []
-    for electr in np.unique(data['electrode']): 
+
+    for electr in range(np.size(data,0)): 
         # remove all mean from each electrode 
         print electr,
         
-        electro_data = data[data['electrode'] == electr]
-        mean_datatime = np.mean(electro_data['time'])
-        
-        for trace in np.unique(data[data['electrode'] == electr]['trace']):
-            data[(data['electrode'] == electr) & (data['trace'] == trace)]['time'] = data[(data['electrode'] == electr) & (data['trace'] == trace)]['time'] - mean_datatime
-  
+        electro_data = data[electr, :, :] #data[data['electrode'] == electr]
+        mean_datatime = np.mean(electro_data)
+        data = data - mean_datatime
+
     np.savez(save_folder + data_file, data = data, fs = fs)   
     del data
     

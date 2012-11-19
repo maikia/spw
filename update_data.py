@@ -6,6 +6,22 @@ import data_mang as dat
 import folder_manager as fold_mng
 import gc #garbage collector
 
+
+def up_intrafile(filename, save_folder, save_file = 'data_intra.npz', data_part = 'all', reanalize = False):
+    """ read intracellular data"""
+    # check if folder already exists
+    fold_mng.create_folder(save_folder)
+    
+    # check if this file already exists
+    exists = fold_mng.file_exists(save_folder, save_file)
+    if reanalize or not exists:
+        # load the data
+        ispw.update_datafile(filename, [1], save_folder, data_file = 'intra', data_part = data_part)
+    else:
+        print 'raw data was already moved to the baseline'    
+    gc.collect()
+    
+
 def up_datafile(filename, save_folder, save_file = 'data.npz', ext_electrodes = [1], intr_electrode = 1, data_part = 'all', reanalize = False):
     """ updates only the datafile for the given values """
     # check if folder already exists
@@ -89,26 +105,26 @@ def up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.np
         ispw.update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_folder, fig_fold_name + save_fig, save_file, ext)  
     gc.collect()
             
-def up_spws_ipsp_ampl(save_folder, save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', reanalize = False):       
-    """analyse the ipsps and checks in which electrode it has the highest amplitude"""
-    # check if folder already exists
-    fold_mng.create_folder(save_folder)
-    
-    # check if this file already exists
-    exists = fold_mng.file_exists(save_folder, save_file)
-    if reanalize or not exists:
-        # load the data
-        npzfile         = np.load(save_folder + load_datafile)
-        data            = npzfile['data']
-        fs              = npzfile['fs']
-        npzfile.close()   
-        
-        npzfile         = np.load(save_folder + load_spwsipsp)
-        npzfile.close()
-        import pdb; pdb.set_trace()
-             
-        ispw.update_SPW_ipsp_ampl(save_folder, save_file, data, fs) 
-    gc.collect()
+#def up_spws_ipsp_ampl(save_folder, save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', reanalize = False):       
+#    """analyse the ipsps and checks in which electrode it has the highest amplitude"""
+#    # check if folder already exists
+#    fold_mng.create_folder(save_folder)
+#    
+#    # check if this file already exists
+#    exists = fold_mng.file_exists(save_folder, save_file)
+#    if reanalize or not exists:
+#        # load the data
+#        npzfile         = np.load(save_folder + load_datafile)
+#        data            = npzfile['data']
+#        fs              = npzfile['fs']
+#        npzfile.close()   
+#        
+#        npzfile         = np.load(save_folder + load_spwsipsp)
+#        npzfile.close()
+#        import pdb; pdb.set_trace()
+#             
+#        ispw.update_SPW_ipsp_ampl(save_folder, save_file, data, fs) 
+#    gc.collect()
              
 def update_ipsp_exSpikes(save_folder, save_file):
     pass
@@ -262,10 +278,7 @@ def up_dist_fromSPW(save_folder, intra = 0):
     distances, min_distances, fs, max_dist = ispw.update_dist_fromSpike(starts_spw, spike_idxs, fs, save_folder, data_file = 'dist_fromSPW', allowms = 5, intra = 0)
     
 
-def up_intrafile(filename, save_folder, data_part = 'all'):
-    """ read intracellular data"""
-    data_intra, fs = ispw.update_datafile(filename, [1], save_folder, data_file = 'intra', data_part = data_part)
-    return data_intra, fs
+
     
 def up_downsample_intra(save_folder, dspl = 2):
     """ updates only downsampling data"""

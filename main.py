@@ -9,6 +9,7 @@ import update_data as updater
 import analyser as analyser
 import folder_manager as fold_mng
 from configure_path import find_folders
+from convert_data_bas import rec2array
 
 # if new settings applied - it will rerun everything again
 # to select the settings go to induc_SPW
@@ -22,9 +23,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     raw_data        = 'data.npz'
     updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, data_part = 'all', reanalize = reanalize)
 
-
     raw_baselined   = "data_bas.npz"
-    #raw_baselined   = "data_bas_3d.npz"
     updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
     
     spikes_raw      = 'spikes.npz'
@@ -47,9 +46,14 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     
     SPWs_ipsps_beg  = 'spw_ipsps_beg.npz'
     updater.up_spws_ipsp_beg(save_folder,  save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = SPWs_spikes_ampl, reanalize = reanalize, ext = ext)
- 
-    #SPWs_ipsps_ampl = 'spw_ipsps_ampl.npz'
-    #updater.up_spws_ipsp_ampl(save_folder, save_file = SPWs_ipsps_ampl, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, reanalize = reanalize)
+    
+    print intr_electrode
+    if intr_electrode == 1:
+        data_intra = 'data_intra.npz'
+        updater.up_intrafile(filename, save_folder, save_file = data_intra, data_part = 'all', reanalize = reanalize)
+        
+        intra_spikes = 'spw_ipsps_ampl.npz'
+        #updater.up_spws_ipsp_ampl(save_folder, save_file = SPWs_ipsps_ampl, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, reanalize = reanalize)
         
     #ipsp_exSpikes = 'ipsp_exSpikes.npz'
     #updater.update_ipsp_exSpikes(save_folder, save_file = ipsp_exSpikes)
@@ -163,10 +167,10 @@ if __name__=='__main__':
     if update == 1:
         #for nex in [15]:
         #for nex in range(len(all)):
-        for nex in [14, 15, 16, 17, 18]: #range(5, 16): #[14, 15]: #range(7, len(all)):
+        for nex in [15]: #range(5, 16): #[14, 15]: #range(7, len(all)):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             
-            ex_electr = range(1+intra, 8+intra)
+            ex_electr = range(1, 9)
             work_on_all(filename, save_folder, ex_electr, intra)
     
     if analyse == 1:
