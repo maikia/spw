@@ -13,8 +13,9 @@ def find_folders(cell_no = 1, part = 1, oscil = 0):
     11. (11, )
     """
     
-    save_path = '/home/maja/PhDProject/SPWs/data/induced/'
-    save_data = '/home/maja/PhDProject/SPWs/SPWs/saved_data/'
+    save_path = '/home/maja/phdProject/data/induced/'
+    save_data = '/home/maja/phdProject/data/SPWs/saved_data/'
+    save_data = '/home/maja/phdProject/analysis/spw 09 11/'
     #save_data = 'C:/phd2/phd/saved_data/'
     #save_data = 'C:/PhDProject/saved_data/'
     
