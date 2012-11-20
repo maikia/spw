@@ -14,7 +14,7 @@ from convert_data_bas import rec2array
 
 # if new settings applied - it will rerun everything again
 # to select the settings go to induc_SPW
-def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], intr_electrode = 1, data_part = 'all'):
+def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], intr_electrode = 1, data_part = 'all'):
     """ work on given data file - proceed all the variables and save them """
     ext = '.pdf'
     
@@ -53,6 +53,8 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
     SPWs_ipsps_beg  = 'spw_ipsps_beg.npz'
     #updater.up_spws_ipsp_beg(save_folder,  save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = SPWs_spikes_ampl, reanalize = reanalize, ext = ext)
     
+    
+    
     print intr_electrode
     if intr_electrode == 1:
         data_intra = 'data_intra.npz'
@@ -63,6 +65,13 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6,7], in
         
         dist_spw_inspikes = 'spw_dist.npz'
         updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, reanalize = reanalize)
+        
+    ##### - analyser - #####
+        solutions_fold = 'plots/'
+        
+        
+        numIpsp2distance = 'numIPSP_distance'
+        analyser.plot_noIpsps2distance(save_folder, solutions_fold+numIpsp2distance + '/', save_plots = numIpsp2distance, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes, ext = ext)
         
         
         

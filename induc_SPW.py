@@ -701,41 +701,40 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
     dist_all = []    
     electrodes = []
     traces = []
-    print 'checking distance in electrode: '
-    for electr in np.unique(ipsps['electrode']):
-        print electr,
-        #min_dist_all = []
-        ipsps_electr = ipsps[ipsps['electrode'] == electr]
+    print 'checking distance in trace: '
+    #for electr in np.unique(ipsps['electrode']):
+    #    print electr,
+    #    #min_dist_all = []
+    #    ipsps_electr = ipsps[ipsps['electrode'] == electr]
         
-        #spike_electr = spike_idxs[spike_idxs['electrode'] == electr]
-        for trace in np.unique(ipsps_electr['trace']):
-                spw_electr_trace = np.unique(ipsps_electr[ipsps_electr['trace'] == trace]['spw_start'])
-                spike_electr_trace = spike_idxs[spike_idxs['trace'] == trace]['time']
-                #idx, en_value = find_nearest(spw_electr_trace, spike_electr_trace)
-                if len(spike_electr_trace) > 0:
-                    for spw in spw_electr_trace:
-                        largest_spikes = spike_electr_trace[spike_electr_trace > spw]
-                        if len(largest_spikes) == 0:
-                            spike_used = spike_electr_trace[0]
-                        else:
-                            spike_used = largest_spikes[0]
-                        dist = spw -spike_used
-                        
-                        dist_all.append(dist)
-                        spw_no.append(spw)
-                        electrodes.append(electr)
-                        traces.append(trace)
+    for trace in np.unique(ipsps['trace']):
+            print trace,
+            spw_electr_trace = np.unique(ipsps[ipsps['trace'] == trace])
+            spw_beginnings = np.unique(spw_electr_trace['spw_start'])
+            spike_electr_trace = spike_idxs[spike_idxs['trace'] == trace]['time']
+
+            if len(spike_electr_trace) > 0:
+                for spw in spw_beginnings:
+                    spw_numb = spw_electr_trace[spw_electr_trace['spw_start'] == spw]['spw_no'][0]
+                    #import pdb; pdb.set_trace()
+                    largest_spikes = spike_electr_trace[spike_electr_trace <= spw]
+                    if len(largest_spikes) == 0:
+                        spike_used = spike_electr_trace[0]
+                    else:
+                        spike_used = largest_spikes[0]
+                    dist = spw -spike_used
+                    
+                    dist_all.append(dist)
+                    spw_no.append(spw_numb)
+                    traces.append(trace)
     type = 'f8'
     dists = np.array(dist_all, dtype=type)
-    numbers = np.array(dist_all, dtype='i4')
+    numbers = np.array(spw_no, dtype='i4')
     electrode = np.array(electrodes, dtype='i4')
     traces = np.array(traces, dtype='i4')    
     
-    temp_spw = np.rec.fromarrays([electrode, traces, numbers, dists], 
-                                               names='electrode, trace, spw_no, distance')                
-    import pdb; pdb.set_trace()
-    
-    
+    temp_spw = np.rec.fromarrays([traces, numbers, dists], 
+                                               names='trace, spw_no, distance')                
     
     np.savez(save_folder + save_file, dist_spwspike = temp_spw) 
 
@@ -767,6 +766,8 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
     proper_ipsps = []
     expected_min_ipsp_ampl = 20 # microV
     
+    
+    
     #import pdb; pdb.set_trace()
     # go through all the spws
     for spw in np.unique(spw_ipsps['spw_no']):
@@ -780,6 +781,8 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
         sort_ip_idx     = np.argsort(sp_ip_used['ipsp_start'])    
         ip_sorted     = sp_ip_used[sort_ip_idx]
         spw_no = sp_ip_used['spw_no'][0]
+        
+        
         #spike_times = sp_sp_used['spikes']
         ipsps_temp, spikes_temp, ipsp_ampl_temp, electr_temp, increase_temp, ipsp_ends = [], [], [], [], [], []
         el_ipsp_spw, tr_ipsp_spw, spwno_ipsp_spw, spwstart_isps_spw, spwend_ipsp_spw, ipspno_ipsp_spw = [],[], [], [], [], []
@@ -884,7 +887,7 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
                             spw_start = ipstarts_temp[min_idx]
                             #min_electr = min_electr_other # change to different constraint (for IPSP and not beginning of SPW)   
                             spw_electr_st = el_ipsp_spw[min_idx] 
-                            
+      
                         spwstart_isps_spw.append(np.ones(len(ipstarts_temp)) * spw_start)
                         ipsp_count = ipsp_count + 1
                     
@@ -930,7 +933,7 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
             spwend_ipsp_spw = np.array(spwend_ipsp_spw, dtype='f8')
             spw_electr_start = np.ones(len(el_ipsp_spw), dtype=np.int32)*spw_electr_st
             spwstart_isps_spw = np.concatenate(spwstart_isps_spw)
-            spwstart_isps_spw = np.array(spwstart_isps_spw, dtype='i4')
+            spwstart_isps_spw = np.array(spwstart_isps_spw, dtype='f8')
             temp_spw = np.rec.fromarrays([el_ipsp_spw, tr_ipsp_spw, spwno_ipsp_spw, spw_electr_start, spwstart_isps_spw,
                                                    spwend_ipsp_spw,ipspno_ipsp_spw, ipspstrt_ipsp_spw, ampl_ipsp_spw], 
                                                names='electrode, trace, spw_no, spw_electr_start, spw_start, spw_end, ipsp_no, ipsp_start, ipsp_ampl')
@@ -974,7 +977,11 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
             plt.clf()
     if len(proper_ipsps) > 0:
         proper_ipsps = np.concatenate(proper_ipsps)
+
     np.savez(save_folder + save_file, ipsps = proper_ipsps) 
+    
+    
+    
     del spw_ipsps, data
 
 def update_SPW_ipsp_ampl(save_folder, save_file, data, fs):

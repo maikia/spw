@@ -1,15 +1,68 @@
 import numpy as np
 import data_mang as dat
 import pylab as plt
-#import read_data as reader
 import update_data as updater
 import induc_SPW as ispw
 import scipy.signal as signal
 import b_analyser as ba
-#import cluster as clust
 from matplotlib.ticker import NullFormatter
 from mpl_toolkits.mplot3d import Axes3D
+import folder_manager as fold_mng
 
+def plot_noIpsps2distance(save_folder, plot_folder, save_plots, spw_file, dist_file, ext):
+    """ it takes previously calculated distances spw to spike and calculates number of Ipsp for each spike
+    and plots them against each other"""
+    
+    npzfile         = np.load(save_folder + spw_file)
+    
+    ipsps      = npzfile['ipsps'] # spikes_all
+    npzfile.close()    
+    
+    npzfile         = np.load(save_folder + dist_file)
+    distances      = npzfile['dist_spwspike'] # spikes_all
+    npzfile.close()    
+    
+    all_spws = np.unique(distances['spw_no'])
+    numb_ipsps = np.zeros([len(all_spws)])
+    dists = np.zeros([len(all_spws)])
+    
+    fig = plt.figure()
+    for idx, spw_no in enumerate(all_spws):
+        # count how many IPSPs are detected in each SPW
+        ipsps_used = ipsps[ipsps['spw_no'] == spw_no]['ipsp_no']
+        uniq = np.unique(ipsps_used)
+        no_ipsps = len(uniq)
+        
+        # check how far this spw is from the spike
+        dis = np.unique(distances[distances['spw_no'] == spw_no]['distance'])
+        
+        numb_ipsps[idx] = no_ipsps
+        dists[idx] = dis
+        
+    plt.plot(dists, numb_ipsps, '.')
+    plt.title('Relation of distance and number of IPSPs in SPW')
+    plt.xlabel('Distance from spike [ms]')
+    plt.ylabel('Number of IPSPs')
+    
+    save_fold = save_folder + plot_folder
+    fold_mng.create_folder(save_fold)
+    
+    fig.savefig(save_fold + save_plots + ext,dpi=600)        
+    plt.close()
+        
+        
+    
+def plot_origin(save_folder, plot_folder, save_plots, spw_file, dist_file, ext):
+    pass
+
+
+def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, spw_file, dist_file, ext):
+    pass
+
+
+
+
+#---------------------------old -----------------------------
 def define_colors(no_colors = 8):
 
     #RGB_tuples = [(x*1.0/no_colors, x*0.5/no_colors,x*0.5/no_colors) for x in range(no_colors)]
