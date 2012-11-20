@@ -47,7 +47,8 @@ def plot_noIpsps2distance(save_folder, plot_folder, save_plots, spw_file, dist_f
     save_fold = save_folder + plot_folder
     fold_mng.create_folder(save_fold)
     
-    fig.savefig(save_fold + save_plots + ext,dpi=600)        
+    fig.savefig(save_fold + save_plots + ext,dpi=600)     
+    fig.savefig(save_fold + save_plots + '.eps',dpi=600)    
     plt.close()
         
         
@@ -57,11 +58,84 @@ def plot_origin(save_folder, plot_folder, save_plots, spw_file, dist_file, ext):
 
 
 def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, spw_file, dist_file, ext):
-    pass
+    """ it divides SPWs to two groups - close and far from the spike and alignes them, and plots together"""
+    
+    min_dist = 7 # ms
+    win = [-20, 100] #ms
+    
+    npzfile         = np.load(save_folder + spw_file)
+    
+    ipsps      = npzfile['ipsps'] # spikes_all
+    npzfile.close()    
+    
+    npzfile         = np.load(save_folder + dist_file)
+    distances      = npzfile['dist_spwspike'] # spikes_all
+    npzfile.close()   
+    
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close() 
+    
+    before_pts = ispw.ms2pts(win[0], fs)
+    after_pts = ispw.ms2pts(win[1], fs)
+    
+    initiated_no = distances[distances['distance'] <= min_dist]['spw_no']
+    spont_no = distances[distances['distance'] > min_dist]['spw_no']
+    
+    #import pdb; pdb.set_trace() 
+    init_set = np.in1d(ipsps['spw_no'], initiated_no, assume_unique= False)
+    initiated = ipsps[init_set]
+    spont_set = np.in1d(ipsps['spw_no'], spont_no, assume_unique=False)
+    spontaneous = ipsps[spont_set]
+    
+    spws_all = [initiated, spontaneous]
+    all_data_traces = []
+    for spws in spws_all:
+        # take out those spws which are too early or too late (don't fit in the data size)
+        used = ispw.ms2pts(spws['spw_start'], fs).astype(int)
+        spws_used = spws[(used > -before_pts) & (used + after_pts < np.size(data,2))]
+        
+        spw = np.unique(spws_used['spw_no'])
+        spw_traces = np.zeros([np.size(data,0), len(spw), after_pts - before_pts])
+        
+        for spw_idx, spw_n in enumerate(spw):
+            spw_start = spws_used[spws_used['spw_no'] == spw_n]['spw_start'][0]
+            spw_start_pts = ispw.ms2pts(spw_start, fs).astype(int)
+            trace = spws_used[spws_used['spw_no'] == spw_n]['trace'][0]
 
+            data_temp = data[:, trace, spw_start_pts + before_pts: spw_start_pts + after_pts]
 
+            spw_traces[:, spw_idx, :] = data_temp
+        all_data_traces.append(spw_traces)
+            
+    titles = ['Induced', 'Spontaneous']
+    
+    add_it = 100
+    t = dat.get_timeline(data_temp[0], fs, 'ms')
+    for idx, data_spw in enumerate(all_data_traces): 
+        print 'tak'
+        fig = plt.figure()
+        
+        for electr in range(len(data_spw)):
+ 
+            data_used = data_spw[electr,:]
+            for s in range(len(data_used)):
+                plt.plot(t, data_used[s] + electr * add_it, 'b', alpha=0.2)
+            plt.plot(t, np.mean(data_used, 0) + electr * add_it, 'r')
+        
+        plt.title(titles[idx] + ', spws: ' + str(len(data_used)))     
+        save_fold = save_folder + plot_folder
+        fold_mng.create_folder(save_fold)
+        fig.savefig(save_fold + save_plots + titles[idx] + ext,dpi=600)     
+        fig.savefig(save_fold + save_plots + titles[idx] + '.eps',dpi=600)    
+        plt.close() 
+        plt.show()
+    #import pdb; pdb.set_trace() 
+    
+    
 
-
+    
 #---------------------------old -----------------------------
 def define_colors(no_colors = 8):
 
