@@ -62,17 +62,17 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     print intr_electrode
     if intr_electrode == 1:
         data_intra = 'data_intra.npz'
-        updater.up_intrafile(filename, save_folder, save_file = data_intra, int_electrodes = [0], reanalize = reanalize)
+        #updater.up_intrafile(filename, save_folder, save_file = data_intra, int_electrodes = [0], reanalize = reanalize)
         
         plot_folder = 'full_data/'
         save_plots = 'data_intra'
-        analyser.display_data(save_folder, plot_folder, save_plots, data_intra, trace = 0, part = [0, 100000], ext = ext)
+        #analyser.display_data(save_folder, plot_folder, save_plots, data_intra, trace = 0, part = [0, 100000], ext = ext)
         
         intra_spikes = 'intra_spikes.npz'
-        updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra, reanalize = reanalize)
+        #updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra, reanalize = reanalize)
         
         dist_spw_inspikes = 'spw_dist.npz'
-        updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, reanalize = reanalize)
+        #updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, reanalize = reanalize)
         
     ##### - analyser - #####
         solutions_fold = 'plots/'
@@ -82,7 +82,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         analyser.plot_noIpsps2distance(save_folder, solutions_fold+numIpsp2distance + '/', save_plots = numIpsp2distance, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes, ext = ext)
         
         alignedSPWs = 'aligned_SPWs'
-        analyser.plot_alignedSPW(save_folder, solutions_fold+alignedSPWs + '/', save_plots = alignedSPWs, data_file = raw_baselined, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes, ext = ext)
+        #analyser.plot_alignedSPW(save_folder, solutions_fold+alignedSPWs + '/', save_plots = alignedSPWs, data_file = raw_baselined, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes, ext = ext)
         
         
     #ipsp_exSpikes = 'ipsp_exSpikes.npz'

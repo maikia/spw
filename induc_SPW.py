@@ -716,23 +716,25 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
             if len(spike_electr_trace) > 0:
                 for spw in spw_beginnings:
                     spw_numb = spw_electr_trace[spw_electr_trace['spw_start'] == spw]['spw_no'][0]
-                    #import pdb; pdb.set_trace()
+                    
+                    
                     largest_spikes = spike_electr_trace[spike_electr_trace <= spw]
                     if len(largest_spikes) == 0:
                         spike_used = spike_electr_trace[0]
                     else:
-                        spike_used = largest_spikes[0]
+                        spike_used = largest_spikes[-1]
                     dist = spw -spike_used
                     
                     dist_all.append(dist)
                     spw_no.append(spw_numb)
                     traces.append(trace)
+                    
+    
     type = 'f8'
     dists = np.array(dist_all, dtype=type)
     numbers = np.array(spw_no, dtype='i4')
     electrode = np.array(electrodes, dtype='i4')
     traces = np.array(traces, dtype='i4')    
-    
     temp_spw = np.rec.fromarrays([traces, numbers, dists], 
                                                names='trace, spw_no, distance')                
     
@@ -857,11 +859,22 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
                                 else:
                                     sp = spike
                                 start_pts = ms2pts(spike, fs).astype(int)
-                            
+                                
                                 end_pts =ipsp_ends[max_idx]
-                                data_temp_ipsp = data_temp[el, start_pts: end_pts]
-                                maxpt = np.argmax(data_temp_ipsp)
-                                ipsp_ampl = data_temp_ipsp[maxpt] - data_temp_ipsp[0]
+                                
+                                # for now if IPSPs size is 0, put amplitude to 0, but CHANGE IT!!!!
+                                if start_pts >= end_pts:
+                                    ipsp_ampl = 0
+                                else:
+                                    
+                                    data_temp_ipsp = data_temp[el, start_pts: end_pts]
+                                    #print start_pts
+                                    #print end_pts
+                                    maxpt = np.argmax(data_temp_ipsp)
+                                    ipsp_ampl = data_temp_ipsp[maxpt] - data_temp_ipsp[0]
+                                    
+                                    #import pdb; pdb.set_trace() 
+                                    
 
                             el_ipsp_spw.append(el)
                             tr_ipsp_spw.append(trace)

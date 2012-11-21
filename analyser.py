@@ -141,7 +141,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, spw_file, d
     add_it = 100
     t = dat.get_timeline(data_temp[0], fs, 'ms')
     for idx, data_spw in enumerate(all_data_traces): 
-        print 'tak'
+        #print 'tak'
         fig = plt.figure()
         
         for electr in range(len(data_spw)):
