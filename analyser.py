@@ -56,7 +56,34 @@ def plot_noIpsps2distance(save_folder, plot_folder, save_plots, spw_file, dist_f
 def plot_origin(save_folder, plot_folder, save_plots, spw_file, dist_file, ext):
     pass
 
+def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, part = [0, 10000], ext = '.pdf'):
+    """ it plots given data trace"""
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close() 
+    
+    fig = plt.figure()
+    data_temp = data[:,trace, part[0]: part[1]]
+    t = dat.get_timeline(data_temp[0,:], fs, 'ms')
+    #import pdb; pdb.set_trace() 
+    add_it = 100
+    for electr in range(np.size(data_temp, 0)):
+        plt.plot(t, data_temp[electr, :] + electr * add_it)
+    plt.title('data')
+    plt.ylabel('Voltage (' + micro() + 'V)')
+    plt.xlabel('Time (ms)')
+        
 
+    save_fold = save_folder + plot_folder
+    fold_mng.create_folder(save_fold)
+    fig.savefig(save_fold + save_plots + ext,dpi=600)     
+    fig.savefig(save_fold + save_plots + '.eps',dpi=600)    
+    plt.show() 
+    plt.close()   
+     
+    
+    
 def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, spw_file, dist_file, ext):
     """ it divides SPWs to two groups - close and far from the spike and alignes them, and plots together"""
     

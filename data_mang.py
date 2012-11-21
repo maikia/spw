@@ -29,10 +29,13 @@ def get_electrdata(data, no_segments, electrode=[1]):
     #electrode = electrode - 1
     #import pdb; pdb.set_trace()
     dat = np.zeros((len(electrode), no_segments, np.size(data,2)))
+    
     for electr in electrode:
         for trace in range(no_segments):
-            el = electr - 1
-            dat[el, trace, :] = data[trace][el].magnitude
+            el = electr - electrode[0]
+            #print electr
+            #import pdb; pdb.set_trace()
+            dat[el, trace, :] = data[trace][electr].magnitude
         
     
     fs = data[0][0].sampling_rate
