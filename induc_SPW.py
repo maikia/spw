@@ -907,9 +907,14 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
             # calculate amplitude of the ipsp (from the beginning to the highest peak)
             start_pts = ms2pts(ipsp_time, fs).astype(int)
             end_pts = ms2pts(ipsp_end,fs).astype(int)
-            data_temp_ipsp = data_temp[electr,start_pts: end_pts]
-            maxpt = np.argmax(data_temp_ipsp)
-            ipsp_ampl = data_temp_ipsp[maxpt] - data_temp_ipsp[0]
+            if end_pts <= start_pts:
+                # in the future don't add this IPSP!!!!
+                ipsp_ampl = 0
+            else:
+                data_temp_ipsp = data_temp[electr,start_pts: end_pts]
+
+                maxpt = np.argmax(data_temp_ipsp)
+                ipsp_ampl = data_temp_ipsp[maxpt] - data_temp_ipsp[0]
             ipsp_ampl_temp.append(ipsp_ampl)
             ipsp_ends.append(end_pts)
             
@@ -974,7 +979,7 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
             fig.savefig(save_folder + save_fig + str(spw) + ext,dpi=600)
             fig.savefig(save_folder + save_fig + str(spw) + '.eps',dpi=600)        
             #plt.show()
-            plt.clf()
+            plt.close()
     if len(proper_ipsps) > 0:
         proper_ipsps = np.concatenate(proper_ipsps)
 
@@ -1069,12 +1074,12 @@ def update_SPW_ipsp(load_datafile, load_spwsspike, save_folder, save_file):
                 mini = pts2ms(maxs,fs) + spw_electr_used['spw_start'][0]
                 mini = np.append(mini,spw_electr_used['spw_end'][0])
 
-                ipsp_start = mini[:-1]
-                ipsp_end = mini[1:]
+                ipsp_start = mini[:-1].astype('f8')
+                ipsp_end = mini[1:].astype('f8')
                 electrodes = np.ones(len(ipsp_start), dtype=typ)*electr
                 traces = np.ones(len(ipsp_start), dtype=typ)*trace
                 spw_num = np.ones(len(ipsp_start), dtype=typ)*spw_no
-                ipsp_no = range(1,len(mini))
+                ipsp_no = np.arange(1,len(mini)).astype(typ)
 
 
                 spw_ipsps.append(np.rec.fromarrays([electrodes, traces, spw_num,

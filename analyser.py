@@ -130,7 +130,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, spw_file, d
         fig.savefig(save_fold + save_plots + titles[idx] + ext,dpi=600)     
         fig.savefig(save_fold + save_plots + titles[idx] + '.eps',dpi=600)    
         plt.close() 
-        plt.show()
+        #plt.show()
     #import pdb; pdb.set_trace() 
     
     
