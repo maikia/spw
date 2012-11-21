@@ -79,12 +79,14 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         
         numIpsp2distance = 'numIPSP_distance'
-        analyser.plot_noIpsps2distance(save_folder, solutions_fold+numIpsp2distance + '/', save_plots = numIpsp2distance, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes, ext = ext)
+        #analyser.plot_noIpsps2distance(save_folder, solutions_fold+numIpsp2distance + '/', save_plots = numIpsp2distance, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes, ext = ext)
         
         alignedSPWs = 'aligned_SPWs'
-        #analyser.plot_alignedSPW(save_folder, solutions_fold+alignedSPWs + '/', save_plots = alignedSPWs, data_file = raw_baselined, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes, ext = ext)
+        analyser.plot_alignedSPW(save_folder, solutions_fold+alignedSPWs + '/', save_plots = alignedSPWs, data_file = raw_baselined, intra_data_file = data_intra, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes, ext = ext)
         
-        
+        spikes_inSPWs = 'spikes_inSPWs'
+        #load_spikefile = spikes_params
+        #analyser.plot_extra_spike_distribut(save_folder, , solutions_fold+spikes_inSPWs + '/', save_plots = spikes_inSPWs, spike_data = SPWs_spikes_ampl
     #ipsp_exSpikes = 'ipsp_exSpikes.npz'
     #updater.update_ipsp_exSpikes(save_folder, save_file = ipsp_exSpikes)
     

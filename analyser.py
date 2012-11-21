@@ -84,7 +84,7 @@ def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, par
      
     
     
-def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, spw_file, dist_file, ext):
+def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_file, spw_file, dist_file, ext):
     """ it divides SPWs to two groups - close and far from the spike and alignes them, and plots together"""
     
     min_dist = 7 # ms
@@ -98,6 +98,12 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, spw_file, d
     npzfile         = np.load(save_folder + dist_file)
     distances      = npzfile['dist_spwspike'] # spikes_all
     npzfile.close()   
+    
+    npzfile        = np.load(save_folder + intra_data_file)
+    data_intra = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close() 
+     
     
     npzfile        = np.load(save_folder + data_file)
     data = npzfile['data']
@@ -124,7 +130,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, spw_file, d
         spws_used = spws[(used > -before_pts) & (used + after_pts < np.size(data,2))]
         
         spw = np.unique(spws_used['spw_no'])
-        spw_traces = np.zeros([np.size(data,0), len(spw), after_pts - before_pts])
+        spw_traces = np.zeros([np.size(data,0) + 1, len(spw), after_pts - before_pts])
         
         for spw_idx, spw_n in enumerate(spw):
             spw_start = spws_used[spws_used['spw_no'] == spw_n]['spw_start'][0]
@@ -133,12 +139,15 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, spw_file, d
 
             data_temp = data[:, trace, spw_start_pts + before_pts: spw_start_pts + after_pts]
 
-            spw_traces[:, spw_idx, :] = data_temp
+            spw_traces[1:, spw_idx, :] = data_temp
+            data_temp_intra = data_intra[:, trace, spw_start_pts + before_pts: spw_start_pts + after_pts]
+            spw_traces[0, spw_idx, :] = data_temp_intra
         all_data_traces.append(spw_traces)
+    
             
     titles = ['Induced', 'Spontaneous']
-    
-    add_it = 100
+    #import pdb; pdb.set_trace() 
+    add_it = 150
     t = dat.get_timeline(data_temp[0], fs, 'ms')
     for idx, data_spw in enumerate(all_data_traces): 
         #print 'tak'
@@ -150,6 +159,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, spw_file, d
             for s in range(len(data_used)):
                 plt.plot(t, data_used[s] + electr * add_it, 'b', alpha=0.2)
             plt.plot(t, np.mean(data_used, 0) + electr * add_it, 'r')
+        #import pdb; pdb.set_trace()
         
         plt.title(titles[idx] + ', spws: ' + str(len(data_used)))     
         save_fold = save_folder + plot_folder
