@@ -83,8 +83,95 @@ def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, par
     plt.close()   
      
 
+def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', ext = '.pdf', win = [-20, 20]):
+    """ plots every spw separately (in all electrodes)"""
     
     
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close()     
+    colors = define_colors(no_colors = np.size(data,0))
+    
+    npzfile        = np.load(save_folder + spw_data)
+    spontaneous = npzfile['spontaneous']
+    initiated = npzfile['initiated']
+    npzfile.close()         
+    
+    npzfile        = np.load(save_folder + spike_data)
+    spikes = npzfile['chosen_spikes']
+    npzfile.close()     
+    #import pdb; pdb.set_trace()
+    types = ['spontaneous', 'initiated']
+    #add_before_after = 20 # ms
+    before_pts = ispw.ms2pts(win[0], fs)
+    after_pts = ispw.ms2pts(win[1], fs)
+    
+    
+#    timescale = 200000
+#    d= data[0,0,0:timescale]
+#    t = dat.get_timeline(d, fs, 'ms')
+#    sp1 = spikes[spikes['electrode'] == 0]['time']
+#    sp = ispw.ms2pts(sp1, fs)
+#    sp = sp[sp < timescale]
+#    sp = sp.astype('i4')
+#   # ispw.ms2pts(dat,fs)
+#    plt.plot(t, d) 
+#    plt.plot(t[sp], d[sp],'go')
+#    plt.show()
+#    import pdb; pdb.set_trace() 
+    
+    add_it = 150
+    for idx, typ in enumerate([initiated, spontaneous]):
+        #data[:, ]
+        #t = 
+        spw_noms = np.unique(typ['spw_no'])
+        for spw_used in spw_noms:
+            spw = typ[typ['spw_no'] == spw_used][0]
+            trace = spw['trace']
+            spw_start = ispw.ms2pts(spw['spw_start'], fs).astype('i4')
+            spw_end = ispw.ms2pts(spw['spw_end'], fs).astype('i4')
+            data_used = data[:, trace, spw_start+before_pts:spw_end + after_pts]
+            
+            t = dat.get_timeline(data_used[0, :], fs, 'ms') + win[0]
+            spikes_used = spikes[spikes['spw_no'] == spw_used]
+            
+            for electr in range(np.size(data_used, 0)):
+               
+                plt.plot(t, data_used[electr, :] + add_it * electr, color = colors[electr])
+                spikes_plot = spikes_used[spikes_used['electrode'] == electr]['time']
+                spikes_idx = ispw.ms2pts(spw['spw_start'],fs).astype('i4') - ispw.ms2pts(spikes_plot + win[0], fs).astype('i4') + before_pts.astype('i4')
+                #(spw['spw_start'] - spikes_used)#spw_start - ispw.ms2pts(spikes_used[spikes_used['electrode'] == electr]['time'],fs) - ispw.ms2pts(win[0], fs)
+                plt.plot(t[spikes_idx], data_used[electr, spikes_idx] + add_it* electr, 'go')
+            plt.show()
+                
+                
+#                import pdb; pdb.set_trace()
+#                if np.size(spikes_used['electrode']) == 1:
+#                    if spikes_used['electrode'] == electr:
+#                        time_of_spike = spw_start - ispw.ms2pts(spikes_used['time'], fs)
+#                        plt.plot(t[time_of_spike], data_used[electr, time_of_spike], 'go')
+                        
+                        
+#                elif np.size(spikes_used['electrode']) > 1:
+#                    pass
+                    
+                #spike_electr = spikes_used['electrode'] == electr
+                #if spike_electr != False:
+                #    import pdb; pdb.set_trace()
+                #    if np.size(spike_electr, 0) 
+                #    spike_electr = spikes_used[spike_electr]['spw_no']
+                
+                #plt.plot(t[])
+            #plt.xlim([min(t), max(t)])
+            
+                
+                
+        
+            
+            #import pdb; pdb.set_trace() 
+        plt.plot()
+        
 def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_file, spw_file, dist_file, ext):
     """ it divides SPWs to two groups - close and far from the spike and alignes them, and plots together"""
     

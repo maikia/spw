@@ -105,7 +105,7 @@ def up_spws_spikes_ampl(save_folder, save_file = 'data.npz', load_spwsspike = 'S
     gc.collect()
 
 
-def up_spikes_in_spw(save_folder, save_file ='spikes_in_spws', load_spike_file = 'spikes.npz', load_spw_file = 'spws.npz', reanalize = False):
+def up_spikes_in_spw(save_folder, save_file ='spikes_in_spws', load_spike_file = 'spikes.npz', load_spw_file = 'spws.npz', reanalize = False, win = [-20, 20]):
     """ finds all the spikes in a given SPW"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -114,7 +114,7 @@ def up_spikes_in_spw(save_folder, save_file ='spikes_in_spws', load_spike_file =
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
         # load the data   
-        ispw.update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file)
+        ispw.update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file, win)
     else:
         print 'spikes were already found in the SPW'
     gc.collect()        
@@ -174,7 +174,21 @@ def up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.np
 def update_ipsp_exSpikes(save_folder, save_file):
     pass
 
+def up_induc_spont_spw(save_folder, save_file = 'i_s_spws', load_distances = 'distances.npz', load_spwfile = 'spws.npz', max_init_dist = 10, reanalize = False, ext = '.pdf'):
+    """ it finds which spws are initiated and which are sponteneaus"""
+    fold_mng.create_folder(save_folder)
+    
+    # check if this file already exists
+    exists = fold_mng.file_exists(save_folder, save_file)
 
+    if reanalize or not exists:
+        # load the data        
+        ispw.update_induc_spont_spw(save_folder = save_folder, save_file = save_file, load_distances = load_distances, load_spwfile = load_spwfile, max_dist =max_init_dist, ext = ext)
+    else:
+        print 'Initiated SPWs were already saved'    
+    gc.collect()       
+    
+    
 
 def up_dist_SpwfromSpike(save_folder, save_file = 'spw_dist.npz', load_intrafile = 'intra_data.npz', load_spwfile = 'spw_data.npz', spikes = 'all', reanalize = False):
     """ it finds the distance intracellular spike to each spw"""

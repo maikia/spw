@@ -25,7 +25,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     if delete_old:
         fold_mng.remove_folder(save_folder)
-    
+    win = [-20, 20]
     raw_data        = 'data.npz'
     #updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, reanalize = reanalize)
     
@@ -63,7 +63,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     spikes_inSPWs = 'spikes_inSpw.npz'
     # uses previously selected largest spikes
-    updater.up_spikes_in_spw(save_folder, save_file =spikes_inSPWs, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps_beg, reanalize = reanalize)
+    #updater.up_spikes_in_spw(save_folder, save_file =spikes_inSPWs, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps_beg, reanalize = reanalize, win = win)
     
     print intr_electrode
     if intr_electrode == 1:
@@ -78,12 +78,17 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         #updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra, reanalize = reanalize)
         
         dist_spw_inspikes = 'spw_dist2first.npz'
-        updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, spikes = 'first', reanalize = reanalize)
-        dist_spw_inspikes2all = 'spw_dist2all.npz'
-        updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes2all, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, spikes = 'all', reanalize = reanalize)
+        #updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, spikes = 'first', reanalize = reanalize)
         
+        dist_spw_inspikes2all = 'spw_dist2all.npz'
+        #updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes2all, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, spikes = 'all', reanalize = reanalize)
+        
+        induc_spont_spw = 'induc_spont_spw.npz'
+        max_dist = 10 # ms
+        #updater.up_induc_spont_spw(save_folder, save_file = induc_spont_spw, load_distances = dist_spw_inspikes, load_spwfile = SPWs_ipsps_beg, max_init_dist = max_dist, reanalize = reanalize, ext = ext)
+    
     ##### - analyser - #####
-        solutions_fold = 'plots/'
+        solutions_folder = 'plots/'
         
         
         numIpsp2distance = 'numIPSP_distance'
@@ -91,11 +96,15 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         alignedSPWs = 'aligned_SPWs'
         #analyser.plot_alignedSPW(save_folder, solutions_fold+alignedSPWs + '/', save_plots = alignedSPWs, data_file = raw_baselined, intra_data_file = data_intra, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes, ext = ext)
-        alignedSPWs_2all = 'aligned_SPWs2allSpikes'
-        analyser.plot_alignedSPW(save_folder, solutions_fold+alignedSPWs + '/', save_plots = alignedSPWs_2all, data_file = raw_baselined, intra_data_file = data_intra, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes2all, ext = ext)
         
-        spikes_inSPWs = 'spikes_inSPWs'
-        analyser.plot_extra_spike_distribut(save_folder, solutions_fold+spikes_inSPWs + '/', save_plots = spikes_inSPWs, spike_data = spikes_params, spw_data = SPWs_ipsps_beg)
+        alignedSPWs_2all = 'aligned_SPWs2allSpikes'
+        #analyser.plot_alignedSPW(save_folder, solutions_folder+alignedSPWs + '/', save_plots = alignedSPWs_2all, data_file = raw_baselined, intra_data_file = data_intra, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes2all, ext = ext)
+        
+        spikes_inSPWs_plot = 'spikes_inSPWs'
+        analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot + '/', save_plots = spikes_inSPWs_plot, data_file = raw_baselined, spike_data = spikes_inSPWs, spw_data = induc_spont_spw, ext = ext, win = win)
+    
+    
+    
     #ipsp_exSpikes = 'ipsp_exSpikes.npz'
     #updater.update_ipsp_exSpikes(save_folder, save_file = ipsp_exSpikes)
 #    def plot_extra_spike_distribut(save_folder, solutions_fold+spikes_inSPWs + '/', save_plots = spikes_inSPWs, spike_data = spikes_params, spw_data = SPWs_ipsps_beg):

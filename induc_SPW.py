@@ -636,15 +636,19 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
                 highest_ampl = highest_ampl[0]
             wining_spike = considered_spikes[highest_ampl] 
             
+            #print considered_spikes
+            #print wining_spike
             el.append(wining_spike['electrode'])
             tr.append(wining_spike['trace'])
             sp.append(wining_spike['time'])
             am.append(considered_ampls[highest_ampl])
-
+            
+            
             considered_ampls = []
             considered_spikes = []
             considered_spikes.append(spike)
             considered_ampls.append(ams)
+            
         spike_old = spike['time']
         
     electrode = np.array(el, dtype='i4')
@@ -659,7 +663,7 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
     
     
   
-def update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file):
+def update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file, win):
     """ finds the spikes for each spw"""
     
     npzfile         = np.load(save_folder + load_spike_file)
@@ -667,7 +671,7 @@ def update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file
     npzfile.close()  
     
     npzfile         = np.load(save_folder + load_spw_file)
-    ipsps      = npzfile['ipsps']
+    ipsps           = npzfile['ipsps']
     npzfile.close()   
     #el, tr, sp, am, spw_no = [], [], [], [], []
     
@@ -675,11 +679,12 @@ def update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file
     spw_spike = []
     for spw in np.unique(ipsps['spw_no']):
         ipsp_used = ipsps[ipsps['spw_no'] == spw][0]
+        
         spw_start = ipsp_used['spw_start']
         spw_end = ipsp_used['spw_end']
         trace = ipsp_used['trace']
-        
-        spikes = spike_idxs[(spike_idxs['trace'] == trace) & (spike_idxs['time'] >= spw_start) & (spike_idxs['time'] <= spw_end)]
+        #import pdb; pdb.set_trace()  
+        spikes = spike_idxs[(spike_idxs['trace'] == trace) & (spike_idxs['time'] >= spw_start + win[0]) & (spike_idxs['time'] <= spw_end + win[1])]
         
         el = spikes['electrode'].astype('i4')
         tr = spikes['trace'].astype('i4')
@@ -693,7 +698,8 @@ def update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file
                                                        names='electrode,trace, time, spike_ampl, spw_no, spw_start, spw_end'))    
         
      
-    spw_spike = np.concatenate(spw_spike)  
+    spw_spike = np.concatenate(spw_spike) 
+    #import pdb; pdb.set_trace()  
     np.savez(save_folder + save_file, chosen_spikes = spw_spike)        
     del spike_idxs, spw_spike
 
@@ -780,6 +786,31 @@ def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_nam
     chosen_spikes = np.concatenate(chosen_spikes)
     np.savez(save_folder + save_name, chosen_spikes = chosen_spikes)        
     del spike_idxs, ampls, spw_spikes
+
+def update_induc_spont_spw(save_folder, save_file, load_distances, load_spwfile, max_dist, ext):
+    """ checks which spws are initiated and which are sponteneaus"""
+    
+    npzfile    = np.load(save_folder + load_distances)
+    distances      = npzfile['dist_spwspike']  
+    npzfile.close()    
+    
+    npzfile    = np.load(save_folder + load_spwfile)
+    ipsps      = npzfile['ipsps']  
+    npzfile.close()   
+    #before_pts = ispw.ms2pts(win[0], fs)
+    #after_pts = ispw.ms2pts(win[1], fs)
+    
+    initiated_no = distances[distances['distance'] <= max_dist]['spw_no']
+    spont_no = distances[distances['distance'] > max_dist]['spw_no']
+    
+    #import pdb; pdb.set_trace() 
+    init_set = np.in1d(ipsps['spw_no'], initiated_no, assume_unique= False)
+    initiated = ipsps[init_set]
+    spont_set = np.in1d(ipsps['spw_no'], spont_no, assume_unique=False)
+    spontaneous = ipsps[spont_set]
+    
+    np.savez(save_folder + save_file, initiated = initiated, spontaneous = spontaneous)
+       
 
 def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfile,  max_dist = 3, allowms = 0, spikes = 'first'):
     """ updates all the distances from extracellular spikes to the preceeding it intracellular spike,
