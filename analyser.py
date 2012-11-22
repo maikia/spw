@@ -9,6 +9,28 @@ from matplotlib.ticker import NullFormatter
 from mpl_toolkits.mplot3d import Axes3D
 import folder_manager as fold_mng
 
+def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
+    """ plots the histogram of the distribution of spws from the spike"""
+    npzfile         = np.load(save_folder + dist_file)
+    dist = npzfile['dist_spwspike']
+    
+    distance = dist['distance']
+    xlim = [-10, 200]
+    no_bins = 50
+    distance = distance[(distance > xlim[0]) & (distance < xlim[1])]
+    #import pdb; pdb.set_trace() 
+    fig = plt.figure()                
+    plt.hist(distance, no_bins, normed=1)
+    plt.title('Distribution of SPWs from the spike')
+    plt.xlim(xlim)
+    plt.ylabel('Fraction of SPWs')
+    plt.xlabel('Distance from spike (ms)')
+    fig.savefig(save_folder + save_plots + ext,dpi=600)     
+    fig.savefig(save_folder + save_plots + '.eps',dpi=600)    
+    plt.show() 
+    plt.close()  
+    
+    
 def plot_noIpsps2distance(save_folder, plot_folder, save_plots, spw_file, dist_file, ext):
     """ it takes previously calculated distances spw to spike and calculates number of Ipsp for each spike
     and plots them against each other"""
@@ -142,7 +164,7 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
                 spikes_plot = spikes_used[spikes_used['electrode'] == electr]['time']
                 spikes_idx = ispw.ms2pts(spw['spw_start'],fs).astype('i4') - ispw.ms2pts(spikes_plot + win[0], fs).astype('i4') + before_pts.astype('i4')
                 #(spw['spw_start'] - spikes_used)#spw_start - ispw.ms2pts(spikes_used[spikes_used['electrode'] == electr]['time'],fs) - ispw.ms2pts(win[0], fs)
-                plt.plot(t[spikes_idx], data_used[electr, spikes_idx] + add_it* electr, 'go')
+                plt.plot(t[spikes_idx], data_used[electr, spikes_idx] + add_it * electr, 'go')
             plt.show()
                 
                 
