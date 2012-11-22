@@ -114,7 +114,7 @@ def up_spikes_in_spw(save_folder, save_file ='spikes_in_spws', load_spike_file =
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
         # load the data   
-        ispw.update_spikes_in_spw(save_folder, save_file, load_spike_file, load_spw_file)
+        ispw.update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file)
     else:
         print 'spikes were already found in the SPW'
     gc.collect()        
@@ -132,7 +132,7 @@ def up_spikes_ampl(save_folder, save_file ='spikes_in_spws', load_spike_file = '
         # load the data   
         ispw.update_spikes_ampls(save_folder, save_file, load_spike_file)
     else:
-        print 'spikes were already found in the SPW'
+        print 'origins of spikes were already calculated'
     gc.collect()    
 
         

@@ -611,7 +611,7 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
     ampls           = npzfile['ampls']
     fs              = npzfile['fs']
     npzfile.close()  
-    
+    print 'Looking for origin of each spike'
     # loop trough all the detected spikes sorted timewise
     sort_idx        = np.argsort(spike_idxs['time'])
     posortowane     = spike_idxs[sort_idx]
@@ -658,21 +658,46 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
     
     
     
+  
+def update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file):
+    """ finds the spikes for each spw"""
     
-def updates_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file):
-
     npzfile         = np.load(save_folder + load_spike_file)
-    spike_idxs      = npzfile['spike_idxs']
-    ampls           = npzfile['ampls']
-    fs              = npzfile['fs']
+    spike_idxs      = npzfile['chosen_spikes']
+    npzfile.close()  
     
     npzfile         = np.load(save_folder + load_spw_file)
     ipsps      = npzfile['ipsps']
     npzfile.close()   
+    #el, tr, sp, am, spw_no = [], [], [], [], []
     
-    import pdb; pdb.set_trace()
-    
-    
+    print 'Updating spikes in each SPW'
+    spw_spike = []
+    for spw in np.unique(ipsps['spw_no']):
+        ipsp_used = ipsps[ipsps['spw_no'] == spw][0]
+        spw_start = ipsp_used['spw_start']
+        spw_end = ipsp_used['spw_end']
+        trace = ipsp_used['trace']
+        
+        spikes = spike_idxs[(spike_idxs['trace'] == trace) & (spike_idxs['time'] >= spw_start) & (spike_idxs['time'] <= spw_end)]
+        
+        el = spikes['electrode'].astype('i4')
+        tr = spikes['trace'].astype('i4')
+        sp = spikes['time'].astype('f8')
+        am = spikes['amplitude'].astype('f8')
+        spw_no = (np.ones(len(spikes)) * spw).astype('i4')
+        spw_st = (np.ones(len(spikes)) * spw_start).astype('f8')
+        spw_en = (np.ones(len(spikes)) * spw_end).astype('f8')
+        
+        spw_spike.append(np.rec.fromarrays([el, tr, sp, am, spw_no, spw_st, spw_en],
+                                                       names='electrode,trace, time, spike_ampl, spw_no, spw_start, spw_end'))    
+        
+     
+    spw_spike = np.concatenate(spw_spike)  
+    np.savez(save_folder + save_file, chosen_spikes = spw_spike)        
+    del spike_idxs, spw_spike
+
+     
 
 def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_name):
     """ finds in which of the electrodes spike has the largest amplitude and possibly plot the traces"""
