@@ -601,9 +601,82 @@ def get_var_used(var, electr, trace):
     var_used = var[(var['electrode'] == electr) & (var['trace'] == trace)]['time']
     return var_used
 
+def update_spikes_ampls(save_folder, save_file, load_spike_file):
+    """ find in which electrode spikes have the highest amplitude"""
+    
+    allow_shift = 0.15
+    
+    npzfile         = np.load(save_folder + load_spike_file)
+    spike_idxs      = npzfile['spike_idxs']
+    ampls           = npzfile['ampls']
+    fs              = npzfile['fs']
+    npzfile.close()  
+    
+    # loop trough all the detected spikes sorted timewise
+    sort_idx        = np.argsort(spike_idxs['time'])
+    posortowane     = spike_idxs[sort_idx]
+    spike_old = -1
+    considered_spikes, considered_ampls = [], []
+    el,tr,sp,am = [],[],[],[]
+    for (idx, spike) in enumerate(posortowane):
+        # find amplitude of this particular spike
+        electr = spike['electrode']
+        trace = spike['trace']
+        sp_time = spike['time']
+        ams = ampls[(spike_idxs['time'] == sp_time) & (ampls['electrode'] == electr) & (ampls['trace'] == trace)]['time'][0]
+
+        if (np.abs(sp_time - spike_old) < allow_shift) or (len(considered_spikes) == 0):
+            # remember this one!
+            considered_spikes.append(spike)
+            considered_ampls.append(ams)
+        else:
+            # it is necessary to sum up previous considered_spikes and start new ones
+            highest_ampl = np.argmax(considered_ampls)
+            if np.size(highest_ampl) > 1:
+                highest_ampl = highest_ampl[0]
+            wining_spike = considered_spikes[highest_ampl] 
+            
+            el.append(wining_spike['electrode'])
+            tr.append(wining_spike['trace'])
+            sp.append(wining_spike['time'])
+            am.append(considered_ampls[highest_ampl])
+
+            considered_ampls = []
+            considered_spikes = []
+            considered_spikes.append(spike)
+            considered_ampls.append(ams)
+        spike_old = spike['time']
+        
+    electrode = np.array(el, dtype='i4')
+    trace = np.array(tr, dtype='i4')
+    spike = np.array(sp, dtype='f8')    
+    amplitude = np.array(am, dtype='f8')   
+    large_spikes = np.rec.fromarrays([electrode, trace, spike, amplitude], 
+                                               names='electrode, trace, time, amplitude')  
+    np.savez(save_folder + save_file, chosen_spikes = large_spikes)        
+    del spike_idxs, ampls, large_spikes    
+    
+    
+    
+    
+def updates_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file):
+
+    npzfile         = np.load(save_folder + load_spike_file)
+    spike_idxs      = npzfile['spike_idxs']
+    ampls           = npzfile['ampls']
+    fs              = npzfile['fs']
+    
+    npzfile         = np.load(save_folder + load_spw_file)
+    ipsps      = npzfile['ipsps']
+    npzfile.close()   
+    
+    import pdb; pdb.set_trace()
+    
+    
 
 def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_name):
     """ finds in which of the electrodes spike has the largest amplitude and possibly plot the traces"""
+    
     npzfile         = np.load(save_folder + load_spikefile)
     spike_idxs      = npzfile['spike_idxs']
     ampls           = npzfile['ampls']
@@ -683,12 +756,15 @@ def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_nam
     np.savez(save_folder + save_name, chosen_spikes = chosen_spikes)        
     del spike_idxs, ampls, spw_spikes
 
-def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfile,  max_dist = 3, allowms = 0):
+def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfile,  max_dist = 3, allowms = 0, spikes = 'first'):
     """ updates all the distances from extracellular spikes to the preceeding it intracellular spike,
     it also returns the indexes of those spikes which are closer than min_dist (in ms) to intracellular spike"""
     
     npzfile         = np.load(save_folder + load_intrafile)
-    spike_idxs      = npzfile['spikes_first'] # spikes_all
+    if spikes == 'first':
+        spike_idxs      = npzfile['spikes_first'] # spikes_all
+    elif spikes == 'all':
+        spike_idxs      = npzfile['spikes_all'] # spikes_all
     fs              = npzfile['fs']
     npzfile.close()
 

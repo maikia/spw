@@ -82,6 +82,7 @@ def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, par
     plt.show() 
     plt.close()   
      
+
     
     
 def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_file, spw_file, dist_file, ext):

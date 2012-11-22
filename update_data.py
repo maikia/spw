@@ -103,6 +103,38 @@ def up_spws_spikes_ampl(save_folder, save_file = 'data.npz', load_spwsspike = 'S
     else:
         print 'spws were already analysed'        
     gc.collect()
+
+
+def up_spikes_in_spw(save_folder, save_file ='spikes_in_spws', load_spike_file = 'spikes.npz', load_spw_file = 'spws.npz', reanalize = False):
+    """ finds all the spikes in a given SPW"""
+    # check if folder already exists
+    fold_mng.create_folder(save_folder)
+    
+    # check if this file already exists
+    exists = fold_mng.file_exists(save_folder, save_file)
+    if reanalize or not exists:
+        # load the data   
+        ispw.update_spikes_in_spw(save_folder, save_file, load_spike_file, load_spw_file)
+    else:
+        print 'spikes were already found in the SPW'
+    gc.collect()        
+    
+    
+
+def up_spikes_ampl(save_folder, save_file ='spikes_in_spws', load_spike_file = 'spikes.npz', reanalize = False):
+    """ finds all the spikes for the given spw"""
+    # check if folder already exists
+    fold_mng.create_folder(save_folder)
+    
+    # check if this file already exists
+    exists = fold_mng.file_exists(save_folder, save_file)
+    if reanalize or not exists:
+        # load the data   
+        ispw.update_spikes_ampls(save_folder, save_file, load_spike_file)
+    else:
+        print 'spikes were already found in the SPW'
+    gc.collect()    
+
         
 def up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf'):       
     """analyse the ipsps in each SPWs - finds the beginnings, and removes those which are not correct"""
@@ -144,7 +176,7 @@ def update_ipsp_exSpikes(save_folder, save_file):
 
 
 
-def up_dist_SpwfromSpike(save_folder, save_file = 'spw_dist.npz', load_intrafile = 'intra_data.npz', load_spwfile = 'spw_data.npz', reanalize = False):
+def up_dist_SpwfromSpike(save_folder, save_file = 'spw_dist.npz', load_intrafile = 'intra_data.npz', load_spwfile = 'spw_data.npz', spikes = 'all', reanalize = False):
     """ it finds the distance intracellular spike to each spw"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -154,7 +186,7 @@ def up_dist_SpwfromSpike(save_folder, save_file = 'spw_dist.npz', load_intrafile
 
     if reanalize or not exists:
         # load the data        
-        ispw.update_dist_SPWfromSpike(save_folder = save_folder, save_file = save_file, load_intrafile = load_intrafile, load_spwfile = load_spwfile, max_dist = 10)
+        ispw.update_dist_SPWfromSpike(save_folder = save_folder, save_file = save_file, load_intrafile = load_intrafile, load_spwfile = load_spwfile, max_dist = 10, spikes = spikes)
     else:
         print 'distances of spws to intracellular spikes were already calculated'    
     gc.collect()    
