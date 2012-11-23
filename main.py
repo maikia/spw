@@ -23,7 +23,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     delete_old = False #!!!!
     
-    run_all_functions = True
+    run_all_functions = False
     if delete_old:
         fold_mng.remove_folder(save_folder)
     win = [-20, 20]
@@ -37,7 +37,8 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         analyser.display_data(save_folder, plot_folder, save_plots, raw_data, trace = 0, part = [0, 10000], ext = ext)
     
     raw_baselined   = "data_bas.npz"
-    #updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
+    if run_all_functions:
+        updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
     
     spikes_raw      = 'spikes.npz'
     spikes_filter = 'fast_data_'
