@@ -311,7 +311,7 @@ def update_extraspikes(data_load, save_folder, save_file = "ex_spikes"):
     fs = npzfile['fs'] 
     npzfile.close()
        
-    freq_fast = 500.
+    freq_fast = 800.
     # find extracellular spikes
     f_d = 'filtered/'
     folder_name = save_folder + f_d
@@ -328,7 +328,7 @@ def update_extraspikes(data_load, save_folder, save_file = "ex_spikes"):
             N = 100
         for trace in range(np.size(data,1)):
             data_used = data[electr, trace, :]
-            filename_fast = 'fast_data' + str(electr) + "_" + str(trace)
+            filename_fast = 'fast_data_'+str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
             data_fast, fs = load_create(folder_name, filename_fast, freq_fast, fs, data_used, N)
             spike_ampl, spike_idxs = fes.find_extra_spikes(data_used, data_fast, fs) #(data[electr][trace], fs)
             del data_fast
@@ -981,7 +981,7 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
                                 ipsp_idx = electr_temp.index(el)
                                 ipsp_ampl = ipsp_ampl_temp[ipsp_idx]
                             # if this electrode has no IPSP detected or no spike around
-                            if not(el in (electr_temp)) or sp == np.inf:
+                            if el not in electr_temp or sp == np.inf:
                                 # if any spike exists
                                 if len(notInf) > 0:
                                     #import pdb; pdb.set_trace() 
@@ -1019,8 +1019,6 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
                             sp_end = sp_sp_used[sp_sp_used['electrode'] == el]['spw_end']
                             #if len(sp_end) == 0:
                                 #if end was not calculated, the longest SPW end will be reused
-                            approx_spw_end =max(sp_sp_used['spw_end'])
-                            spwend_ipsp_spw.append(approx_spw_end) 
                             #else:
                             #    spwend_ipsp_spw.append(sp_end[0])
                             
@@ -1034,6 +1032,8 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
                             spw_electr_st = el_ipsp_spw[min_idx] 
       
                         spwstart_isps_spw.append(np.ones(len(ipstarts_temp)) * spw_start)
+                        spw_duration = 80
+                        spwend_ipsp_spw.append(np.ones(len(ipstarts_temp))*(spw_start+spw_duration))
                         ipsp_count = ipsp_count + 1
                     
                 ipsps_temp, spikes_temp, ipsp_ampl_temp, electr_temp, increase_temp, ipsp_ends = [], [], [], [], [], []
@@ -1080,7 +1080,7 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
             ipspno_ipsp_spw = np.array(ipspno_ipsp_spw, dtype='i4') 
             ipspstrt_ipsp_spw = np.array(ipspstrt_ipsp_spw, dtype='f8')
             ampl_ipsp_spw = np.array(ampl_ipsp_spw, dtype='f8')
-            spwend_ipsp_spw = np.array(spwend_ipsp_spw, dtype='f8')
+            spwend_ipsp_spw = np.concatenate(spwend_ipsp_spw)
             spw_electr_start = np.ones(len(el_ipsp_spw), dtype=np.int32)*spw_electr_st
             spwstart_isps_spw = np.concatenate(spwstart_isps_spw)
             spwstart_isps_spw = np.array(spwstart_isps_spw, dtype='f8')
@@ -1117,7 +1117,9 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
                 plt.plot(t,data_used + add_it * el, colr)
                 sp_to_plot = spikes[(spikes>0) & (spikes<len(t))]
                 plt.plot(t[sp_to_plot],data_used[sp_to_plot] + add_it * el, 'r<')
-                plt.plot(t[ipsp_start],data_used[ipsp_start] + add_it * el, 'go')
+                ipsp_to_plot = ipsp_start[ipsp_start<len(data_used)]
+                plt.plot(t[ipsp_to_plot],data_used[ipsp_to_plot] + add_it * el, 
+                         'o', mfc='none', mec='g')
 
             tit = 'spw: ' + str(spw)
             plt.title(tit)

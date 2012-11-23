@@ -50,20 +50,20 @@ def find_extra_spikes(data, fast_data, fs): #, fast_freq = 750.):
     
     # find spikes 
     spike_data = fast_data * (-1)
-    spike_data[spike_data < 0] = 0
+    #spike_data[spike_data < 0] = 0
     thres = np.std(spike_data)*5 # use thres as 6 * standard deviation
     
     waves = dw.find_above(spike_data, thres)
     starts, ends = dw.find_startend(waves) # finds all the peaks above threshold
     
     mins, min_idxs = dw.max_waves(data*(-1), starts-int(alerr_pts), ends+int(alerr_pts)) # finds mins of each wave    
-    scale = 'ms'
+    #scale = 'ms'
 
-#    t = dat.get_timeline(data, fs, scale)    
-#    py.plot(t, data)
-#    py.plot(t, spike_data)
-#    py.plot(t[min_idxs], spike_data[min_idxs], 'o')
-#    py.show()
+    #t = dat.get_timeline(data, fs, scale)    
+    #py.plot(t, data)
+    #py.plot(t, spike_data)
+    #py.plot(t[min_idxs], spike_data[min_idxs], 'o')
+    #py.show()
     return mins, min_idxs
     
 #

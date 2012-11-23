@@ -27,7 +27,7 @@ def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     plt.xlabel('Distance from spike (ms)')
     fig.savefig(save_folder + save_plots + ext,dpi=600)     
     fig.savefig(save_folder + save_plots + '.eps',dpi=600)    
-    plt.show() 
+    #plt.show() 
     plt.close()  
     
     
@@ -101,7 +101,7 @@ def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, par
     fold_mng.create_folder(save_fold)
     fig.savefig(save_fold + save_plots + ext,dpi=600)     
     fig.savefig(save_fold + save_plots + '.eps',dpi=600)    
-    plt.show() 
+    #plt.show() 
     plt.close()   
      
 
@@ -162,8 +162,10 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
                
                 plt.plot(t, data_used[electr, :] + add_it * electr, color = colors[electr])
                 spikes_plot = spikes_used[spikes_used['electrode'] == electr]['time']
-                spikes_idx = ispw.ms2pts(spw['spw_start'],fs).astype('i4') - ispw.ms2pts(spikes_plot + win[0], fs).astype('i4') + before_pts.astype('i4')
-                #(spw['spw_start'] - spikes_used)#spw_start - ispw.ms2pts(spikes_used[spikes_used['electrode'] == electr]['time'],fs) - ispw.ms2pts(win[0], fs)
+                spikes_idx = (-ispw.ms2pts(spw['spw_start'],fs).astype('i4') +
+                              ispw.ms2pts(spikes_plot, fs).astype('i4')-
+                              before_pts).astype(int)
+                                #(spw['spw_start'] - spikes_used)#spw_start - ispw.ms2pts(spikes_used[spikes_used['electrode'] == electr]['time'],fs) - ispw.ms2pts(win[0], fs)
                 plt.plot(t[spikes_idx], data_used[electr, spikes_idx] + add_it * electr, 'go')
             plt.show()
                 
