@@ -13,6 +13,7 @@ import scipy as sc
 import detect_waves as dw
 from scipy import signal
 import data_mang as dat
+import folder_manager as fold_mang
 
 def find_envelope(data):
     """ finds envelope of the data"""
@@ -298,12 +299,14 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
         else: 
             data_filt = filt.bandPass(freq, fs, data, N) 
         # save it
+        
+        fold_mang.create_folder(folder_save)
         np.savez(folder_save + filename_save, data = data_filt, fs = fs)
         
     return data_filt, fs
 
 
-def update_extraspikes(data_load, save_folder, save_file = "ex_spikes", save_filter = 'fast_data_'):
+def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_spikes", save_filter = 'fast_data_'):
     """ finds and updates the detection of extracellular spikes"""
     
     npzfile = np.load(save_folder + data_load)
@@ -313,7 +316,7 @@ def update_extraspikes(data_load, save_folder, save_file = "ex_spikes", save_fil
        
     freq_fast = 800.
     # find extracellular spikes
-    folder_name = save_folder
+    folder_name = save_folder + filter_folder
     N = 1000
     print
     print "finding extracellular spikes, working on electrode:",

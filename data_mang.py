@@ -59,10 +59,16 @@ def get_data(fname, ifsaved = 0):
     ifsaved """
     print "Patience please, processing ", fname, " ..."
     reader = neo.io.AxonIO(filename=fname)
+    #try:
     block = reader.read_block()
+    #except ValueError:
+    #    import pdb; pdb.set_trace() 
     data = []
     for i in range(len(block.segments)):
+         
         seg = block.segments[i]
+         
+        
         data.append(seg.analogsignals)
     return data, len(block.segments)
 

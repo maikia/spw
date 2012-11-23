@@ -104,7 +104,48 @@ def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, par
     #plt.show() 
     plt.close()   
 
+def plot_spike(save_folder, plot_folder, save_plots, spike_data = 'spike.npz', spw_data = 'spw.npz', ext = '.pdf', win = [-20, 20]):
+    """ counts how many spikes are in each electrode during all the spws and do the image shows """
+    #import pdb; pdb.set_trace()
+    npzfile        = np.load(save_folder + spike_data)
+    spikes = npzfile['chosen_spikes']
+    npzfile.close()    
+    
+    npzfile        = np.load(save_folder + spw_data)
+    spontaneous = npzfile['spontaneous']
+    initiated = npzfile['initiated']
+    npzfile.close()           
+    types = ['spontaneous', 'initiated']
+    
+    n_bins = 100
+    bins = np.linspace(-20, 100, n_bins)
+    for idx,typ in enumerate([spontaneous, initiated]):
+        dist_electrode = []
+        dist_spikes = []
+        fig = plt.figure()
+        for electr in np.unique(typ['electrode']):
+            for spw_no in np.unique(typ['spw_no']):
+                spikes_used = spikes[(spikes['spw_no'] == spw_no) & (spikes['electrode'] == electr)]
+                dist_spikes.append(spikes_used['time'] - spikes_used['spw_start'])
+            dist_spikes = np.concatenate(dist_spikes) 
+            n_all, _ = np.histogram(dist_spikes, bins)
+            #import pdb; pdb.set_trace()
+            dist_electrode.append(n_all)
+            dist_spikes = [] 
+        #import pdb; pdb.set_trace()    
+        plt.imshow(dist_electrode, interpolation='nearest', aspect='auto')  
+        plt.title(types[idx])
+        plt.ylabel('electrode number')
+        plt.xlabel('time from beginning of the detected start of SPW (ms)')
+        plt.xlim([win[0], 80+win[1]])
+        save_fold = save_folder + plot_folder
+        fold_mng.create_folder(save_fold)
+        fig.savefig(save_fold + save_plots + types[idx] + ext,dpi=600)     
+        fig.savefig(save_fold + save_plots + types[idx] + '.eps',dpi=600) 
+    plt.show()       
 
+    
+    
 
 def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 800.0):
     """ plots every spw separately (in all electrodes)"""
@@ -135,7 +176,7 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
     
     print 'plotting the data and their spikes'
     add_it = 150
-    for idx, typ in enumerate([initiated, spontaneous]):
+    for idx, typ in enumerate([spontaneous, initiated]):
         #data[:, ]
         #t = 
         spw_noms = np.unique(typ['spw_no'])
