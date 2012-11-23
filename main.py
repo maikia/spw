@@ -37,7 +37,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     #updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
     
     spikes_raw      = 'spikes.npz'
-    spikes_filter = 'fast_data_'
+    spikes_filter = 'filtered/fast_data_'
     #updater.up_extraspikes(save_folder, save_file = spikes_raw, load_file = raw_baselined, spikes_filter =  spikes_filter, reanalize = reanalize)
     
     spikes_params   = 'spikes_params.npz'
@@ -105,10 +105,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         #analyser.plot_alignedSPW(save_folder, solutions_folder+alignedSPWs + '/', save_plots = alignedSPWs_2all, data_file = raw_baselined, intra_data_file = data_intra, spw_file = SPWs_ipsps_beg, dist_file = dist_spw_inspikes2all, ext = ext)
         
         spikes_inSPWs_plot = 'spikes_inSPWs'
-        analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot + '/', 
-                                 save_plots = spikes_inSPWs_plot, data_file = raw_baselined, 
-                                 spike_data = spikes_inSPWs, spw_data = induc_spont_spw, 
-                                 spikes_filter = [], ext = ext, win = win)
+        #analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot + '/', 
+        #                         save_plots = spikes_inSPWs_plot, data_file = raw_baselined, 
+        #                         spike_data = spikes_inSPWs, spw_data = induc_spont_spw, 
+        #                         spikes_filter = [], ext = ext, win = win)
     
         spikes_inSPWs_plot_fig3a = 'spikes_inSPWs_fig3a'
         analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot_fig3a + '/', 

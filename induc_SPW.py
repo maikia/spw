@@ -313,8 +313,7 @@ def update_extraspikes(data_load, save_folder, save_file = "ex_spikes", save_fil
        
     freq_fast = 800.
     # find extracellular spikes
-    f_d = 'filtered/'
-    folder_name = save_folder + f_d
+    folder_name = save_folder
     N = 1000
     print
     print "finding extracellular spikes, working on electrode:",

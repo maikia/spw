@@ -106,7 +106,7 @@ def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, par
 
 
 
-def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20]):
+def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 800.0):
     """ plots every spw separately (in all electrodes)"""
     
     
@@ -130,6 +130,9 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
     before_pts = ispw.ms2pts(win[0], fs)
     after_pts = ispw.ms2pts(win[1], fs)
     
+
+    
+    
     print 'plotting the data and their spikes'
     add_it = 150
     for idx, typ in enumerate([initiated, spontaneous]):
@@ -147,6 +150,17 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
             spikes_used = spikes[spikes['spw_no'] == spw_used]
             
             fig = plt.figure()
+            
+            if spikes_filter != []:
+                mult_factor = 10
+                npzfile = np.load(save_folder + spikes_filter + str(filt) + '_0_' + str(trace) + '.npz')
+                #import pdb; pdb.set_trace()
+                filt_dat = npzfile['data']
+                npzfile.close() 
+                filt_dat = filt_dat[spw_start+before_pts:spw_end + after_pts]
+                plt.plot(t, filt_dat * mult_factor + add_it * -1.5,  'k')
+                #import pdb; pdb.set_trace()
+
             for electr in range(np.size(data_used, 0)):
                
                 plt.plot(t, data_used[electr, :] + add_it * electr,  'k') #color = colors[electr],
@@ -156,8 +170,9 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
                               before_pts).astype(int)
                                 #(spw['spw_start'] - spikes_used)#spw_start - ispw.ms2pts(spikes_used[spikes_used['electrode'] == electr]['time'],fs) - ispw.ms2pts(win[0], fs)
                 
-                if spikes_filter != []:
-                    import pdb; pdb.set_trace()
+
+        
+    
                 
                     
                 spikes_idx = spikes_idx[spikes_idx < np.size(data_used,1)]
@@ -167,13 +182,19 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
             
             plt.xlim([t[0], t[-1]])
             #import pdb; pdb.set_trace()
-            plt.ylim([data_used.min()-100, data_used.max() + electr *add_it + 100])
-            plt.title(types[idx])
+            if spikes_filter != []:
+                plt.ylim([min(filt_dat * mult_factor + add_it * -1.5)-100, data_used.max() + electr *add_it + 100])
+                plt.ylabel('Voltage (' + micro() + 'V); filter multiplied by: '  + str(mult_factor))
+            else:
+                plt.ylim([data_used.min()-100, data_used.max() + electr *add_it + 100])
+                plt.ylabel('Voltage (' + micro() + 'V)')
+            plt.title(types[idx] + ', spw no: ' + str(spw_used))
+            plt.xlabel('time(ms) from the detected beginning of the SPW')
             save_fold = save_folder + plot_folder
             fold_mng.create_folder(save_fold)
-            fig.savefig(save_fold + save_plots + str(spw_used) + ext,dpi=600)     
-            fig.savefig(save_fold + save_plots + str(spw_used) + '.eps',dpi=600) 
-               
+            fig.savefig(save_fold + save_plots + str(spw_used) + types[idx] + ext,dpi=600)     
+            fig.savefig(save_fold + save_plots + str(spw_used) + types[idx] + '.eps',dpi=600) 
+            #plt.show() 
             plt.close()   
 
         
