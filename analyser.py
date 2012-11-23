@@ -103,9 +103,10 @@ def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, par
     fig.savefig(save_fold + save_plots + '.eps',dpi=600)    
     #plt.show() 
     plt.close()   
-     
 
-def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', ext = '.pdf', win = [-20, 20]):
+
+
+def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20]):
     """ plots every spw separately (in all electrodes)"""
     
     
@@ -129,20 +130,7 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
     before_pts = ispw.ms2pts(win[0], fs)
     after_pts = ispw.ms2pts(win[1], fs)
     
-    
-#    timescale = 200000
-#    d= data[0,0,0:timescale]
-#    t = dat.get_timeline(d, fs, 'ms')
-#    sp1 = spikes[spikes['electrode'] == 0]['time']
-#    sp = ispw.ms2pts(sp1, fs)
-#    sp = sp[sp < timescale]
-#    sp = sp.astype('i4')
-#   # ispw.ms2pts(dat,fs)
-#    plt.plot(t, d) 
-#    plt.plot(t[sp], d[sp],'go')
-#    plt.show()
-#    import pdb; pdb.set_trace() 
-    
+    print 'plotting the data and their spikes'
     add_it = 150
     for idx, typ in enumerate([initiated, spontaneous]):
         #data[:, ]
@@ -158,43 +146,36 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
             t = dat.get_timeline(data_used[0, :], fs, 'ms') + win[0]
             spikes_used = spikes[spikes['spw_no'] == spw_used]
             
+            fig = plt.figure()
             for electr in range(np.size(data_used, 0)):
                
-                plt.plot(t, data_used[electr, :] + add_it * electr, color = colors[electr])
+                plt.plot(t, data_used[electr, :] + add_it * electr,  'k') #color = colors[electr],
                 spikes_plot = spikes_used[spikes_used['electrode'] == electr]['time']
                 spikes_idx = (-ispw.ms2pts(spw['spw_start'],fs).astype('i4') +
                               ispw.ms2pts(spikes_plot, fs).astype('i4')-
                               before_pts).astype(int)
                                 #(spw['spw_start'] - spikes_used)#spw_start - ispw.ms2pts(spikes_used[spikes_used['electrode'] == electr]['time'],fs) - ispw.ms2pts(win[0], fs)
-                plt.plot(t[spikes_idx], data_used[electr, spikes_idx] + add_it * electr, 'go')
-            plt.show()
                 
+                if spikes_filter != []:
+                    import pdb; pdb.set_trace()
                 
-#                import pdb; pdb.set_trace()
-#                if np.size(spikes_used['electrode']) == 1:
-#                    if spikes_used['electrode'] == electr:
-#                        time_of_spike = spw_start - ispw.ms2pts(spikes_used['time'], fs)
-#                        plt.plot(t[time_of_spike], data_used[electr, time_of_spike], 'go')
-                        
-                        
-#                elif np.size(spikes_used['electrode']) > 1:
-#                    pass
                     
-                #spike_electr = spikes_used['electrode'] == electr
-                #if spike_electr != False:
-                #    import pdb; pdb.set_trace()
-                #    if np.size(spike_electr, 0) 
-                #    spike_electr = spikes_used[spike_electr]['spw_no']
+                spikes_idx = spikes_idx[spikes_idx < np.size(data_used,1)]
+                #plt.plot(t[spikes_idx], data_used[electr, spikes_idx] + add_it * electr - 5, 'k*', linewidth = 6.)
+                plt.scatter(t[spikes_idx], data_used[electr, spikes_idx] + add_it * electr - 20, s = 25., marker = '*')
                 
-                #plt.plot(t[])
-            #plt.xlim([min(t), max(t)])
             
-                
-                
-        
-            
-            #import pdb; pdb.set_trace() 
-        plt.plot()
+            plt.xlim([t[0], t[-1]])
+            #import pdb; pdb.set_trace()
+            plt.ylim([data_used.min()-100, data_used.max() + electr *add_it + 100])
+            plt.title(types[idx])
+            save_fold = save_folder + plot_folder
+            fold_mng.create_folder(save_fold)
+            fig.savefig(save_fold + save_plots + str(spw_used) + ext,dpi=600)     
+            fig.savefig(save_fold + save_plots + str(spw_used) + '.eps',dpi=600) 
+               
+            plt.close()   
+
         
 def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_file, spw_file, dist_file, ext):
     """ it divides SPWs to two groups - close and far from the spike and alignes them, and plots together"""

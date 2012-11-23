@@ -239,7 +239,7 @@ def up_filtered(save_folder, save_file = 'spw_data.npz', load_file = "data_dspl.
         print 'raw data was already filtered' 
     gc.collect()
     
-def up_extraspikes(save_folder, save_file = "ex_spikes", load_file = "data_dspl.npz", reanalize = False):
+def up_extraspikes(save_folder, save_file = "ex_spikes", load_file = "data_dspl.npz", spikes_filter = 'filter_', reanalize = False):
     """ finding extracellular spikes in the data """
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -247,7 +247,7 @@ def up_extraspikes(save_folder, save_file = "ex_spikes", load_file = "data_dspl.
     # check if this file already exists
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:  
-        ispw.update_extraspikes(data_load = load_file, save_folder = save_folder, save_file = save_file)
+        ispw.update_extraspikes(data_load = load_file, save_folder = save_folder, save_file = save_file, save_filter = spikes_filter)
     else:
         print 'spikes were already found'
     gc.collect()

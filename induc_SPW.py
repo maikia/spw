@@ -303,7 +303,7 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
     return data_filt, fs
 
 
-def update_extraspikes(data_load, save_folder, save_file = "ex_spikes"):
+def update_extraspikes(data_load, save_folder, save_file = "ex_spikes", save_filter = 'fast_data_'):
     """ finds and updates the detection of extracellular spikes"""
     
     npzfile = np.load(save_folder + data_load)
@@ -328,7 +328,7 @@ def update_extraspikes(data_load, save_folder, save_file = "ex_spikes"):
             N = 100
         for trace in range(np.size(data,1)):
             data_used = data[electr, trace, :]
-            filename_fast = 'fast_data_'+str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
+            filename_fast = save_filter +str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
             data_fast, fs = load_create(folder_name, filename_fast, freq_fast, fs, data_used, N)
             spike_ampl, spike_idxs = fes.find_extra_spikes(data_used, data_fast, fs) #(data[electr][trace], fs)
             del data_fast
