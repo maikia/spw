@@ -25,26 +25,27 @@ def find_above(data, thres):
     above - in bulean
     waves - in 01 format"""
     above = (data > thres)
-    waves = np.zeros(len(data))
-    waves[above != True] = 0
-    waves[above == True] = 1 
-    return waves
+    #waves = np.zeros(len(data))
+    #waves[above != True] = 0
+    #waves[above == True] = 1 
+    return above*1
 
 def find_startend(above):
     """ above must be give in 0 for no event and 1 for event 
     format"""
-    shifted = np.array(above)
+    shifted = above.copy()
     temp = shifted[0]
-    shifted[:-1] = above[1:]
-    shifted[-1] = temp
-    st_end = shifted - above # beginnings and ends of waves
+    #shifted[:-1] = above[1:]
+    #shifted[-1] = temp
+    #st_end = shifted - above # beginnings and ends of waves
+    st_end = np.diff(above)
     starts = np.where(st_end == 1)
     ends = np.where(st_end == -1)
     starts = starts[0]
     ends = ends[0]
+    
     # remove waves if wave have already started or didn't finish in the course
     # of the recordings
-
     if len(starts) > 1:
         if starts[0] > ends[0]:
             ends = np.setdiff1d(ends, ends[0])
@@ -52,6 +53,18 @@ def find_startend(above):
         if ends[-1] < starts[-1]:
             starts = np.setdiff1d(starts, starts[-1])
     return starts, ends+1
+
+def max_waves_bartex(data, starts, ends):
+    
+    maxs = []
+    idxs = []
+    for l,r in zip(starts, ends):
+        i = data[l:r].argmin()
+        m = data[i]
+        maxs.append(m)
+        idxs.append(i+l)
+    return np.array(maxs), np.array(idxs)
+        
 
 def max_waves(data, starts, ends):
     """ returns the maximums and its indexes of each wave 

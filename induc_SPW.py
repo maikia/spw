@@ -36,7 +36,7 @@ def detect_spikes(data, thres):
     returns indices of all the found waves """
     above = dw.find_above(data, thres)
     starts, ends = dw.find_startend(above)
-    maxs, indcs = dw.max_waves(data, starts, ends)
+    maxs, indcs = dw.max_waves_bartex(data, starts, ends)
     return indcs
 
 def detect_1spike(data, thres, fs, pulse_len = 500):
@@ -260,7 +260,7 @@ def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
         # detect only the first spike in the row 
         sp_idx_first = detect_1spike(data[0, trace, :], spiking_thres, fs, pulse_len)
         sp_idx_a = detect_spikes(data[0, trace, :], spiking_thres) # for detecting all the spikes 
-        #import pdb; pdb.set_trace()
+        
         
         typ = 'f8'
         spike_idxs_first = pts2ms(sp_idx_first, fs).astype(typ)
@@ -273,7 +273,20 @@ def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
             
         sp_all.append(np.rec.fromarrays([electrodes_all, traces_all, np.array(sp_idxs_all, dtype=typ)], names='electrode,trace,time'))
         sp_first.append(np.rec.fromarrays([electrodes_first, traces_first, np.array(spike_idxs_first, dtype=typ)], names='electrode,trace,time'))
-    
+#        import pdb; pdb.set_trace()
+#        part = [0, 200000]
+#        data_temp = data[0,0,part[0]:part[1]]
+#        
+#        t = dat.get_timeline(data_temp, fs, 'ms')
+#        plt.plot(t, data_temp)
+#        
+#        spik = np.concatenate(sp_first)
+#        spiks = ms2pts(spik['time'], fs).astype('i4')
+#        spiks_temp = spiks[(spiks < part[1]) & (spiks > part[0])]
+#        plt.plot(t[spiks_temp - part[0]], data_temp[spiks_temp - part[0]], 'go')
+        
+        
+        
     sp_all = np.concatenate(sp_all)
     sp_first = np.concatenate(sp_first)    
        
@@ -338,15 +351,16 @@ def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_sp
             spike_idxs = pts2ms(spike_idxs, fs).astype(typ)
             electrodes = np.ones(len(spike_idxs), dtype=np.int32)*electr
             traces = np.ones(len(spike_idxs), dtype=np.int32)*trace    
-            idx_all.append(np.rec.fromarrays([electrodes, traces, spike_idxs], names='electrode,trace,time'))
-            ampl_all.append(np.rec.fromarrays([electrodes, traces, np.array(spike_ampl, dtype=typ)], names='electrode,trace,time'))
+            idx_all.append(np.rec.fromarrays([electrodes, traces, spike_idxs,  np.array(spike_ampl, dtype=typ)], names='electrode,trace,time, amplitude'))
+            #ampl_all.append(np.rec.fromarrays([electrodes, traces, np.array(spike_ampl, dtype=typ)], names='electrode,trace,time'))
             del data_used
     
     #import pdb; pdb.set_trace()
-    ampl_all = np.concatenate(ampl_all)         
+    #ampl_all = np.concatenate(ampl_all)         
     idx_all = np.concatenate(idx_all)            
     
-    np.savez(save_folder + save_file, spike_idx = idx_all, spike_ampl = ampl_all, fs = fs)
+    #np.savez(save_folder + save_file, spike_idx = idx_all, spike_ampl = ampl_all, fs = fs)
+    np.savez(save_folder + save_file, spike_idx = idx_all, fs = fs)
     del data, idx_all, ampl_all, fs
 
 
@@ -491,6 +505,7 @@ def update_datafile(filename, ex_electr, save_folder, data_file = 'data'):
 
     data_all = []
     # do the same for every electrode given - read data
+    #print filename
     all_data, no_segments = dat.get_data(filename) 
     
     print
@@ -607,10 +622,10 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
     """ find in which electrode spikes have the highest amplitude"""
     
     allow_shift = 0.15
-    
+    #import pdb; pdb.set_trace() 
     npzfile         = np.load(save_folder + load_spike_file)
-    spike_idxs      = npzfile['spike_idxs']
-    ampls           = npzfile['ampls']
+    spike_idxs      = npzfile['spike_idx']
+    #ampls           = npzfile['ampls']
     fs              = npzfile['fs']
     npzfile.close()  
     print 'Looking for origin of each spike'
@@ -625,7 +640,7 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
         electr = spike['electrode']
         trace = spike['trace']
         sp_time = spike['time']
-        ams = ampls[(spike_idxs['time'] == sp_time) & (ampls['electrode'] == electr) & (ampls['trace'] == trace)]['time'][0]
+        ams = spike['amplitude']
 
         if (np.abs(sp_time - spike_old) < allow_shift) or (len(considered_spikes) == 0):
             # remember this one!
@@ -660,7 +675,7 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
     large_spikes = np.rec.fromarrays([electrode, trace, spike, amplitude], 
                                                names='electrode, trace, time, amplitude')  
     np.savez(save_folder + save_file, chosen_spikes = large_spikes)        
-    del spike_idxs, ampls, large_spikes    
+    del spike_idxs, large_spikes    
     
     
     
@@ -793,7 +808,7 @@ def update_induc_spont_spw(save_folder, save_file, load_distances, load_spwfile,
     """ checks which spws are initiated and which are sponteneaus"""
     
     npzfile    = np.load(save_folder + load_distances)
-    distances      = npzfile['dist_spwspike']  
+    distances      = npzfile['dist_spwspike'] 
     npzfile.close()    
     
     npzfile    = np.load(save_folder + load_spwfile)
@@ -801,9 +816,9 @@ def update_induc_spont_spw(save_folder, save_file, load_distances, load_spwfile,
     npzfile.close()   
     #before_pts = ispw.ms2pts(win[0], fs)
     #after_pts = ispw.ms2pts(win[1], fs)
-    
-    initiated_no = distances[distances['distance'] <= max_dist]['spw_no']
-    spont_no = distances[distances['distance'] > max_dist]['spw_no']
+    d = distances['distance']
+    initiated_no = distances[(d <= max_dist) & (d>=0)]['spw_no']
+    spont_no = distances[(d > max_dist) | (d<0)]['spw_no']
     
     #import pdb; pdb.set_trace() 
     init_set = np.in1d(ipsps['spw_no'], initiated_no, assume_unique= False)
@@ -825,7 +840,9 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
         spike_idxs      = npzfile['spikes_all'] # spikes_all
     fs              = npzfile['fs']
     npzfile.close()
+    
 
+    #allow_before = ms2pts(allow_before,fs)
     # load starts of spws
     npzfile         = np.load(save_folder + load_spwfile)
     ipsps      = npzfile['ipsps']  
@@ -842,17 +859,20 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
     #    ipsps_electr = ipsps[ipsps['electrode'] == electr]
         
     for trace in np.unique(ipsps['trace']):
-            print trace,
+            #print trace,
             spw_electr_trace = np.unique(ipsps[ipsps['trace'] == trace])
             spw_beginnings = np.unique(spw_electr_trace['spw_start'])
             spike_electr_trace = spike_idxs[spike_idxs['trace'] == trace]['time']
 
             if len(spike_electr_trace) > 0:
                 for spw in spw_beginnings:
-                    spw_numb = spw_electr_trace[spw_electr_trace['spw_start'] == spw]['spw_no'][0]
+                    #make sure that all spw_no are the same
+                    spw_numb = spw_electr_trace[spw_electr_trace['spw_start'] == spw]['spw_no']
+                    assert len(np.unique(spw_numb))==1
+                    spw_numb = spw_numb[0]
                     
-                    
-                    largest_spikes = spike_electr_trace[spike_electr_trace <= spw]
+                    #import pdb; pdb.set_trace()
+                    largest_spikes = np.sort(spike_electr_trace[(spike_electr_trace <= (spw))])
                     if len(largest_spikes) == 0:
                         spike_used = spike_electr_trace[0]
                     else:
