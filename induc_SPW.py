@@ -1182,14 +1182,13 @@ def update_SPW_ipsp_ampl(save_folder, save_file, data, fs):
 def update_ipsp_exSpikes(save_folder, save_file):
     pass
 
-def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_file):
+def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_file, spw_length = 80):
     # it looks for the ipsps within detected spws - separate for each electrode
     # it take very long to analyse so be patient!
     npzfile         = np.load(save_folder + load_datafile)
     data            = npzfile['data']
     fs              = npzfile['fs']
     npzfile.close()
-
     #import pdb; pdb.set_trace()
     
     # load starts of spws
@@ -1198,102 +1197,96 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
     npzfile.close()
 
     npzfile         = np.load(save_folder + load_waves)
-    spw_starts      = npzfile['starts']
-    spw_ends        = npzfile['ends']
+    spw_details      = npzfile['spw_details']
     npzfile.close()
     
+    spw_len_pts = ms2pts(spw_length, fs)
     print
     print "analyzing SPWs in electrode:",
-    plot_it = True
+    plot_it = False
     add_it = 100
     window = 0.5 # ms for calculating moving average
     window = ms2pts(window, fs)
     spw_ipsps = []
     
+    
     # take each SPW separately and find ipsps
-    spw_len = len(np.unique(spw_spikes['spw_no']))
-    for spw in np.unique(spw_spikes['spw_no']):
+    spw_len = len(np.unique(spw_details['spw_no']))
+    for spw in np.unique(spw_details['spw_no']):
         print str(spw) + '/' + str(spw_len)
         
-        spw_spike_used = spw_spikes[spw_spikes['spw_no'] == spw]
+        spw_used = spw_details[spw_details['spw_no'] == spw]
+        trace = int(spw_used['trace'][0])
+        spw_no = int(spw_used['spw_no'][0])
+        
+        # always use minimum detected start for this SPW
+        min_start = min(spw_used['spw_start'])
+        min_start_pts = ms2pts(min_start, fs).astype(int)
         for electr in range(np.size(data,0)):
-            # check if in this electrode spw was recorded
-
-            exists = electr in np.unique(spw_spike_used['electrode'])                
+            # no matter if wave was detected in this electrode or not, still check for IPSPS
+            # as start use the earliest start found in any electrdoe for this spw
+            data_used = data[electr, trace, min_start_pts:min_start_pts + spw_len_pts]
+                      
+            # calculate moving average  
+            temp, moved_avg = filt.remove_baseloc(data_used, window)  
+            rest_win = len(data_used) - np.floor(len(data_used)%window)
             
-            # this electrode was recorded
-            if exists:
-                spw_electr_used = spw_spike_used[spw_spike_used['electrode'] == electr]
-                trace = int(spw_electr_used['trace'][0])
-                start_ms = spw_electr_used['spw_start'][0]
-                end_ms = spw_electr_used['spw_end'][0]
-                start  = ms2pts(start_ms, fs).astype(int)
-                end = ms2pts(end_ms, fs).astype(int)
-                spw_no = spw_electr_used['spw_no'][0]
+            prepare4mean = np.reshape(moved_avg[0:rest_win], [rest_win/window, window])
+            meanEach = np.mean(prepare4mean.T, 0)
+             
+            err_allowed = 1 #mV
+            mean_temp   = meanEach[0]
+            switch      = 1 # looking for start of rise
+            maxs, mins  = [], []
+            
+            # find ipsps - where the bins start changing their amplitude
+            for idx, m in enumerate(meanEach):
+                if m * switch > (mean_temp + err_allowed)*switch:
+                    # found it (rise or fall)
+                    detected = np.argmin(data_used[(idx-1)*window : (idx+1)*window] * switch)
+                    if switch >0:
+                        maxs.append(detected + (idx-1)*window)
+                    else:
+                        mins.append(detected + (idx-1)*window)
+                    switch = switch * -1 # looking for start of fall
                 
-                data_used = data[electr, trace, start:end]
-                          
-                # calculate moving average  
-                temp, moved_avg = filt.remove_baseloc(data_used, window)  
-                rest_win = len(data_used) - np.floor(len(data_used)%window)
+                mean_temp = m
                 
-                prepare4mean = np.reshape(moved_avg[0:rest_win], [rest_win/window, window])
-                meanEach = np.mean(prepare4mean.T, 0)
-                 
-                err_allowed = 1 #mV
-                mean_temp   = meanEach[0]
-                switch      = 1 # looking for start of rise
-                maxs, mins  = [], []
+            if plot_it:
+                t = dat.get_timeline(data_used, fs, 'ms') + min_start #spw_used['spw_start'][0]
+                plt.plot(t, data_used + add_it*electr)   
+                plt.plot(t[maxs], data_used[maxs] + add_it*electr, 'r<')
+                plt.plot(t[mins], data_used[mins] + add_it*electr, 'b<')
                 
-                # find ipsps - where the bins start changing their amplitude
-                for idx, m in enumerate(meanEach):
-                    if m * switch > (mean_temp + err_allowed)*switch:
-                        # found it (rise or fall)
-                        detected = np.argmin(data_used[(idx-1)*window : (idx+1)*window] * switch)
-                        if switch >0:
-                            maxs.append(detected + (idx-1)*window)
-                        else:
-                            mins.append(detected + (idx-1)*window)
-                        switch = switch * -1 # looking for start of fall
-                    
-                    mean_temp = m
-                    
-                if plot_it:
-                    t = dat.get_timeline(data_used, fs, 'ms') + spw_electr_used['spw_start'][0]
-                    plt.plot(t, data_used + add_it*electr)   
-                    plt.plot(t[maxs], data_used[maxs] + add_it*electr, 'r<')
-                    plt.plot(t[mins], data_used[mins] + add_it*electr, 'b<')
-                    
-                typ = 'f8'
-                mini = pts2ms(maxs,fs) + spw_electr_used['spw_start'][0]
-                mini = np.append(mini,spw_electr_used['spw_end'][0])
+            typ = 'f8'
+            mini = pts2ms(maxs,fs) + min_start #spw_electr_used['spw_start'][0]
+            #mini = np.append(mini,spw_electr_used['spw_end'][0])
 
-                ipsp_start = mini[:-1].astype('f8')
-                ipsp_end = mini[1:].astype('f8')
-                electrodes = np.ones(len(ipsp_start), dtype=typ)*electr
-                traces = np.ones(len(ipsp_start), dtype=typ)*trace
-                spw_num = np.ones(len(ipsp_start), dtype=typ)*spw_no
-                ipsp_no = np.arange(1,len(mini)).astype(typ)
+            ipsp_start = mini.astype('f8')
+            #ipsp_end = mini[1:].astype('f8')
+            electrodes = np.ones(len(ipsp_start), dtype=typ)*electr
+            traces = np.ones(len(ipsp_start), dtype=typ)*trace
+            spw_num = np.ones(len(ipsp_start), dtype=typ)*spw_no
+            ipsp_no = np.arange(0,len(mini)).astype(typ)
 
-
-                spw_ipsps.append(np.rec.fromarrays([electrodes, traces, spw_num,
-                                                        ipsp_start, ipsp_end, ipsp_no], 
-                                                       names='electrode,trace, spw_no, ipsp_start, ipsp_end, ipsp_no'))
-                
-                
-                if plot_it: 
-                    plt.plot(t, moved_avg + add_it*electr)
-        #import pdb; pdb.set_trace() 
+            #import pdb; pdb.set_trace()  
+            spw_ipsps.append(np.rec.fromarrays([electrodes, traces, spw_num,
+                                                    ipsp_start, ipsp_no], 
+                                                   names='electrode,trace, spw_no, ipsp_start, ipsp_no'))
+            
+            
+            if plot_it: 
+                plt.plot(t, moved_avg + add_it*electr)
 
         if plot_it:
             plt.show()
     spw_ipsps = np.concatenate(spw_ipsps)
     np.savez(save_folder + save_file, spw_ipsps = spw_ipsps) 
-    del data, spw_spikes 
+    del data, spw_details 
       
 
 
-def update_SPWspikes(load_spwsfile, save_folder, data_file):
+def update_highWaves_numb(load_spwsfile, save_folder, data_file):
     # reject all the SPWs where there is less than min_no_wave spws detected, 
     # check which spws belog together and save them
     # it also numbers SPWs

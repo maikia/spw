@@ -76,7 +76,7 @@ def up_highWaves(save_folder, save_file = "data_movavg.npz", load_datafile = 'da
         print 'raw data was already moved to the baseline' 
     gc.collect()
     
-def up_spws_spikes(save_folder, save_file = 'spws_params.npz', load_spwsfile = 'spws_potential', reanalize = False):
+def up_highWaves_numb(save_folder, save_file = 'spws_params.npz', load_spwsfile = 'spws_potential', reanalize = False):
     """ it finds the characteristics of each spw"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -86,7 +86,7 @@ def up_spws_spikes(save_folder, save_file = 'spws_params.npz', load_spwsfile = '
     if reanalize or not exists:   
         # load spike params
        
-        ispw.update_SPWspikes(load_spwsfile, save_folder, save_file)
+        ispw.update_highWaves_numb(load_spwsfile, save_folder, save_file)
     else:
         print 'spws were already analysed'    
     gc.collect()

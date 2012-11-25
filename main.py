@@ -69,19 +69,13 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         updater.up_highWaves(save_folder, save_file = SPWs_potential, load_datafile = raw_baselined,reanalize = reanalize)
  
     SPWs_potential_numb     = 'potential_SPWs_numbered.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # it numbers which wave is the same SPWs and asigns number to them
-        updater.up_spws_spikes(save_folder, save_file = SPWs_potential_numb, load_spwsfile = SPWs_potential, reanalize = reanalize)
-
-# is it really needed??    
-#    SPWs_spikes_ampl= 'spw_spikes_ampl.npz'
-#    if run_all_functions:
-#        # correct here!
-#        updater.up_spws_spikes_ampl(save_folder, save_file = SPWs_spikes_ampl, load_spwsspike = SPWs_spikes, load_spikefile = spikes_params, reanalize = reanalize)
+        updater.up_highWaves_numb(save_folder, save_file = SPWs_potential_numb, load_spwsfile = SPWs_potential, reanalize = reanalize)
     
     SPWs_ipsps      = 'spws_params.npz' #'spws_ipsps.npz'
-    if run_all_functions:
-        updater.up_SPW_ipsp(save_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_waves = SPWs_potential, load_spikes = spikes_largest, reanalize = reanalize)
+    if not run_all_functions:
+        updater.up_SPW_ipsp(save_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_waves = SPWs_potential_numb, load_spikes = spikes_largest, reanalize = reanalize)
     
     
     SPWs_ipsps_beg  = 'spw_ipsps_beg.npz'
