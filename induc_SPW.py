@@ -327,7 +327,7 @@ def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_sp
     fs = npzfile['fs'] 
     npzfile.close()
        
-    freq_fast = 800.
+    freq_fast = 750.
     # find extracellular spikes
     folder_name = save_folder + filter_folder
     N = 1000
@@ -345,17 +345,16 @@ def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_sp
             data_used = data[electr, trace, :]
             filename_fast = save_filter +str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
             data_fast, fs = load_create(folder_name, filename_fast, freq_fast, fs, data_used, N)
-            spike_ampl, spike_idxs = fes.find_extra_spikes(data_used, data_fast, fs) #(data[electr][trace], fs)
+            spike_ampl, spike_idxs = fes.find_extra_spikes(data_used, data_fast, fs) 
             del data_fast
             typ = 'f8'
             spike_idxs = pts2ms(spike_idxs, fs).astype(typ)
             electrodes = np.ones(len(spike_idxs), dtype=np.int32)*electr
             traces = np.ones(len(spike_idxs), dtype=np.int32)*trace    
             idx_all.append(np.rec.fromarrays([electrodes, traces, spike_idxs,  np.array(spike_ampl, dtype=typ)], names='electrode,trace,time, amplitude'))
-            #ampl_all.append(np.rec.fromarrays([electrodes, traces, np.array(spike_ampl, dtype=typ)], names='electrode,trace,time'))
             del data_used
     
-    #import pdb; pdb.set_trace()
+        
     #ampl_all = np.concatenate(ampl_all)         
     idx_all = np.concatenate(idx_all)            
     

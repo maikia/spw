@@ -24,6 +24,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     delete_old = False #!!!!
     
     run_all_functions = False
+    
     if delete_old:
         fold_mng.remove_folder(save_folder)
     win = [0, 0]
@@ -31,21 +32,25 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     raw_data        = 'data.npz'
     if run_all_functions:
+        # reads the raw data from the file
         updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, reanalize = reanalize)
     
     plot_folder = 'full_data/'
     save_plots = 'data'
     if run_all_functions:
+        # saves part of the data 
         analyser.display_data(save_folder, plot_folder, save_plots, raw_data, trace = 0, part = [0, 10000], ext = ext)
     
     raw_baselined   = "data_bas.npz"
     if run_all_functions:
+        # removes the baseline
         updater.up_databas(save_folder, save_file = raw_baselined, load_file = raw_data, reanalize = reanalize)
     
     spikes_raw      = 'spikes.npz'
     spikes_filter = 'fast_data_'
     filter_folder = 'filtered/'
     if run_all_functions:
+        # finds all the extracellular spikes
         updater.up_extraspikes(save_folder, filter_folder, save_file = spikes_raw, load_file = raw_baselined, spikes_filter =  spikes_filter, reanalize = reanalize)
     
     spikes_params   = 'spikes_params.npz'
@@ -149,62 +154,13 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         
         spikePerElectrode = 'spike_per_electrode'
-        if not run_all_functions:
+        if run_all_functions:
             analyser.plot_spike(save_folder, solutions_folder + spikePerElectrode + '/', save_plots = spikePerElectrode, 
                             spike_data = spikes_inSPWs, spw_data = induc_spont_spw, 
                             ext = ext, win = win)
     
     
-    #ipsp_exSpikes = 'ipsp_exSpikes.npz'
-    #updater.update_ipsp_exSpikes(save_folder, save_file = ipsp_exSpikes)
-#    def plot_extra_spike_distribut(save_folder, solutions_fold+spikes_inSPWs + '/', save_plots = spikes_inSPWs, spike_data = spikes_params, spw_data = SPWs_ipsps_beg):
-#    """ it takes the spikes (max amplitude) for each SPW """
 
-    
-
-
-#    clean_filter = [-1, 2] # filter the data for using for further analysis
-#    raw_clean_data = 'clean_data.npz'
-#    updater.up_filtered(save_folder, save_file = raw_clean_data, load_file = raw_baselined, freq = clean_filter, reanalize = reanalize)
-#    
-#    spw_data = "spws.npz"
-#    updater.up_spws(save_folder, save_file = spw_data, load_file = raw_clean_data, reanalize = reanalize)
-    
-    
-    
-    
-#    updater.up_downsample(save_folder)
-    
-#    SPW_freq = [1.5, 500.0]
-#    ripple_freq = [100.0, 300.0]
-    fast_freq = [500.0, -1]
-    smooth_freq = [500, 2000]
-#    updater.up_filtered(save_folder, SPW_freq, save_file = 'spw_data')
-#    updater.up_filtered(save_folder, ripple_freq, save_file = "ripple_data")
-    ##updater.up_filtered(save_folder, fast_freq, save_file = 'fast_data')
-    #updater.up_filtered(save_folder, smooth_freq, save_file = 'smooth_data')
-    
-    #updater.up_extraspikes(save_folder)
-    #updater.up_expikes_params(save_folder)
-##    
-#    updater.up_spws(save_folder)
-#    updater.up_ipsp(save_folder)
-#    updater.up_ripples(save_folder)
-#    updater.up_spw_ripple(save_folder)
-
-    #updater.up_dist_fromSPW(save_folder, intra = intr_electrode)
-#    
-##    
-#    if intr_electrode:
-#        updater.up_intrafile(filename, save_folder)
-        #updater.up_intraSpikes(save_folder)
-        #updater.up_dist_fromSpike(save_folder, intr_electrode)
-        #updater.up_dist_SpwfromSpike(save_folder)
-        
-#    if intr_electrode == 1:
-#        # intracellular electrode was recorded and should be processed
-#        updater.up_intrafile(filename, save_folder, data_part = data_part)
-#        updater.up_downsample(save_folder, dspl = 2)
     
 def analyse_all(filename, save_folder, intra = 1): 
     ext = '.pdf'  
@@ -230,30 +186,9 @@ def analyse_all(filename, save_folder, intra = 1):
     #analyser.plot_extra_params(save_folder, ext)
     
     if intra == 1:
-        #analyser.plot_extra_params_novel(save_folder, save_name = 'chosen_spikes.npz', ext = ext) # <-- popraw!
-        #analyser.detect_cell4spikes(save_folder, save_name = 'chosen_spikes.npz')
-        #analyser.save_chosen(save_folder, save_name = 'chosen_spikes.npz', save_ext = '.png')
-        #analyser.max_between_spikes(save_folder,  load_chosen  = 'chosen_idx_val.npz', save_name = 'spike_maxs.npz', save_ext = ext)
-        
+
         analyser.spw_spike_plotter(save_folder, save_name = 'main_spw', save_ext = ext)
-        #analyser.find_ipsps(save_folder, load_file = 'IPSPs.npz', save_name = 'isps_clean', save_ext = ext)
-        #analyser.plot_distSPWfromSpike(save_folder, save_ext = ext)
-   
-    #analyser.exspikes_clust_separate(save_folder, load_chosen = 'chosen_idx_val.npz', save_clust = 'exclust_sep', save_ext = ext)
-    #analyser.plot_clust(save_folder, load_clust = 'exclust_sep.npz', save_ext = ext)
-    #if intra == 1:
-        #analyser.find_clust_extraspikes(save_folder, n_clusters = 3, save_name = 'extra_clusters', save_clust = 'extra_clusters', save_ext = ext)
-        #analyser.plot_extra_clusters(save_folder, save_name = 'extra_spikes_clust', save_clust = 'extra_clusters.npz', save_ext = ext, win = [-1, 2])
-        #analyser.plot_hist_dist_ex2intra(save_folder, ext, read_clust = 'extra_clusters.npz')
-        #analyser.plot_hist_dist_ex2SPW(save_folder, ext, read_clust = 'extra_clusters.npz')
 
-
-#
-#f_name = ''
-
-  
-#save_folder = '/home/maja/PhDProject/SPWs/SPWs/saved_data/cell5/part1_test/'
-#save_folder = '/home/maja/PhDProject/SPWs/SPWs/saved_data/cell6/test'
 
 
 if __name__=='__main__':
@@ -267,10 +202,10 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        #for nex in range(len(all)):
-        for nex in [15, 17]: #range(1, 15):
+        for nex in [0,1]: #range(12, len(all)):
+        #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
-            
+            #import pdb; pdb.set_trace()
             ex_electr = range(intra, 7+intra)
             print 'intra ' + str(intra)
             work_on_all(filename, save_folder, ex_electr, intra)
