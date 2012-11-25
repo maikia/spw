@@ -917,25 +917,45 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
 def count_coincident_ipsps(spw_ipsps_trace, shift_ipsp):
     """counts number of IPSPs in different electrodes seperated by not more
     than shift_ipsp"""
-    spw_ipsps_trace.sort(order='ipsp_start')
-    spw_ipsps_intervals = np.diff(spw_ipsps_trace['ipsp_start'])
+    i = np.argsort(spw_ipsps_trace['ipsp_start'])
+    spw_ipsps_sorted = spw_ipsps_trace[i]
+    spw_ipsps_intervals = np.diff(spw_ipsps_sorted['ipsp_start'])
     group_sep = spw_ipsps_intervals>shift_ipsp
     group_sep = np.concatenate([[0], group_sep])
     
     #calculate group IDs by counting seperators
     group_idx = np.cumsum(group_sep)
-    electrode = spw_ipsps_trace['electrode']
+    electrode = spw_ipsps_sorted['electrode']
 
     #count number of disitinct electrodes fin each IPSP group
     n_uniq_electrodes_per_group = [len(np.unique(electrode[group_idx==group])) for group in range(group_idx.max()+1)]
     n_uniq_electrodes_per_group = np.array(n_uniq_electrodes_per_group)
+    
     #assign to each IPSP number of coincident IPSPs in other electrodes
     n_electrodes_per_ipsp = n_uniq_electrodes_per_group[group_idx]
     
-    return n_electrodes_per_ipsp
+    #inverse sorting
+    inverse_i = np.argsort(i)
+    return n_electrodes_per_ipsp[inverse_i]
 
-def calculate_ipsp_rise():
-    pass
+def calculate_ipsp_rise(spw_ipsps_trace, data_trace, fs):  
+    """calculate amplitude rise between IPSPs. for last IPSP in SPW/electrode
+    return 0 """
+    
+    i = np.argsort(spw_ipsps_trace, order=['spw_no', 'electrode', 'ipsp_start'])
+    spw_ipsps_sorted = spw_ipsps_trace[i]
+    
+    time_pts = ms2pts(spw_ipsps_sorted['ipsp_start'], fs).astype(np.uint32)
+    ipsp_ampl = data_trace[spw_ipsps_sorted['electrode'], time_pts]
+    ampl_rise = np.concatenate([np.diff(ipsp_ampl), [0]])
+    
+    #set amplitude to zero for last IPSP in each electrode
+    last_ipsp = np.append(np.diff(spw_ipsps_sorted['electrode'])!=0, [True])
+    ampl_rise[last_ipsp] = 0
+    return  ampl_rise
+    
+    
+    
 def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext):
     """ checks all the ipsps and corrects them for each spw"""
 
@@ -959,13 +979,22 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     #import pdb; pdb.set_trace()
     shift_ipsp = 1 # ms
     min_electr = 3 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-
+    expected_min_ipsp_ampl = 20 # microV
+     
+    spw_ipsps_list = []
     all_traces= np.unique(spw_ipsps['trace'])
+    
     for trace in all_traces:
         spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
+        
         n_electrodes_per_ipsp = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
         
-        spw_ipsps_trace = spw_ipsps_trace[n_electrodes_per_ipsp<=min_electr]
+        ipsp_rise = calculate_ipsp_rise(spw_ipsps_trace, data[:, trace, :], fs)
+        
+        spw_ipsps_trace = spw_ipsps_trace[(ipsp_rise > expected_min_ipsp_ampl) &
+                                          (n_electrodes_per_ipsp >= min_electr)]
+        
+        spw_ipsps_list.append(spw_ipsps_trace)
 
         
         
@@ -978,7 +1007,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     
     shift_spike= 0.5 #ms
     proper_ipsps = []
-    expected_min_ipsp_ampl = 20 # microV
+
     
     # go through all the spws
     for spw_no in np.unique(spw_ipsps['spw_no']):
