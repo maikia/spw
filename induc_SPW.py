@@ -928,7 +928,9 @@ def count_coincident_ipsps(spw_ipsps_trace, shift_ipsp):
     electrode = spw_ipsps_sorted['electrode']
 
     #count number of disitinct electrodes fin each IPSP group
-    n_uniq_electrodes_per_group = [len(np.unique(electrode[group_idx==group])) for group in range(group_idx.max()+1)]
+    n_uniq_electrodes_per_group = [len(np.unique(electrode[group_idx==group])) 
+                                   for group in range(group_idx.max()+1)]
+    
     n_uniq_electrodes_per_group = np.array(n_uniq_electrodes_per_group)
     
     #assign to each IPSP number of coincident IPSPs in other electrodes
