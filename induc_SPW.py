@@ -621,59 +621,78 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
     """ find in which electrode spikes have the highest amplitude"""
     
     allow_shift = 0.15
+    
     #import pdb; pdb.set_trace() 
     npzfile         = np.load(save_folder + load_spike_file)
     spike_idxs      = npzfile['spike_idx']
-    #ampls           = npzfile['ampls']
     fs              = npzfile['fs']
     npzfile.close()  
     print 'Looking for origin of each spike'
-    # loop trough all the detected spikes sorted timewise
-    sort_idx        = np.argsort(spike_idxs['time'])
-    posortowane     = spike_idxs[sort_idx]
-    spike_old = -1
-    considered_spikes, considered_ampls = [], []
-    el,tr,sp,am = [],[],[],[]
-    for (idx, spike) in enumerate(posortowane):
-        # find amplitude of this particular spike
-        electr = spike['electrode']
-        trace = spike['trace']
-        sp_time = spike['time']
-        ams = spike['amplitude']
+    
 
-        if (np.abs(sp_time - spike_old) < allow_shift) or (len(considered_spikes) == 0):
-            # remember this one!
-            considered_spikes.append(spike)
-            considered_ampls.append(ams)
-        else:
-            # it is necessary to sum up previous considered_spikes and start new ones
-            highest_ampl = np.argmax(considered_ampls)
-            if np.size(highest_ampl) > 1:
-                highest_ampl = highest_ampl[0]
-            wining_spike = considered_spikes[highest_ampl] 
+    
+    # make sure that you are not comparing spikes which appear on different traces
+    for trace in np.unique(spike_idxs['trace']):
+        # loop trough all the detected spikes sorted timewise
+        
+        spike_idxs_used = spike_idxs[spike_idxs['trace'] == trace]
+        
+        sort_idx        = np.argsort(spike_idxs_used['time'])
+        posortowane     = spike_idxs_used[sort_idx]
+        
+        spike_old = -1
+        considered_spikes, considered_ampls = [], []
+        el,tr,sp,am = [],[],[],[]
+        
+        # check which spikes are enough close to each other to be considered one
+        for (idx, spike) in enumerate(posortowane):
+            # find amplitude of this particular spike
+            sp_time = spike['time']
+            ams = spike['amplitude']
+    
+            if (np.abs(sp_time - spike_old) < allow_shift) or (len(considered_spikes) == 0):
+                # remember this one! It's close enought to the previous one
+                considered_spikes.append(spike)
+                considered_ampls.append(ams)
+            else:
+                # it is necessary to sum up previous considered_spikes and start new ones
+                highest_ampl = np.argmax(considered_ampls)
+                if np.size(highest_ampl) > 1:
+                    highest_ampl = highest_ampl[0]
+                wining_spike = considered_spikes[highest_ampl] 
+                
+                el.append(wining_spike['electrode'])
+                tr.append(wining_spike['trace'])
+                sp.append(wining_spike['time'])
+                am.append(considered_ampls[highest_ampl])
+                
+                considered_ampls = []
+                considered_spikes = []
+                considered_spikes.append(spike)
+                considered_ampls.append(ams)
             
-            #print considered_spikes
-            #print wining_spike
-            el.append(wining_spike['electrode'])
-            tr.append(wining_spike['trace'])
-            sp.append(wining_spike['time'])
-            am.append(considered_ampls[highest_ampl])
-            
-            
-            considered_ampls = []
-            considered_spikes = []
-            considered_spikes.append(spike)
-            considered_ampls.append(ams)
-            
-        spike_old = spike['time']
+            if idx == len(posortowane):
+                # analyse the last spike(s) - repeat of above (might be improved in the future)
+                highest_ampl = np.argmax(considered_ampls)
+                if np.size(highest_ampl) > 1:
+                    highest_ampl = highest_ampl[0]
+                wining_spike = considered_spikes[highest_ampl] 
+
+                el.append(wining_spike['electrode'])
+                tr.append(wining_spike['trace'])
+                sp.append(wining_spike['time'])
+                am.append(considered_ampls[highest_ampl])
+                  
+            spike_old = spike['time']
         
     electrode = np.array(el, dtype='i4')
     trace = np.array(tr, dtype='i4')
     spike = np.array(sp, dtype='f8')    
     amplitude = np.array(am, dtype='f8')   
     large_spikes = np.rec.fromarrays([electrode, trace, spike, amplitude], 
-                                               names='electrode, trace, time, amplitude')  
-    np.savez(save_folder + save_file, chosen_spikes = large_spikes)        
+                                               names='electrode, trace, time, amplitude')     
+    
+    np.savez(save_folder + save_file, fs = fs, spike_idx = large_spikes)
     del spike_idxs, large_spikes    
     
     

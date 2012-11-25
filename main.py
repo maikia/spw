@@ -53,12 +53,15 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         # finds all the extracellular spikes
         updater.up_extraspikes(save_folder, filter_folder, save_file = spikes_raw, load_file = raw_baselined, spikes_filter =  spikes_filter, reanalize = reanalize)
     
-    spikes_params   = 'spikes_params.npz'
-    if run_all_functions:
-        updater.up_expikes_params(save_folder, save_file = spikes_params, load_datafile = raw_baselined, load_spikefile = spikes_raw, reanalize = reanalize)
+    # this funtion might be used for future spike clustering, but shall not be used for other reasons so far
+    #spikes_params   = 'spikes_params.npz'
+    #if run_all_functions:
+    #    updater.up_expikes_params(save_folder, save_file = spikes_params, load_datafile = raw_baselined, load_spikefile = spikes_raw, reanalize = reanalize)
     
     spikes_largest = 'spikes_largest.npz'
     if run_all_functions:
+        # checks which spikes have the highest amplitude (if the same spike is detected in multiple electrodes)
+        #     only the spike of the highest amplitude will be kept - structrue stays the same
         updater.up_spikes_ampl(save_folder, save_file =spikes_largest, load_spike_file = spikes_raw, reanalize = reanalize)
      
     SPWs_potential  = 'potential_SPWs.npz'
@@ -67,11 +70,14 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     SPWs_spikes     = 'spws_spikes.npz'
     if run_all_functions:
-        #does not use previously selected largest spikes
-        updater.up_spws_spikes(save_folder, save_file = SPWs_spikes, load_spwsfile = SPWs_potential, load_spikefile = spikes_params, reanalize = reanalize)
+        #----> change so it does! does not use previously selected largest spikes
+        #updater.up_spws_spikes(save_folder, save_file = SPWs_spikes, load_spwsfile = SPWs_potential, load_spikefile = spikes_params, reanalize = reanalize)
+        # 
+        updater.up_spws_spikes(save_folder, save_file = SPWs_spikes, load_spwsfile = SPWs_potential, reanalize = reanalize)
     
     SPWs_spikes_ampl= 'spw_spikes_ampl.npz'
     if run_all_functions:
+        # correct here!
         updater.up_spws_spikes_ampl(save_folder, save_file = SPWs_spikes_ampl, load_spwsspike = SPWs_spikes, load_spikefile = spikes_params, reanalize = reanalize)
     
     SPWs_ipsps      = 'spws_params.npz' #'spws_ipsps.npz'
@@ -80,6 +86,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     SPWs_ipsps_beg  = 'spw_ipsps_beg.npz'
     if run_all_functions:
+        # !!!!!!!!!!!!!!!!!! divide to more functios, add correlation, etc!
         updater.up_spws_ipsp_beg(save_folder,  save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = SPWs_spikes_ampl, reanalize = reanalize, ext = ext)
     
     spikes_inSPWs = 'spikes_inSpw.npz'
@@ -202,7 +209,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [0,1]: #range(12, len(all)):
+        for nex in [1]: #range(12, len(all)):
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()
