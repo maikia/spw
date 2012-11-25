@@ -62,7 +62,7 @@ def get_data(fname, ifsaved = 0):
     #try:
     block = reader.read_block()
     #except ValueError:
-    #    import pdb; pdb.set_trace() 
+    #import pdb; pdb.set_trace() 
     data = []
     for i in range(len(block.segments)):
          

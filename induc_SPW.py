@@ -505,7 +505,6 @@ def update_datafile(filename, ex_electr, save_folder, data_file = 'data'):
 
     data_all = []
     # do the same for every electrode given - read data
-    #print filename
     all_data, no_segments = dat.get_data(filename) 
     
     print
@@ -606,6 +605,7 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
             traces = np.ones(len(spw_starts), dtype=np.int32)*trace 
             
             spws_starts.append(np.rec.fromarrays([electrodes, traces, spw_starts], names='electrode,trace,time'))
+            #import pdb; pdb.set_trace()
             spws_ends.append(np.rec.fromarrays([electrodes, traces, spw_ends], names='electrode,trace,time'))
                      
     spws_starts = np.concatenate(spws_starts)    

@@ -48,10 +48,17 @@ def find_startend(above):
     # of the recordings
     if len(starts) > 1:
         if starts[0] > ends[0]:
-            ends = np.setdiff1d(ends, ends[0])
-  
-        if ends[-1] < starts[-1]:
-            starts = np.setdiff1d(starts, starts[-1])
+            #ends = np.setdiff1d(ends, ends[0])
+            ends = ends[1:]
+        #import pdb; pdb.set_trace()
+        assert starts[0]<ends[0], ("spike start (%d) is later than end (%d)" %
+                                   (starts[0], ends[0]))
+        #if ends[-1] < starts[-1]:
+        #    starts = np.setdiff1d(starts, starts[-1])
+    if len(starts)>len(ends):
+        starts = starts[:len(ends)]
+    elif len(starts)<len(ends):
+        ends = ends[:len(starts)]
     return starts, ends+1
 
 def max_waves_bartex(data, starts, ends):
