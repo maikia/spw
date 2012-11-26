@@ -54,6 +54,19 @@ def test_calculate_ipsp_rise_multi_electrodes():
                               names='ipsp_start,spw_no,electrode')
     ampls = calculate_ipsp_rise(ipsps, data, Fs)
     
-    expected_ampls = np.array([1,1,0, 4, 0])
+    expected_ampls = np.array([4,1,0, 0, 1])
 
     assert (ampls==expected_ampls).all(), "%s != %s" % (ampls, expected_ampls)
+    
+def test_calculate_amplitude_of_IPSP():
+    electrode = [1, 2, 1, 2, 1]
+    data = np.vstack([np.zeros(10), np.arange(10), np.arange(10)])
+    ipsp_start = [1, 2, 5, 4, 7]
+    fs = 1000
+    
+    ipsps = np.rec.fromarrays([ipsp_start, electrode],
+                              names='ipsp_start,electrode')
+    
+    ampls = calculate_amplitude_of_IPSP(ipsps, data, fs)
+    expected_maxs = np.array([3, 1,1, 0, 0])
+    assert  (ampls==expected_maxs).all(), "%s != %s" % (ampls, expected_maxs)
