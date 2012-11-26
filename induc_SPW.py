@@ -1,10 +1,9 @@
 import scipy.signal as signal
-
+import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
 import os
 import spike_detection as fes
-import numpy as np
 from matplotlib import pyplot
 import pylab as plt
 import filtit as filt
@@ -956,12 +955,7 @@ def calculate_ipsp_rise(spw_ipsps_trace, data_trace, fs):
     #inverse sorting
     inverse_i = np.argsort(i)
     return  ampl_rise[inverse_i]
-    
-def define_spikes_closest2IPSP_starts(spikes, ipsps, shift_spike):
-    """ finds which spikes are the closest to the beginnings of IPSP but no 
-    further than shift_spike"""
-    import pdb; pdb.set_trace()
-    
+       
     
 
 def calculate_amplitude_of_IPSP(spw_ipsps_trace, data_trace, fs):
@@ -990,7 +984,35 @@ def calculate_amplitude_of_IPSP(spw_ipsps_trace, data_trace, fs):
     inverse_i = np.argsort(i)       
     return  ipsp_ampl[inverse_i]
     
+def define_spikes_closest2IPSP_starts(spikes, ipsps, shift_spike):
+    """ finds which spikes are the closest to the beginnings of IPSP but no 
+    further than shift_spike"""
+    
+    i_ipsp = np.argsort(ipsps, order=['spw_no', 'electrode', 'ipsp_start'])
+    ipsps_sorted = ipsps[i_ipsp]
+    i_spike = np.argsort(spikes, order=['spw_no', 'electrode', 'time'])
+    spikes_sorted = spikes[i_spike]    
+    
+    closest_events = []
+    for t in ipsps_sorted:
+        #import pdb; pdb.set_trace()
+        i = np.argsort(np.abs(t['ipsp_start']-spikes_sorted['time']))
+        i = i[(spikes_sorted['electrode']==t['electrode']) &
+             (spikes_sorted['spw_no']==t['spw_no'])]
+        closest = i[0] if len(i)>0 else np.nan
+        closest_events.append(closest)
+    s = take_element_or_nan(ipsps_sorted, np.array(closest_events))
+    #spikes_sorted[closest_events]
+    inverse_i = np.argsort(i_ipsp)       
+    return closest_events[inverse_i]
 
+def take_element_or_nan(x, i):
+    import pdb; pdb.set_trace()
+    y = np.zeros(len(x), dtype=x.dtype)
+    isnan = np.isnan(i)
+    y[i[~isnan].astype('i4')]=x[~isnan]
+    y[isnan]['spw_no'] = np.nan
+    return y
 
 
 def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext):
@@ -1022,6 +1044,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     
     for trace in all_traces:
         spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
+        spikes_trace = spw_spike[spw_spike['trace']==trace]
         
         # check in how many electrodes each IPSP appears
         n_electrodes_per_ipsp = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
@@ -1037,13 +1060,19 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
                                           (n_electrodes_per_ipsp >= min_electr)]
         
         # check which spikes are the closest to found beginnings of IPSPs 
-        # in each electrode separately (no further than shift_spike)
+        closest_spikes = define_spikes_closest2IPSP_starts(spikes_trace, spw_ipsps_trace, shift_spike)
         
-
+        # now combine all this together to detect where is the beginning of the spw
+        
+        
+        import pdb; pdb.set_trace()
         #spw_ipsps_list.append(spw_ipsps_trace)
         spw_ipsps_list = np.concatenate(spw_ipsps_trace)
         import pdb; pdb.set_trace()
         
+    
+    
+
 
         
         
