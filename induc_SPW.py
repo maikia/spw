@@ -975,7 +975,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     npzfile         = np.load(save_folder + load_spwsspike)
     spw_spike      = npzfile['chosen_spikes']  
     npzfile.close()     
-    import pdb; pdb.set_trace()
+    
     plot_it = True
     
     #import pdb; pdb.set_trace()
@@ -999,7 +999,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         spw_ipsps_list.append(spw_ipsps_trace)
 
         
-        
+    import pdb; pdb.set_trace()
             
         
         
