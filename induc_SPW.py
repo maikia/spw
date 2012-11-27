@@ -603,7 +603,6 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
             traces = np.ones(len(spw_starts), dtype=np.int32)*trace 
             
             spws_starts.append(np.rec.fromarrays([electrodes, traces, spw_starts], names='electrode,trace,time'))
-            #import pdb; pdb.set_trace()
             spws_ends.append(np.rec.fromarrays([electrodes, traces, spw_ends], names='electrode,trace,time'))
                      
     spws_starts = np.concatenate(spws_starts)    
@@ -1486,10 +1485,14 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
     window = ms2pts(window, fs)
     spw_ipsps = []
     
-    
+    import pdb; pdb.set_trace() 
     # take each SPW separately and find ipsps
     spw_len = len(np.unique(spw_details['spw_no']))
-    for spw in np.unique(spw_details['spw_no']):
+    all_spw_numbers = np.unique(spw_details['spw_no'])
+    for idx_spw, spw in enumerate(all_spw_numbers):
+#        if idx_spw < len(all_spw_numbers):
+#            spw_next = np.min(spw_details[spw_details['spw_no'] == all_spw_numbers[idx_spw + 1]]['spw_start'])
+#            spw_next = ms2pts(spw_next, fs).astype('i4')
         print str(spw) + '/' + str(spw_len)
         
         spw_used = spw_details[spw_details['spw_no'] == spw]
@@ -1502,6 +1505,12 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
         for electr in range(np.size(data,0)):
             # no matter if wave was detected in this electrode or not, still check for IPSPS
             # as start use the earliest start found in any electrdoe for this spw
+            #if idx_spw != len(all_spw_numbers):
+            #    #import pdb; pdb.set_trace()  
+            #    end_spw = min(spw_next, min_start_pts + spw_len_pts)
+            #else:
+            #    end_spw = min_start_pts + spw_len_pts
+                
             data_used = data[electr, trace, min_start_pts:min_start_pts + spw_len_pts]
                       
             # calculate moving average  
@@ -1558,6 +1567,7 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
 
         if plot_it:
             plt.show()
+    #import pdb; pdb.set_trace()  
     spw_ipsps = np.concatenate(spw_ipsps)
     np.savez(save_folder + save_file, spw_ipsps = spw_ipsps) 
     del data, spw_details 
@@ -1573,79 +1583,112 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
     # load starts of spws
     npzfile         = np.load(save_folder + load_spwsfile)
     spw_starts      = npzfile['starts']
-    #spw_ends        = npzfile['ends']
-    npzfile.close()
+    spw_ends        = npzfile['ends']
     
-    spw_details = []
-    min_no_electr = 0
+    npzfile.close()
+    #import pdb; pdb.set_trace() 
+    min_no_electr = 2
     max_move = 15 # ms
-
+    min_spw_length = 5 #ms
+    min_dist_between_starts = 20
     spw_details_temp = []
     spw_no = 0
+    a = 0
     no_traces = len(np.unique(spw_starts['trace']))
     for trace in np.unique(spw_starts['trace']):
         print 'trace: ' + str(trace + 1) + '/' + str(no_traces)
         
         # get spws for each electrode and check if it's the same
         spw_st_trace = spw_starts[(spw_starts['trace'] == trace)]
-        #spw_en_trace = spw_ends[(spw_ends['trace'] == trace)]
+        spw_en_trace = spw_ends[(spw_ends['trace'] == trace)]
         
         sort_idx = np.argsort(spw_st_trace['time'])
         spw_st_sorted = spw_st_trace[:,:,sort_idx]
-        #spw_en_sorted = spw_en_trace[:,:,sort_idx]
+        spw_en_sorted = spw_en_trace[:,:,sort_idx]
         
         same = 0
-        start_init, end_init = 0, 0 
-        
+        start_init = 0 
+        traces = []
+        electrodes = []
+        all_starts = []
         # analize every single SPW
+        
         for idx, next_spw_st in enumerate(spw_st_sorted):
-            #next_spw_en = spw_en_sorted[idx]
-            
             # check if start is enclosed between start and end of previous one and beginning is not 
             # further than max_move from new beginning
-            st_same = (start_init < next_spw_st['time']) 
-            #en_same = (end_init > next_spw_st['time'])
-            dist_same = abs(next_spw_st['time'] - start_init) < max_move
             
-            if st_same and dist_same:
-                same = same + 1
-                start_init = min(start_init, next_spw_st['time'])
-                #end_init = max(end_init, next_spw_en['time'])              
-
-            elif same >= min_no_electr:
-                # checks if this wave was detected in enough electrodes
-                same = 0
-                # save previous spws   
-                spw_details = spw_details + spw_details_temp
-                start_init = next_spw_st['time']
-                #end_init = next_spw_en['time']        
-                spw_details_temp = []
-                spw_no = spw_no + 1    
-            else:
-                # something wrong with previous SPW = remove it
-                spw_details_temp = []
-                start_init = next_spw_st['time']
-                #end_init = next_spw_en['time']
-                same = 0
-
+            
+            if ((spw_en_sorted[idx]['time'] -  next_spw_st['time']) > min_spw_length):
                 
-            # check the beginning of this SPWs
-            electr = next_spw_st['electrode']
-            trace = next_spw_st['trace']
-
-            # save temp details of this spw
-            typ = 'f8'
-            start = next_spw_st['time']
-            #end = next_spw_en['time']
-
-            spw_details_temp.append(np.rec.fromarrays([[electr], [trace] ,[start], [spw_no]], names='electrode,trace, spw_start, spw_no'))
+                st_same = (start_init < next_spw_st['time']) 
+                dist_same = abs(next_spw_st['time'] - start_init) < max_move
+                
+                if st_same and dist_same:
+                    # it's the same SPW
+                    same = same + 1
+                    start_init = min(start_init, next_spw_st['time']) 
     
-    #import pdb; pdb.set_trace()          
+                elif same >= min_no_electr:
+                    # checks if this wave was detected in enough electrodes
+                    same = 0
+                    # save the data for this SPW
+                    starts = min(all_starts)
+                    
+                    if len(spw_details_temp) > 0:
+                        # check if previous SPW was no closer than min_dist_between
+                        #import pdb; pdb.set_trace() 
+                        if starts - spw_details_temp[-1][-1]['spw_start'] > min_dist_between_starts:
+                            starts =  np.ones(len(electrodes), dtype='f8')*starts
+                            numbers = np.ones(len(electrodes), dtype='f8')*spw_no
+                            spw_details_temp.append(np.rec.fromarrays([electrodes, traces ,starts, numbers], names='electrode,trace, spw_start, spw_no'))
+                            spw_no = spw_no + 1
+                    else:
+                        # save previous end - either end or the maximum lenght of the spw
+                        #old_en = np.min(spw_en_sorted[idx]['time'], starts
+                                        
+                        starts =  np.ones(len(electrodes), dtype='f8')*starts
+                        numbers = np.ones(len(electrodes), dtype='f8')*spw_no
+                        spw_details_temp.append(np.rec.fromarrays([electrodes, traces ,starts, numbers], names='electrode,trace, spw_start, spw_no'))
+                        spw_no = spw_no + 1
+                        
+                    
+                    #print spw_no
+                    electrodes = []
+                    traces = []
+                    all_starts = []
+                    
+                    start_init = next_spw_st['time']
+                else:
+                    # spw not found in enough electrodes
+                    start_init = next_spw_st['time']
+                    same = 0
+    
+                    
+                # check the beginning of this SPWs
+                electrodes.append(next_spw_st['electrode'])
+                traces.append(next_spw_st['trace'])
+                all_starts.append(next_spw_st['time'])
+                # save temp details of this spw
+                #typ = 'f8'
+            
+#                print 'spw taken: ' + str(spw_en_sorted[idx]['time'] -  next_spw_st['time'])
+#            else:
+#                a = a +1 
+#                print 'removed spw: ' + str(spw_en_sorted[idx]['time'] -  next_spw_st['time']), a
+
+    
+            
     # do the same check as before but for the last SPW      
     if same >= min_no_electr - 1:
+
         # checks if this wave was detected in enough electrodes and save
-        spw_details = spw_details + spw_details_temp
-    spw_details = np.concatenate(spw_details)   
+        # save the data for this SPW
+        starts = min(all_starts)
+        starts =  np.ones(len(electrodes), dtype='f8')*starts
+        numbers = np.ones(len(electrodes), dtype='f8')*spw_no
+        spw_details_temp.append(np.rec.fromarrays([electrodes, traces ,starts, numbers], names='electrode,trace, spw_start, spw_no'))
+    spw_details = np.concatenate(spw_details_temp)   
+    #import pdb; pdb.set_trace() 
     np.savez(save_folder + data_file, spw_details = spw_details) 
     del spw_starts
 
