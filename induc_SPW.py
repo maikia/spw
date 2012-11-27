@@ -911,19 +911,29 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
                                                names='trace, spw_no, distance')                
     
     np.savez(save_folder + save_file, dist_spwspike = temp_spw) 
-    
 
-def count_coincident_ipsps(spw_ipsps_trace, shift_ipsp):
-    """counts number of IPSPs in different electrodes seperated by not more
-    than shift_ipsp"""
-    i = np.argsort(spw_ipsps_trace['ipsp_start'])
-    spw_ipsps_sorted = spw_ipsps_trace[i]
+def group_ipsps(spw_ipsps_trace, shift_ipsp):
+    """Assign coincident spikes (closer than shift_ipsp) to one group
+    and return the group's index"""
+    sort_order = np.argsort(spw_ipsps_trace['ipsp_start'])
+    spw_ipsps_sorted = spw_ipsps_trace[sort_order]
     spw_ipsps_intervals = np.diff(spw_ipsps_sorted['ipsp_start'])
     group_sep = spw_ipsps_intervals>shift_ipsp
     group_sep = np.concatenate([[0], group_sep])
     
     #calculate group IDs by counting seperators
     group_idx = np.cumsum(group_sep)
+    inverse_order = np.argsort(sort_order)
+    return group_idx[inverse_order]
+
+def count_coincident_ipsps(spw_ipsps_trace, shift_ipsp):
+    """counts number of IPSPs in different electrodes seperated by not more
+    than shift_ipsp"""
+    i = np.argsort(spw_ipsps_trace['ipsp_start'])
+    spw_ipsps_sorted = spw_ipsps_trace[i]
+    
+    group_idx = group_ipsps(spw_ipsps_sorted, shift_ipsp)
+    
     electrode = spw_ipsps_sorted['electrode']
 
     #count number of disitinct electrodes fin each IPSP group
@@ -985,7 +995,7 @@ def calculate_amplitude_of_IPSP(spw_ipsps_trace, data_trace, fs):
     inverse_i = np.argsort(sort_order)       
     return  ipsp_ampl[inverse_i]
     
-def define_spikes_closest2IPSP_starts(spikes, ipsps, shift_spike):
+def define_spikes_closest2IPSP_starts(spikes, ipsps):
     """ finds which spikes are the closest to the beginnings of IPSP but no 
     further than shift_spike"""
     
@@ -1008,13 +1018,58 @@ def define_spikes_closest2IPSP_starts(spikes, ipsps, shift_spike):
     return closest_events[inverse_i]
 
 def take_element_or_nan(x, i):
-    import pdb; pdb.set_trace()
     y = np.zeros(len(x), dtype=x.dtype)
     isnan = np.isnan(i)
     y[i[~isnan].astype('i4')]=x[~isnan]
     y[isnan]['spw_no'] = np.nan
     return y
 
+def add_rec_field(recarray, arr, field_name):
+    names = recarray.dtype.names
+    field_data = [recarray[d] for d in names]
+    field_data.append(arr)
+    new_names = ','.join(names+(field_name,))
+    return np.rec.fromarrays(field_data, names=new_names)
+
+def shift_ipsp_start(ipsps_trace, spikes_trace, shift_ipsp, shift_spike):
+    """shift ipsp either to closest spike or two largerst IPSP in the group.
+    returns new rec array with IPSPs shifted in time"""
+    
+    group_ids = group_ipsps(ipsps_trace, shift_ipsp)
+    
+    # check which spikes are the closest to found beginnings of IPSPs 
+    closest_spike_idx = define_spikes_closest2IPSP_starts(spikes_trace, 
+                                                      ipsps_trace)
+    closest_spike_time = spikes_trace[closest_spike_idx]['time']
+    dist_to_spike = np.abs(ipsps_trace['ipsp_start'] - closest_spike_time) 
+    closest_spike_idx[dist_to_spike>shift_spike] = np.nan
+    
+    amplitudes = ipsps_trace['amplitude']
+    ipsp_start = ipsps_trace['ipsp_start']
+    
+    new_ipsp_start = np.empty(len(ipsps_trace))
+    new_ipsp_start.fill(np.nan)
+    
+    for gid in np.unique(group_ids):
+        ipsps_idx, = np.where(group_ids==gid)
+        d = closest_spike_idx[ipsps_idx]
+        
+        if np.isnan(d).all():
+            #did not find close spike, find IPSP with largest amplitude
+            i = np.argmax(amplitudes[ipsps_idx])
+            t = ipsp_start[ipsps_idx[i]] 
+        else:
+            #found at least one spike, shift to spike closest to largest IPSP
+            ipsps_close_to_spikes = ipsps_idx[~np.isnan(d)]
+            i = np.argmax(amplitudes[ipsps_close_to_spikes])
+            t = ipsp_start[ipsps_close_to_spikes[i]]
+        new_ipsp_start[ipsps_idx] = t 
+        
+    assert ~np.isnan(new_ipsp_start).any()
+    new_ipsps_trace = ipsps_trace.copy()
+    new_ipsps_trace['ipsp_start'] = new_ipsp_start
+    
+    return new_ipsps_trace
 
 def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext):
     """ checks all the ipsps and corrects them for each spw"""
@@ -1043,10 +1098,13 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     spw_ipsps_list = []
     all_traces= np.unique(spw_ipsps['trace'])
     
+    #get rid of doubly detected IPSPs
+    print len(spw_ipsps)-len(np.unique(spw_ipsps[['ipsp_start', 'electrode','trace', 'ipsp_no', 'spw_no']]))
+    print len(spw_ipsps)
     for trace in all_traces:
         spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
-        spikes_trace = spw_spike[spw_spike['trace']==trace]
-        
+
+       
         # check in how many electrodes each IPSP appears
         n_electrodes_per_ipsp = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
         
@@ -1055,33 +1113,27 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         
         # use only those IPSPs which appear in more than min_electr and
         # the rise of them is higher then expected_min_ipsp_ampl
-        ipsp_amplitudes = calculate_amplitude_of_IPSP(spw_ipsps_trace, data[:, trace, :], fs)
-
         spw_ipsps_trace = spw_ipsps_trace[(ipsp_rise > expected_min_ipsp_ampl) &
                                           (n_electrodes_per_ipsp >= min_electr)]
-        
-        # check which spikes are the closest to found beginnings of IPSPs 
-        closest_spikes = define_spikes_closest2IPSP_starts(spikes_trace, spw_ipsps_trace, shift_spike)
-        
-        # now combine all this together to detect where is the beginning of the spw
-        
-        
-        import pdb; pdb.set_trace()
-        #spw_ipsps_list.append(spw_ipsps_trace)
-        spw_ipsps_list = np.concatenate(spw_ipsps_trace)
-        import pdb; pdb.set_trace()
-    
-        
-        
-        # if there is no spike use beginning of highest amplitude IPSP
-        
-        # save the information in two rec arrays:
-        # 1. SPW: electrode, trace, spw_no, spw_start, spw_electr_start
-        # 2. IPSP: electrode, trace, spw_no, ipsp_no, ipsp_start, ipsp_ampl, 
 
+        
+        spw_ipsps_list.append(spw_ipsps_trace)
+        
+    spw_selected = np.concatenate(spw_ipsps_list)
+    
+    for trace in all_traces:
+        ipsps_trace = spw_selected[spw_selected['trace']==trace]
+        spikes_trace = spw_spike[spw_spike['trace']==trace]
+        ipsp_amplitudes = calculate_amplitude_of_IPSP(ipsps_trace, 
+                                                  data[:, trace, :], fs)
+        spikes_trace = add_rec_field(spikes_trace, ipsp_amplitudes, 'amplitude')
+        
+        ipsps_trace = shift_ipsp_start(ipsps_trace, spikes_trace, 
+                                       shift_ipsp, shift_spike)
+        
+        
     
         # plot 
-    import pdb; pdb.set_trace()
         
     
     # define variables
@@ -1498,7 +1550,7 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
             #import pdb; pdb.set_trace()  
             spw_ipsps.append(np.rec.fromarrays([electrodes, traces, spw_num, spw_start, 
                                                     ipsp_no, ipsp_start], 
-                                                   names='electrode,trace, spw_no, spw_start,ipsp_no,  ipsp_start'))
+                                                   names='electrode,trace,spw_no,spw_start,ipsp_no,ipsp_start'))
             
             
             if plot_it: 

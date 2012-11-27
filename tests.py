@@ -1,6 +1,19 @@
 import numpy as np
 from induc_SPW import *
 
+def test_group_ipsps():
+    ipsps_start = [1,7, 2,7,8,2 ,5]
+    ipsps = np.rec.fromarrays([ipsps_start], names='ipsp_start')
+    group = group_ipsps(ipsps, 1)
+    expected_group = np.array([0,2, 0, 2, 2, 0, 1])
+    assert (group == expected_group).all()
+
+def test_add_rec_field():
+    x = np.rec.fromarrays([[1,2], [3,4]], names='a,b')
+    c = np.array([5,6])
+    y = add_rec_field(x, c, 'c')
+    assert (y['c']==c).all()
+
 def test_count_coincident_spikes():
     ipsps_start = [1, 2, 3, 5, 6, 10]
     electrodes = [1, 1, 2, 3, 4, 3]
