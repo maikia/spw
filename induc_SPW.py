@@ -699,6 +699,7 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
 def update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file, win, spw_length = 80):
     """ finds the spikes for each spw"""
     
+    win = [-10, 10]
     npzfile         = np.load(save_folder + load_spike_file)
     #import pdb; pdb.set_trace()  
     spike_idxs      = npzfile['spike_idx']
@@ -1163,8 +1164,8 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         # plot 
     if plot_it:
         add_it = 100
-        before = ms2pts(win[0], fs)
-        after = ms2pts(win[1], fs)
+        before = ms2pts(win[0], fs).astype('i4')
+        after = ms2pts(win[1], fs).astype('i4')
         
         #     go through all the spws
         for spw_no in np.unique(all_ipsps['spw_no']):
@@ -1181,6 +1182,8 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
             
             plot_start = max(0,spw_start_pts + before)
             plot_end = min(spw_start_pts + after,  np.size(data,2))
+            
+            spw_start_pt = spw_start_pts - plot_start
 
             
             for electr in range(np.size(data,0)):
@@ -1206,13 +1209,16 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
                 
                 plt.plot(t, data_used + plot_add)
                 ipsps_to_plot = ipsps_used_pts - plot_start
-                try:
-                    plt.plot(t[ipsps_to_plot], data_used[ipsps_to_plot] + plot_add, 'ko', mfc='none', ms=7)
-                    spikes_to_plot = sp_used_pts - plot_start
-                    plt.plot(t[spikes_to_plot], data_used[spikes_to_plot] + plot_add, 'kx', ms=7)
-                except:
-                    import pdb; pdb.set_trace()
-                plt.axvline(t[spw_start_pts])
+                #try:
+                plt.plot(t[ipsps_to_plot], data_used[ipsps_to_plot] + plot_add, 'ko', mfc='none', ms=7)
+                spikes_to_plot = sp_used_pts - plot_start
+                spikes_to_plot = spikes_to_plot[spikes_to_plot < len(t)]
+                plt.plot(t[spikes_to_plot], data_used[spikes_to_plot] + plot_add, 'kx', ms=7)
+                plt.axvline(t[spw_start_pt])
+                #except:
+                #    import pdb; pdb.set_trace()
+                
+                
 
                 
                 #spikes = ms2pts(sp_sp_used[sp_sp_used['electrode'] == el]['spikes'], fs).astype(int) - spw_st_pts
