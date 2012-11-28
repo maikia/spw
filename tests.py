@@ -83,3 +83,47 @@ def test_calculate_amplitude_of_IPSP():
     ampls = calculate_amplitude_of_IPSP(ipsps, data, fs)
     expected_maxs = np.array([3, 1,1, 0, 0])
     assert  (ampls==expected_maxs).all(), "%s != %s" % (ampls, expected_maxs)
+    
+    
+def test_shift_ipsp_to_closest_spike():
+    spike_time = [1, 5, 10]
+    spike_electrode = [1,1, 1]
+    ipsp_start = [2.,3.]
+    ipsp_electrode = [1,2]
+    ipsp_amplitude = [1,1]
+    ipsp_spw_no = [1,1]
+    spike_spw_no = [1,1,1]
+    
+    spikes_trace = np.rec.fromarrays([spike_electrode, spike_time, spike_spw_no], 
+                                    names='electrode,time,spw_no')
+    ipsps_trace = np.rec.fromarrays([ipsp_start, ipsp_electrode, ipsp_amplitude,
+                                     ipsp_spw_no],
+                                        names='ipsp_start,electrode,amplitude,spw_no')
+    shift_ipsp = 2
+    shift_spike = 2
+    shifted_ipsp = shift_ipsp_start(ipsps_trace, spikes_trace, shift_ipsp, shift_spike)
+    expected_time = np.array([1,1])
+    time = shifted_ipsp['ipsp_start']
+    assert (time==expected_time).all(), "%s != %s" % (time, expected_time)
+    
+    
+def test_shift_ipsp_to_closest_spike_after():
+    spike_time = [4.5, 8, 10]
+    spike_electrode = [2,2, 1]
+    ipsp_start = [2.,3.]
+    ipsp_electrode = [1,2]
+    ipsp_amplitude = [1,1]
+    ipsp_spw_no = [1,1]
+    spike_spw_no = [1,1,1]
+    
+    spikes_trace = np.rec.fromarrays([spike_electrode, spike_time, spike_spw_no], 
+                                    names='electrode,time,spw_no')
+    ipsps_trace = np.rec.fromarrays([ipsp_start, ipsp_electrode, ipsp_amplitude,
+                                     ipsp_spw_no],
+                                        names='ipsp_start,electrode,amplitude,spw_no')
+    shift_ipsp = 1
+    shift_spike = 2
+    shifted_ipsp = shift_ipsp_start(ipsps_trace, spikes_trace, shift_ipsp, shift_spike)
+    expected_time = np.array([4.5,4.5])
+    time = shifted_ipsp['ipsp_start']
+    assert (time==expected_time).all(), "%s != %s" % (time, expected_time)
