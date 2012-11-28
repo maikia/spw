@@ -915,16 +915,44 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
 def group_ipsps(spw_ipsps_trace, shift_ipsp):
     """Assign coincident spikes (closer than shift_ipsp) to one group
     and return the group's index"""
-    sort_order = np.argsort(spw_ipsps_trace['ipsp_start'])
-    spw_ipsps_sorted = spw_ipsps_trace[sort_order]
-    spw_ipsps_intervals = np.diff(spw_ipsps_sorted['ipsp_start'])
-    group_sep = spw_ipsps_intervals>shift_ipsp
-    group_sep = np.concatenate([[0], group_sep])
+    order = np.argsort(spw_ipsps_trace['ipsp_start'])
+    spw_ipsps_sorted = spw_ipsps_trace[order]
     
-    #calculate group IDs by counting seperators
-    group_idx = np.cumsum(group_sep)
-    inverse_order = np.argsort(sort_order)
-    return group_idx[inverse_order]
+    group_ids = np.empty(len(spw_ipsps_sorted), dtype=np.int)
+    group_ids.fill(-1)
+    electrodes = spw_ipsps_sorted['electrode']
+    ipsp_start = spw_ipsps_sorted['ipsp_start']
+    group_ids[electrodes==1] = np.arange(np.sum(electrodes==1))
+    assert (electrodes>0).all()
+    max_group = group_ids.max()
+    for el in np.unique(electrodes)[1:]:
+        ipsps_to_assign, = np.where(electrodes==el)
+        ipsps_assigned, = np.where(electrodes<el)
+        time_assigned = ipsp_start[ipsps_assigned]
+        time_to_assign = ipsp_start[ipsps_to_assign]
+        i = np.searchsorted(time_assigned, time_to_assign)
+        #compare times with ipsp to the left and right
+        left = time_assigned[np.maximum(0,i-1)]
+        right = time_assigned[np.minimum(i+1, len(time_assigned)-1)]
+        closer_to_left = (time_to_assign-left)< (right-time_to_assign)
+        i[closer_to_left] = i[closer_to_left]-1
+        i = np.minimum(np.maximum(i,0), len(time_assigned)-1)
+        dist = np.abs((time_assigned[i]-time_to_assign))
+        
+        #if closest ipsps is closer thas shift_ipsp assign the new ipsps to the same group
+        group_ids[ipsps_to_assign[dist<=shift_ipsp]] = group_ids[ipsps_assigned[i[dist<=shift_ipsp]]]
+        
+        #if closest ipsps is closer thas shift_ipsp assign the new ipsps to the same group
+        group_ids[ipsps_to_assign[dist>shift_ipsp]] = np.arange(np.sum(dist>shift_ipsp)) + max_group+1
+        max_group = group_ids.max()
+    
+    assert (group_ids>-1).all()
+    
+    #sort_order = np.argsort(spw_ipsps_trace['ipsp_start'])
+    #spw_ipsps_sorted = spw_ipsps_trace[sort_order]
+    #spw_ipsps_intervals = np.diff(spw_ipsps_sorted['ipsp_start'])
+    inverse_i = np.argsort(order)
+    return group_ids[inverse_i]
 
 def count_coincident_ipsps(spw_ipsps_trace, shift_ipsp):
     """counts number of IPSPs in different electrodes seperated by not more

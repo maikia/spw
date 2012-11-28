@@ -3,10 +3,20 @@ from induc_SPW import *
 
 def test_group_ipsps():
     ipsps_start = [1,7, 2,7,8,2 ,5]
-    ipsps = np.rec.fromarrays([ipsps_start], names='ipsp_start')
+    electrode = np.arange(len(ipsps_start))+1
+    ipsps = np.rec.fromarrays([ipsps_start,electrode], names='ipsp_start,electrode')
     group = group_ipsps(ipsps, 1)
-    expected_group = np.array([0,2, 0, 2, 2, 0, 1])
-    assert (group == expected_group).all()
+    expected_group = np.array([0,1, 0, 1, 1, 0, 2])
+    assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
+
+def test_group_ipsps_in_same_electrode():
+    ipsps_start = [1, 2, 3]
+    electrode =   [1, 1, 1]
+    ipsps = np.rec.fromarrays([ipsps_start, electrode], 
+                              names='ipsp_start,electrode')
+    group = group_ipsps(ipsps, 2)
+    expected_group = np.array([0, 1, 2])
+    assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
 
 def test_add_rec_field():
     x = np.rec.fromarrays([[1,2], [3,4]], names='a,b')
@@ -20,23 +30,23 @@ def test_count_coincident_spikes():
     
     ipsps = np.rec.fromarrays([ipsps_start, electrodes], names='ipsp_start,electrode')
     n_electr = count_coincident_ipsps(ipsps, 1.)
-    expected_n_electr = np.array([2,2,2,2,2, 1])
+    expected_n_electr = np.array([1,2,2,2,2, 1])
     assert (n_electr==expected_n_electr).all()
     
 def test_count_coincident_spikes_not_sorted():
-    ipsps_start = [1, 2, 3, 5, 6, 10]
-    electrodes = [1, 1, 2, 3, 4, 3]
+    ipsps_start = [1, 6, 3, 5, 2, 10]
+    electrodes = [1, 4, 2, 3, 1, 3]
 
     ipsps = np.rec.fromarrays([ipsps_start, electrodes], names='ipsp_start,electrode')
     
     #shuffle randomly and store the order
-    idx = np.argsort(np.random.randn(len(ipsps)))
+    idx = np.array([0, 3, 5,2,4,1])
     ipsps = ipsps[idx]
     ipsps_copy = ipsps.copy()
     n_electr = count_coincident_ipsps(ipsps, 1.)
-    expected_n_electr = np.array([2,2,2,2,2, 1])
+    expected_n_electr = np.array([1,2,2,2,2, 1])
     
-    assert (n_electr==expected_n_electr[idx]).all()
+    assert (n_electr==expected_n_electr[idx]).all(), "%s != %s" % (n_electr, expected_n_electr[idx])
     #check whether inputs array was not changed
     assert (ipsps==ipsps_copy).all()
 
