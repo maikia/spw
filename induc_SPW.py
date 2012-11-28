@@ -715,7 +715,7 @@ def update_spikes_in_spws(save_folder, save_file, load_spike_file, load_spw_file
         ipsp_used = ipsps[ipsps['spw_no'] == spw][0]
         #import pdb; pdb.set_trace()  
         spw_start = ipsp_used['spw_start']
-        spw_end = spw_start + spw_length
+        spw_end = ipsp_used['spw_end']
         trace = ipsp_used['trace']
         #import pdb; pdb.set_trace()  
         spikes = spike_idxs[(spike_idxs['trace'] == trace) & (spike_idxs['time'] >= spw_start + win[0]) & (spike_idxs['time'] <= spw_end + win[1])]
@@ -988,7 +988,10 @@ def calculate_amplitude_of_IPSP(spw_ipsps_trace, data_trace, fs):
         first, last = ipsps_starts[i], ipsps_ends[i]
         electrode = spw_ipsps_sorted['electrode'][i]
         single_ipsp = data_trace[electrode, first:last]
-        ipsp_ampl[i] = np.max(single_ipsp)-data_trace[electrode, first]
+        try:
+            ipsp_ampl[i] = np.max(single_ipsp)-data_trace[electrode, first]
+        except:
+            import pdb; pdb.set_trace()
     
     # return to the original order
     inverse_i = np.argsort(sort_order)       
@@ -1011,16 +1014,19 @@ def define_spikes_closest2IPSP_starts(spikes, ipsps):
              (spikes_sorted['spw_no']==t['spw_no'])]
         closest = i[0] if len(i)>0 else np.nan
         closest_events.append(closest)
-    s = take_element_or_nan(ipsps_sorted, np.array(closest_events))
+    closest_events = np.array(closest_events)
+    #s = take_element_or_nan(ipsps_sorted, np.array(closest_events))
     #spikes_sorted[closest_events]
     inverse_i = np.argsort(i_ipsp)       
     return closest_events[inverse_i]
 
 def take_element_or_nan(x, i):
-    y = np.zeros(len(x), dtype=x.dtype)
+    y = np.empty(len(i), dtype='f8')
+    y.fill(np.nan)
     isnan = np.isnan(i)
-    y[i[~isnan].astype('i4')]=x[~isnan]
-    y[isnan]['spw_no'] = np.nan
+    not_nan_i = i[~isnan].astype('i4')
+    #import pdb; pdb.set_trace()
+    y[~isnan]=x[not_nan_i]
     return y
 
 def add_rec_field(recarray, arr, field_name):
@@ -1037,9 +1043,13 @@ def shift_ipsp_start(ipsps_trace, spikes_trace, shift_ipsp, shift_spike):
     group_ids = group_ipsps(ipsps_trace, shift_ipsp)
     
     # check which spikes are the closest to found beginnings of IPSPs 
+
     closest_spike_idx = define_spikes_closest2IPSP_starts(spikes_trace, 
                                                       ipsps_trace)
-    closest_spike_time = spikes_trace[closest_spike_idx]['time']
+    
+    closest_spike_idx = closest_spike_idx.astype('f4')
+    closest_spike_time = take_element_or_nan(spikes_trace['time'], closest_spike_idx)
+
     dist_to_spike = np.abs(ipsps_trace['ipsp_start'] - closest_spike_time) 
     closest_spike_idx[dist_to_spike>shift_spike] = np.nan
     
@@ -1123,10 +1133,16 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     for trace in all_traces:
         ipsps_trace = spw_selected[spw_selected['trace']==trace]
         spikes_trace = spw_spike[spw_spike['trace']==trace]
+        #if trace == 1:
+        #    import pdb; pdb.set_trace()
         ipsp_amplitudes = calculate_amplitude_of_IPSP(ipsps_trace, 
                                                   data[:, trace, :], fs)
-        spikes_trace = add_rec_field(spikes_trace, ipsp_amplitudes, 'amplitude')
+
+#       import pdb; pdb.set_trace()
+            
+        ipsps_trace = add_rec_field(ipsps_trace, ipsp_amplitudes, 'amplitude')
         
+        print trace
         ipsps_trace = shift_ipsp_start(ipsps_trace, spikes_trace, 
                                        shift_ipsp, shift_spike)
         
@@ -1485,33 +1501,49 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
     window = ms2pts(window, fs)
     spw_ipsps = []
     
-    import pdb; pdb.set_trace() 
+    data_length_ms = pts2ms(np.size(data,2), fs)
+    #import pdb; pdb.set_trace() 
     # take each SPW separately and find ipsps
     spw_len = len(np.unique(spw_details['spw_no']))
     all_spw_numbers = np.unique(spw_details['spw_no'])
     for idx_spw, spw in enumerate(all_spw_numbers):
-#        if idx_spw < len(all_spw_numbers):
-#            spw_next = np.min(spw_details[spw_details['spw_no'] == all_spw_numbers[idx_spw + 1]]['spw_start'])
-#            spw_next = ms2pts(spw_next, fs).astype('i4')
-        print str(spw) + '/' + str(spw_len)
-        
         spw_used = spw_details[spw_details['spw_no'] == spw]
         trace = int(spw_used['trace'][0])
         spw_no = int(spw_used['spw_no'][0])
-        
+
         # always use minimum detected start for this SPW
         min_start = min(spw_used['spw_start'])
         min_start_pts = ms2pts(min_start, fs).astype(int)
+        spw_max_len = min_start + spw_length
+        #import pdb; pdb.set_trace() 
+        # find the end of the IPSP
+        if idx_spw < len(all_spw_numbers)-1 and spw_details[spw_details['spw_no'] == all_spw_numbers[idx_spw + 1]]['trace'][-1] == trace:
+            #import pdb; pdb.set_trace() 
+            next_idx = all_spw_numbers[idx_spw + 1]
+            next_spw_time = spw_details[spw_details['spw_no'] == next_idx]['spw_start'][-1]
+            spw_next = min(next_spw_time, spw_max_len)
+            #spw_next = ms2pts(spw_next, fs).astype('i4')
+        else:
+
+            spw_next = min(spw_max_len, data_length_ms)
+
+        spw_end_pts = ms2pts(spw_next, fs)
+#        if trace == 1:
+#            print
+#            print min_start_pts
+#            print spw_end_pts
+        print str(spw) + '/' + str(spw_len)
+        
         for electr in range(np.size(data,0)):
             # no matter if wave was detected in this electrode or not, still check for IPSPS
             # as start use the earliest start found in any electrdoe for this spw
-            #if idx_spw != len(all_spw_numbers):
-            #    #import pdb; pdb.set_trace()  
-            #    end_spw = min(spw_next, min_start_pts + spw_len_pts)
-            #else:
-            #    end_spw = min_start_pts + spw_len_pts
+#            if idx_spw != len(all_spw_numbers):
+#                #import pdb; pdb.set_trace()  
+#                end_spw = min(spw_next, min_start_pts + spw_len_pts)
+#            else:
+#                end_spw = min_start_pts + spw_len_pts
                 
-            data_used = data[electr, trace, min_start_pts:min_start_pts + spw_len_pts]
+            data_used = data[electr, trace, min_start_pts:spw_end_pts]
                       
             # calculate moving average  
             temp, moved_avg = filt.remove_baseloc(data_used, window)  
@@ -1555,11 +1587,11 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
             spw_num = np.ones(len(ipsp_start), dtype='i4')*spw_no
             ipsp_no = np.arange(0,len(mini)).astype('i4')
             spw_start = np.ones(len(ipsp_start), dtype = 'f8') * min_start
-
+            spw_end = np.ones(len(ipsp_start), dtype = 'f8') * spw_next
             #import pdb; pdb.set_trace()  
-            spw_ipsps.append(np.rec.fromarrays([electrodes, traces, spw_num, spw_start, 
+            spw_ipsps.append(np.rec.fromarrays([electrodes, traces, spw_num, spw_start, spw_end,
                                                     ipsp_no, ipsp_start], 
-                                                   names='electrode,trace,spw_no,spw_start,ipsp_no,ipsp_start'))
+                                                   names='electrode,trace,spw_no,spw_start,spw_end, ipsp_no,ipsp_start'))
             
             
             if plot_it: 
@@ -1611,6 +1643,7 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
         traces = []
         electrodes = []
         all_starts = []
+        spw_no_trace = 0
         # analize every single SPW
         
         for idx, next_spw_st in enumerate(spw_st_sorted):
@@ -1634,14 +1667,15 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
                     # save the data for this SPW
                     starts = min(all_starts)
                     
-                    if len(spw_details_temp) > 0:
-                        # check if previous SPW was no closer than min_dist_between
+                    if spw_no_trace > 0:
+                        # check if previous SPW was no closer than min_dist_between 
                         #import pdb; pdb.set_trace() 
                         if starts - spw_details_temp[-1][-1]['spw_start'] > min_dist_between_starts:
                             starts =  np.ones(len(electrodes), dtype='f8')*starts
                             numbers = np.ones(len(electrodes), dtype='f8')*spw_no
                             spw_details_temp.append(np.rec.fromarrays([electrodes, traces ,starts, numbers], names='electrode,trace, spw_start, spw_no'))
                             spw_no = spw_no + 1
+                            spw_no_trace = spw_no_trace + 1
                     else:
                         # save previous end - either end or the maximum lenght of the spw
                         #old_en = np.min(spw_en_sorted[idx]['time'], starts
@@ -1650,6 +1684,7 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
                         numbers = np.ones(len(electrodes), dtype='f8')*spw_no
                         spw_details_temp.append(np.rec.fromarrays([electrodes, traces ,starts, numbers], names='electrode,trace, spw_start, spw_no'))
                         spw_no = spw_no + 1
+                        spw_no_trace = spw_no_trace + 1
                         
                     
                     #print spw_no
