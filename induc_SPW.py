@@ -1085,7 +1085,11 @@ def shift_spw_to_first_ipsp(ipsps_trace):
     ipsps_trace = ipsps_trace.copy()
     for spw_no in np.unique(ipsps_trace['spw_no']):
         spw_start = ipsps_trace[ipsps_trace['spw_no'] == spw_no]['ipsp_start'].min()
-        ipsps_trace[ipsps_trace['spw_no'] == spw_no]['spw_start'] = spw_start
+        spw_starts = np.ones(len(ipsps_trace[ipsps_trace['spw_no'] == spw_no]['ipsp_start']))
+        spw_starts = spw_starts*spw_start
+        #import pdb; pdb.set_trace()
+        #ipsps_trace[ipsps_trace['spw_no'] == spw_no]['spw_start'] = spw_starts
+        ipsps_trace['spw_start'][ipsps_trace['spw_no'] == spw_no] = spw_starts
     return ipsps_trace
 
 def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext, win = [-20, 80]):
@@ -1115,9 +1119,6 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     spw_ipsps_list = []
     all_traces= np.unique(spw_ipsps['trace'])
     
-    #get rid of doubly detected IPSPs
-    print len(spw_ipsps)-len(np.unique(spw_ipsps[['ipsp_start', 'electrode','trace', 'ipsp_no', 'spw_no']]))
-    print len(spw_ipsps)
     for trace in all_traces:
         spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
 
@@ -1141,6 +1142,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     all_ipsps = []
     all_spikes = []
     for trace in all_traces:
+        import pdb; pdb.set_trace()
         ipsps_trace = spw_selected[spw_selected['trace']==trace]
         spikes_trace = spw_spike[spw_spike['trace']==trace]
         all_spikes.append(spikes_trace)
