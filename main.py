@@ -23,7 +23,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     delete_old = False #!!!!
     
-    run_all_functions = False
+    run_all_functions = True
     
     if delete_old:
         fold_mng.remove_folder(save_folder)
@@ -85,7 +85,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 
 
     SPWs_beg  = 'spw_beg.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # !!!!!!!!!!!!!!!!!! divide to more functios, add correlation, etc!
         # divide to: - finding the spw start (using correlation)
         # finding properly each of the IPSP
@@ -221,7 +221,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [1]: #range(12, len(all)):
+        for nex in [12]: #range(12, len(all)):
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()

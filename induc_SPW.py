@@ -326,7 +326,7 @@ def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_sp
     fs = npzfile['fs'] 
     npzfile.close()
        
-    freq_fast = 750.
+    freq_fast = 600.
     # find extracellular spikes
     folder_name = save_folder + filter_folder
     N = 1000
@@ -922,8 +922,14 @@ def group_ipsps(spw_ipsps_trace, shift_ipsp):
     group_ids.fill(-1)
     electrodes = spw_ipsps_sorted['electrode']
     ipsp_start = spw_ipsps_sorted['ipsp_start']
-    group_ids[electrodes==1] = np.arange(np.sum(electrodes==1))
-    assert (electrodes>0).all()
+    
+    
+    first_el = np.min(electrodes)
+
+    group_ids[electrodes==first_el] = np.arange(np.sum(electrodes==first_el))
+    #print np.min(electrodes)
+    #print electrodes
+    #assert (electrodes>0).all()
     max_group = group_ids.max()
     for el in np.unique(electrodes)[1:]:
         ipsps_to_assign, = np.where(electrodes==el)
@@ -945,7 +951,7 @@ def group_ipsps(spw_ipsps_trace, shift_ipsp):
         #if closest ipsps is closer thas shift_ipsp assign the new ipsps to the same group
         group_ids[ipsps_to_assign[dist>shift_ipsp]] = np.arange(np.sum(dist>shift_ipsp)) + max_group+1
         max_group = group_ids.max()
-    
+    #print group_ids
     assert (group_ids>-1).all()
     
     #sort_order = np.argsort(spw_ipsps_trace['ipsp_start'])
@@ -961,7 +967,8 @@ def count_coincident_ipsps(spw_ipsps_trace, shift_ipsp):
     spw_ipsps_sorted = spw_ipsps_trace[i]
     
     group_idx = group_ipsps(spw_ipsps_sorted, shift_ipsp)
-    
+
+        
     electrode = spw_ipsps_sorted['electrode']
 
     #count number of disitinct electrodes fin each IPSP group
@@ -1150,17 +1157,22 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     for trace in all_traces:
         spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
 
-       
-        # check in how many electrodes each IPSP appears
-        n_electrodes_per_ipsp = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
-        
         # calculate the rise between the beginning of IPSP and next IPSP
         ipsp_rise = calculate_ipsp_rise(spw_ipsps_trace, data[:, trace, :], fs)
+        spw_ipsps_trace_rised = spw_ipsps_trace[(ipsp_rise > expected_min_ipsp_ampl)]        
+        
+        # check in how many electrodes each IPSP appears
+        n_electrodes_per_ipsp = count_coincident_ipsps(spw_ipsps_trace_rised, shift_ipsp)
+        #import pdb; pdb.set_trace()
+        spw_ipsps_trace = spw_ipsps_trace_rised[(n_electrodes_per_ipsp >= min_electr)]
+                                          
+
         
         # use only those IPSPs which appear in more than min_electr and
         # the rise of them is higher then expected_min_ipsp_ampl
-        spw_ipsps_trace = spw_ipsps_trace[(ipsp_rise > expected_min_ipsp_ampl) &
-                                          (n_electrodes_per_ipsp >= min_electr)]
+        #import pdb; pdb.set_trace()
+        #spw_ipsps_trace = spw_ipsps_trace[(ipsp_rise > expected_min_ipsp_ampl) &
+        #                                  (n_electrodes_per_ipsp >= min_electr)]
 
         
         spw_ipsps_list.append(spw_ipsps_trace)
@@ -1170,7 +1182,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     all_ipsps = []
     all_spikes = []
     for trace in all_traces:
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         ipsps_trace = spw_selected[spw_selected['trace']==trace]
         spikes_trace = spw_spike[spw_spike['trace']==trace]
         all_spikes.append(spikes_trace)
@@ -1180,11 +1192,13 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
             
         ipsps_trace = add_rec_field(ipsps_trace, ipsp_amplitudes, 'amplitude')
         
-        ipsps_trace = shift_ipsp_start(ipsps_trace, spikes_trace, 
+        if len(ipsps_trace) > 0:
+            #import pdb; pdb.set_trace()
+            ipsps_trace = shift_ipsp_start(ipsps_trace, spikes_trace, 
                                        shift_ipsp, shift_spike)
         
-        #shift spw to first ipsp
-        ipsps_trace = shift_spw_to_first_ipsp(ipsps_trace)
+            #shift spw to first ipsp
+            ipsps_trace = shift_spw_to_first_ipsp(ipsps_trace)
              
         all_ipsps.append(ipsps_trace)
     all_ipsps = np.concatenate(all_ipsps)

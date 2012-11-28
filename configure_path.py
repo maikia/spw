@@ -4,7 +4,7 @@ def find_folders(cell_no = 1, part = 1, oscil = 0):
     1. (1, 1, 0), (1, 1, 1), (1, 2, 1)
     """
     
-    save_path = '/home/maja/phdProject/data'
+    save_path = '/home/maja/phdProject/data/'
     save_data = '/home/maja/phdProject/analysis/swp/'
     #save_path = '/home/maja/PhDProject/SPWs/data/induced/'
     #save_data = '/home/maja/PhDProject/SPWs/SPWs/saved_data/'
