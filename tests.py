@@ -18,6 +18,16 @@ def test_group_ipsps_in_same_electrode():
     expected_group = np.array([0, 1, 2])
     assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
 
+def test_group_ipsps_in_multi_electrode():
+    ipsps_start = [2, 1, 3, 4, 5]
+    electrode =   [1, 2, 2, 2, 3]
+    ipsps = np.rec.fromarrays([ipsps_start, electrode], 
+                              names='ipsp_start,electrode')
+    group = group_ipsps(ipsps, 2)
+    expected_group = np.array([0, 0, 1, 2, 2])
+    assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
+
+
 def test_add_rec_field():
     x = np.rec.fromarrays([[1,2], [3,4]], names='a,b')
     c = np.array([5,6])

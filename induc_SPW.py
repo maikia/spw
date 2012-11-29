@@ -932,25 +932,40 @@ def group_ipsps(spw_ipsps_trace, shift_ipsp):
     #assert (electrodes>0).all()
     max_group = group_ids.max()
     for el in np.unique(electrodes)[1:]:
-        ipsps_to_assign, = np.where(electrodes==el)
-        ipsps_assigned, = np.where(electrodes<el)
-        time_assigned = ipsp_start[ipsps_assigned]
-        time_to_assign = ipsp_start[ipsps_to_assign]
-        i = np.searchsorted(time_assigned, time_to_assign)
-        #compare times with ipsp to the left and right
-        left = time_assigned[np.maximum(0,i-1)]
-        right = time_assigned[np.minimum(i+1, len(time_assigned)-1)]
-        closer_to_left = (time_to_assign-left)< (right-time_to_assign)
-        i[closer_to_left] = i[closer_to_left]-1
-        i = np.minimum(np.maximum(i,0), len(time_assigned)-1)
-        dist = np.abs((time_assigned[i]-time_to_assign))
-        
-        #if closest ipsps is closer thas shift_ipsp assign the new ipsps to the same group
-        group_ids[ipsps_to_assign[dist<=shift_ipsp]] = group_ids[ipsps_assigned[i[dist<=shift_ipsp]]]
-        
-        #if closest ipsps is closer thas shift_ipsp assign the new ipsps to the same group
-        group_ids[ipsps_to_assign[dist>shift_ipsp]] = np.arange(np.sum(dist>shift_ipsp)) + max_group+1
-        max_group = group_ids.max()
+        ipsps_to_assign, = np.where((electrodes==el))
+        ipsps_assigned, = np.where(group_ids>-1)
+        while len(ipsps_to_assign) > 0:
+            max_group = group_ids.max()
+
+            if len(ipsps_assigned)==0:
+                 group_ids[ipsps_to_assign] = np.arange(len(ipsps_to_assign))+max_group+1
+                 break
+             
+            time_assigned = ipsp_start[ipsps_assigned]
+            time_to_assign = ipsp_start[ipsps_to_assign]
+            i = np.searchsorted(time_assigned, time_to_assign)
+            #compare times with ipsp to the left and right
+            left = time_assigned[np.maximum(0,i-1)]
+            right = time_assigned[np.minimum(i+1, len(time_assigned)-1)]
+            closer_to_left = (time_to_assign-left)< (right-time_to_assign)
+            i[closer_to_left] = i[closer_to_left]-1
+            i = np.minimum(np.maximum(i,0), len(time_assigned)-1)
+            dist = np.abs((time_assigned[i]-time_to_assign))
+            
+            #if closest ipsps is closer thas shift_ipsp assign the new ipsps to the same group
+            new_group_ids = -1*np.ones(len(ipsps_to_assign), dtype=int) 
+            
+            new_group_ids[dist<=shift_ipsp] = group_ids[ipsps_assigned[i[dist<=shift_ipsp]]]
+            new_group_ids[dist>shift_ipsp] = np.arange(np.sum(dist>shift_ipsp))+max_group+1
+            u_groups, nonduplicated = np.unique(new_group_ids,return_index=True)
+            group_ids[ipsps_to_assign[nonduplicated]] = new_group_ids[nonduplicated]
+            
+            #remove ipsps from assign list that were already used for this electrode
+            was_used  = np.in1d(group_ids[ipsps_assigned], u_groups)
+            ipsps_assigned = ipsps_assigned[~was_used] 
+            ipsps_to_assign = ipsps_to_assign[group_ids[ipsps_to_assign]<0]
+            #if closest ipsps is closer thas shift_ipsp assign the new ipsps to the same group
+           
     #print group_ids
     assert (group_ids>-1).all()
     
