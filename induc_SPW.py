@@ -1158,7 +1158,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     spw_spike      = npzfile['chosen_spikes']  
     npzfile.close()     
     
-    plot_it = True
+    plot_it = False
     
     #import pdb; pdb.set_trace()
     shift_ipsp = 1 # ms
@@ -1246,21 +1246,13 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
 
             
             for electr in range(np.size(data,0)):
-                #if el == spw_electr_st:
-                #    colr = 'r'
-                #else:
-                #    colr = 'k'
-                #idxs, = np.where(el_ipsp_spw == el)
                 plot_add = add_it * electr
                 
-                #import pdb; pdb.set_trace()
                 ipsps_used = spw_used[spw_used['electrode'] == electr]
                 ipsps_used_pts = ms2pts(ipsps_used['ipsp_start'], fs).astype('i4')
                 
                 sp_used = spikes_used[spikes_used['electrode'] == electr]
                 sp_used_pts = ms2pts(sp_used['time'], fs).astype('i4')
-                #spw_start = spwstart_isps_spw[el_ipsp_spw == el][0]
-                #spw_end = max(spwend_ipsp_spw[el_ipsp_spw == el])
                 
                 data_used = data[electr,trace, plot_start: plot_end]
                 t = dat.get_timeline(data_used, fs, 'ms')
@@ -1274,40 +1266,18 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
                 spikes_to_plot = spikes_to_plot[spikes_to_plot < len(t)]
                 plt.plot(t[spikes_to_plot], data_used[spikes_to_plot] + plot_add, 'kx', ms=7)
                 plt.axvline(t[spw_start_pt])
-                #except:
-                #    import pdb; pdb.set_trace()
-                
-                
 
-                
-                #spikes = ms2pts(sp_sp_used[sp_sp_used['electrode'] == el]['spikes'], fs).astype(int) - spw_st_pts
-                #ipsp_start = ms2pts(ipspstrt_ipsp_spw[idxs], fs).astype(int) - spw_st_pts
-                
-                #spw_min_start = min(spw_st_pts, spw_min_start)
-                #spw_max_end = max(spw_en_pts, spw_max_end)
-                
-                #t = dat.get_timeline(data_used, fs, 'ms') + spw_start
-                #plt.plot(t,data_used + add_it * el, colr)
-                #sp_to_plot = spikes[(spikes>0) & (spikes<len(t))]
-                #plt.plot(t[sp_to_plot],data_used[sp_to_plot] + add_it * el, 'r<')
-                #ipsp_to_plot = ipsp_start[ipsp_start<len(data_used)]
-                #plt.plot(t[ipsp_to_plot],data_used[ipsp_to_plot] + add_it * el, 
-                #         'o', mfc='none', mec='g')
             plt.show()
             tit = 'spw: ' + str(spw_no)
             plt.title(tit)
             fig.savefig(save_folder + save_fig + str(spw_no) + ext,dpi=600)
             fig.savefig(save_folder + save_fig + str(spw_no) + '.eps',dpi=600)        
-            #plt.show()
-            plt.close()
-    if len(proper_ipsps) > 0:
-        proper_ipsps = np.concatenate(proper_ipsps)
 
-    np.savez(save_folder + save_file, ipsps = proper_ipsps) 
+            plt.close()
+
+    np.savez(save_folder + save_file, spw_ipsps = all_ipsps, spikes = all_spikes) 
     
-    
-    
-    del spw_ipsps, data
+    del spw_ipsps, data, all_ipsps
 
 
 
@@ -1327,7 +1297,7 @@ def update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_f
     spw_spike      = npzfile['chosen_spikes']  
     npzfile.close()     
     
-    plot_it = True
+    plot_it = False
 
     add_it = 100
     shift_ipsp = 1 # ms

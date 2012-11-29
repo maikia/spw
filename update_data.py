@@ -145,7 +145,7 @@ def up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', l
     if reanalize or not exists:
         fig_fold_name = 'SPW_IPSPs/'
         fold_mng.create_folder(save_folder + fig_fold_name)
-        # load the data   
+          
         ispw.update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, fig_fold_name + save_fig, save_file, ext)  
     gc.collect()
         

@@ -23,7 +23,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     delete_old = False #!!!!
     
-    run_all_functions = True
+    run_all_functions = False
     
     if delete_old:
         fold_mng.remove_folder(save_folder)
@@ -84,27 +84,20 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         updater.up_spikes_in_spw(save_folder, save_file =spikes_inWaves, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps, reanalize = reanalize, win = win)
 
 
-    SPWs_beg  = 'spw_beg.npz'
-    if run_all_functions:
-        # !!!!!!!!!!!!!!!!!! divide to more functios, add correlation, etc!
-        # divide to: - finding the spw start (using correlation)
+    SPWs_ipsps_beg  = 'SPWs_ipsps_beg.npz'
+    if not run_all_functions:
         # finding properly each of the IPSP
-        
-        # it combines information on Waves/Ipsps and spikes to find the beginning of the SPW (uses correlation)
-        updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_inWaves, reanalize = reanalize, ext = ext)
-    
-    
-    
-    
-    ipsps_beg  = 'ipsps_beg.npz'    
-    if run_all_functions:
-        # it combines information on IPSPS and spikes to find all the ipsps properly        
-        updater.up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = SPWs_spikes_ampl, reanalize = reanalize, ext = ext)
+        # it combines information on Waves/Ipsps and spikes to find the beginning of the SPW 
+        updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_inWaves, reanalize = reanalize, ext = ext)
     
     spikes_inSPWs = 'spikes_inSpw.npz'
-    if run_all_functions:
+    if not run_all_functions:
         # uses previously selected largest spikes
-        updater.up_spikes_in_spw(save_folder, save_file =spikes_inSPWs, load_spike_file = spikes_largest, load_spw_file = SPWs_beg, reanalize = reanalize, win = win)
+        updater.up_spikes_in_spw(save_folder, save_file =spikes_inSPWs, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps_beg, reanalize = reanalize, win = win)
+    
+    if not run_all_functions:
+        # it makes the plot to exactly analyse each SPW
+        analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_beg, load_spikefile = spikes_inSPWs, load_spikesall = spikes_raw)
     
     #print intr_electrode
     if intr_electrode == 1:
@@ -151,6 +144,8 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if run_all_functions:
 
             analyser.plot_alignedSPW(save_folder, solutions_folder+alignedSPWs + '/', save_plots = alignedSPWs, data_file = raw_baselined, intra_data_file = data_intra, spike_file = induc_spont_spw, intra_spikes = intra_spikes, ext = ext)
+        
+        
         
 #        alignedSPWs_2all = 'aligned_SPWs2allSpikes'
 #        if run_all_functions:
@@ -221,7 +216,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [12]: #range(12, len(all)):
+        for nex in [13]: #range(12, len(all)):
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()
