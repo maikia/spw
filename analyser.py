@@ -107,7 +107,7 @@ def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, par
     #plt.show() 
     plt.close()   
 
-def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spikefile, load_spikesall):
+def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spikefile, load_spikesall, load_ipspsOld, spw_base):
     """ Plots interactively all the data and detected SPWs, spikes and IPSPs. does not save anything"""
     
 
@@ -129,6 +129,14 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
     spikes_alll = npzfile['spike_idx'] 
     npzfile.close()  
     
+    npzfile = np.load(save_folder + load_ipspsOld)
+    ipsps_old = npzfile['spw_ipsps'] 
+    npzfile.close()
+    
+    npzfile = np.load(save_folder + spw_base)
+    primitive_starts = npzfile['starts']
+    npzfile.close()
+    #import pdb; pdb.set_trace()
 
     ax = plt.subplot(111)
     plt.subplots_adjust(bottom=0.2)
@@ -140,7 +148,14 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
         used_trace =  min(ipsps_used['trace'])
         used_spw_no = min(ipsps_used[ipsps_used['trace'] == used_trace]['spw_no'])
         used_spikes = spikes
+        used_primStarts = primitive_starts
+        used_ipsps_old = ipsps_old
         spikes_all = spikes_alll
+        
+        spike_sign = '^'
+        ipsps_sign = 'o'
+        spike_color = 'g'
+        ipsps_color = 'r'
         
         all_data = data
         data_used = all_data[:, used_trace, :]
@@ -151,6 +166,8 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
         actual_ipsps = ipsps_used[ipsps_used['trace'] == used_trace]
         actual_spikes = used_spikes[used_spikes['trace'] == used_trace]
         actual_spikes_all = spikes_all[spikes_all['trace'] == used_trace]
+        actual_ipsps_old = used_ipsps_old[used_ipsps_old['trace'] == used_trace]
+        actual_prim_starts = used_primStarts[used_primStarts['trace'] == used_trace]
         for electr in range(np.size(data_used,0)):
             # plot data
             ax.plot(t, data_used[electr,:] + electr * add_it, 'k')
@@ -158,20 +175,31 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
             # plot ipsps
             actual_ipsps_electr = actual_ipsps[actual_ipsps['electrode'] == electr]['ipsp_start']
             actual_ipsps_pts = ispw.ms2pts(actual_ipsps_electr, fs).astype('i4')
-            ax.plot(t[actual_ipsps_pts], data_used[electr,actual_ipsps_pts] + electr * add_it, 'go')
+            ax.plot(t[actual_ipsps_pts], data_used[electr,actual_ipsps_pts] + electr * add_it, ipsps_color + ipsps_sign)
             
             # plot spikes
             actual_spikes_allelectr = actual_spikes_all[actual_spikes_all['electrode'] == electr]['time']
             actual_spikes_allpts = ispw.ms2pts(actual_spikes_allelectr, fs).astype('i4')
-            ax.plot(t[actual_spikes_allpts], data_used[electr,actual_spikes_allpts] + electr * add_it, 'rx', mfc='none', ms=7, linewidth = 4)
+            ax.plot(t[actual_spikes_allpts], data_used[electr,actual_spikes_allpts] + electr * add_it, spike_color + spike_sign , mfc='none', ms=7, linewidth = 4)
             
             # plot highest spikes in this SPW
             actual_spikes_electr = actual_spikes[actual_spikes['electrode'] == electr]['time']
             actual_spikes_pts = ispw.ms2pts(actual_spikes_electr, fs).astype('i4')
-            ax.plot(t[actual_spikes_pts], data_used[electr,actual_spikes_pts] + electr * add_it, '^', mfc='none', ms=7, linewidth = 4)
+            ax.plot(t[actual_spikes_pts], data_used[electr,actual_spikes_pts] + electr * add_it, spike_color + spike_sign)
+            
+            actual_ipsps_old_electr = actual_ipsps_old[actual_ipsps_old['electrode'] == electr]['ipsp_start']
+            actual_ipsps_old_pts = ispw.ms2pts(actual_ipsps_old_electr, fs).astype('i4')
+            ax.plot(t[actual_ipsps_old_pts], data_used[electr,actual_ipsps_old_pts] + electr * add_it, ipsps_color + ipsps_sign,
+                     mfc='none', ms=7, linewidth = 4)
+            
+            actual_prim_starts_electr = actual_prim_starts[actual_prim_starts['electrode'] == electr]['time']
+            actual_prim_starts_pts = ispw.ms2pts(actual_prim_starts_electr, fs).astype('i4')
+            ax.plot(t[actual_prim_starts_pts], data_used[electr,actual_prim_starts_pts] + electr * add_it, 'r*', 
+                    ms=7, linewidth = 4)    
+            
             
             # mfc='none', ms=7
-            plt.draw()
+            #plt.draw()
         
         used_spws = ipsps_used[ipsps_used['trace'] == used_trace]
         
@@ -275,6 +303,8 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
             self.actual_ipsps = self.ipsps_used[self.ipsps_used['trace'] == self.used_trace]
             self.actual_spikes = self.used_spikes[self.used_spikes['trace'] == self.used_trace]
             self.actual_spikes_all = self.spikes_all[self.spikes_all['trace'] == self.used_trace]
+            self.actual_ipsps_old = self.used_ipsps_old[self.used_ipsps_old['trace'] == self.used_trace]
+            self.actual_prim_starts = self.used_primStarts[self.used_primStarts['trace'] == self.used_trace]
             if len(all_spws) == 0:
                 self.no_spw_in_trace = 0
                 ax.set_xlim([self.xlims[0], self.xlims[1]]) 
@@ -300,15 +330,26 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
                 actual_ipsps_pts = ispw.ms2pts(actual_ipsps_electr, fs).astype('i4')
                 
                 ax.plot(self.t, self.data_used[electr,:] + electr * self.add_it, 'k')
-                ax.plot(self.t[actual_ipsps_pts], self.data_used[electr,actual_ipsps_pts] + electr * self.add_it, 'go')         
+                ax.plot(self.t[actual_ipsps_pts], self.data_used[electr,actual_ipsps_pts] + electr * self.add_it, self.ipsps_color + self.ipsps_sign)         
                 
                 actual_spikes_allelectr = self.actual_spikes_all[self.actual_spikes_all['electrode'] == electr]['time']
                 actual_spikes_allpts = ispw.ms2pts(actual_spikes_allelectr, fs).astype('i4')
-                ax.plot(self.t[actual_spikes_allpts], self.data_used[electr,actual_spikes_allpts] + electr * self.add_it, 'rx', mfc='none', ms=7, linewidth = 4)
+                ax.plot(self.t[actual_spikes_allpts], self.data_used[electr,actual_spikes_allpts] + electr * self.add_it, 
+                        self.spike_color + self.spike_sign, mfc='none', ms=7, linewidth = 4)
                 
                 actual_spikes_electr = self.actual_spikes[self.actual_spikes['electrode'] == electr]['time']
                 actual_spikes_pts = ispw.ms2pts(actual_spikes_electr, fs).astype('i4')
-                ax.plot(self.t[actual_spikes_pts], self.data_used[electr,actual_spikes_pts] + electr * self.add_it, '^', mfc='none', ms=7, linewidth = 4)
+                ax.plot(self.t[actual_spikes_pts], self.data_used[electr,actual_spikes_pts] + electr * self.add_it, self.spike_color + self.spike_sign)
+                
+                actual_ipsps_old_electr = self.actual_ipsps_old[self.actual_ipsps_old['electrode'] == electr]['ipsp_start']
+                actual_ipsps_old_pts = ispw.ms2pts(actual_ipsps_old_electr, fs).astype('i4')
+                ax.plot(self.t[actual_ipsps_old_pts], self.data_used[electr,actual_ipsps_old_pts] + electr * self.add_it, 
+                        self.ipsps_color + self.ipsps_sign,  mfc='none', ms=7, linewidth = 4)
+                
+                actual_prim_starts_electr = self.actual_prim_starts[self.actual_prim_starts['electrode'] == electr]['time']
+                actual_prim_starts_pts = ispw.ms2pts(actual_prim_starts_electr, fs).astype('i4')
+                ax.plot(self.t[actual_prim_starts_pts], self.data_used[electr,actual_prim_starts_pts] + electr * self.add_it, 'r*', 
+                        ms=7, linewidth = 4)  
                 plt.draw()
             
             #import pdb; pdb.set_trace()

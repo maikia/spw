@@ -551,7 +551,7 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
     npzfile.close()
 
     
-    thres_level = 10
+    thres_level = 5
     print
     print "removing averaged baseline and finding possible SPWs:",
     spws_starts = []
@@ -1163,7 +1163,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     #import pdb; pdb.set_trace()
     shift_ipsp = 1 # ms
     min_electr = 3 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    expected_min_ipsp_ampl = 20 # microV
+    expected_min_ipsp_ampl = 5 # microV
     shift_spike= 1 #ms
      
     spw_ipsps_list = []

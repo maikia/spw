@@ -23,7 +23,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     delete_old = False #!!!!
     
-    run_all_functions = True
+    run_all_functions = False
     
     if delete_old:
         fold_mng.remove_folder(save_folder)
@@ -95,9 +95,9 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         # uses previously selected largest spikes
         updater.up_spikes_in_spw(save_folder, save_file =spikes_inSPWs, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps_beg, reanalize = reanalize, win = win)
     
-    if run_all_functions:
+    if not run_all_functions:
         # it makes the plot to exactly analyse each SPW
-        analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_beg, load_spikefile = spikes_inSPWs, load_spikesall = spikes_raw)
+        analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_beg, load_spikefile = spikes_inSPWs, load_spikesall = spikes_raw, load_ipspsOld = SPWs_ipsps, spw_base = SPWs_potential)
     
     #print intr_electrode
     if intr_electrode == 1:
