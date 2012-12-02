@@ -25,7 +25,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     run_all_functions = False
     
-    if delete_old:
+    if delete_old: # !!!!!!
         fold_mng.remove_folder(save_folder)
     win = [0, 0]
     
@@ -69,17 +69,17 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         updater.up_highWaves(save_folder, save_file = SPWs_potential, load_datafile = raw_baselined,reanalize = reanalize)
  
     SPWs_potential_numb  = 'potential_SPWs_numbered.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # it numbers which wave is the same SPWs and asigns number to them
         updater.up_highWaves_numb(save_folder, save_file = SPWs_potential_numb, load_spwsfile = SPWs_potential, reanalize = reanalize)
     
     SPWs_ipsps      = 'spws_params.npz' #'spws_ipsps.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # it finds the preliminary IPSPs for each of the detected waves
         updater.up_SPW_ipsp(save_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_waves = SPWs_potential_numb, load_spikes = spikes_largest, reanalize = reanalize)
     
     spikes_inWaves = 'spikes_inWaves.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # uses previously selected largest spikes
         updater.up_spikes_in_spw(save_folder, save_file =spikes_inWaves, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps, reanalize = reanalize, win = win)
 
@@ -216,7 +216,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [14]: #range(12, len(all)):
+        for nex in [12]: #range(12, len(all)):
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()

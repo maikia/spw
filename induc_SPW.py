@@ -824,7 +824,6 @@ def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_nam
 
 def update_induc_spont_spw(save_folder, save_file, load_distances, load_spwfile, max_dist, ext):
     """ checks which spws are initiated and which are sponteneaus"""
-    
     npzfile    = np.load(save_folder + load_distances)
     distances      = npzfile['dist_spwspike'] 
     npzfile.close()    
@@ -957,6 +956,8 @@ def group_ipsps(spw_ipsps_trace, shift_ipsp):
             
             new_group_ids[dist<=shift_ipsp] = group_ids[ipsps_assigned[i[dist<=shift_ipsp]]]
             new_group_ids[dist>shift_ipsp] = np.arange(np.sum(dist>shift_ipsp))+max_group+1
+            
+            #assure that only one ipsp in assigned to a given group
             u_groups, nonduplicated = np.unique(new_group_ids,return_index=True)
             group_ids[ipsps_to_assign[nonduplicated]] = new_group_ids[nonduplicated]
             
@@ -1042,7 +1043,8 @@ def calculate_amplitude_of_IPSP(spw_ipsps_trace, data_trace, fs):
         try:
             ipsp_ampl[i] = np.max(single_ipsp)-data_trace[electrode, first]
         except:
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
+            ipsp_ampl[i] = np.nan
     
     # return to the original order
     inverse_i = np.argsort(sort_order)       
@@ -1080,18 +1082,18 @@ def take_element_or_nan(x, i):
     y[~isnan]=x[not_nan_i]
     return y
 
-def add_rec_field(recarray, arr, field_name):
-    names = recarray.dtype.names
+def add_rec_field(recarray, arrs, field_names):
+    names = list(recarray.dtype.names)
     field_data = [recarray[d] for d in names]
-    field_data.append(arr)
-    new_names = ','.join(names+(field_name,))
+    field_data += arrs
+    new_names = ','.join(names+field_names)
     return np.rec.fromarrays(field_data, names=new_names)
 
-def shift_ipsp_start(ipsps_trace, spikes_trace, shift_ipsp, shift_spike):
+def shift_ipsp_start(ipsps_trace, spikes_trace, shift_spike):
     """shift ipsp either to closest spike or two largerst IPSP in the group.
     returns new rec array with IPSPs shifted in time"""
     
-    group_ids = group_ipsps(ipsps_trace, shift_ipsp)
+    group_ids = ipsps_trace['group']
     
     # check which spikes are the closest to found beginnings of IPSPs 
 
@@ -1161,9 +1163,9 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     plot_it = False
     
     #import pdb; pdb.set_trace()
-    shift_ipsp = 1 # ms
+    shift_ipsp = 3 # ms
     min_electr = 3 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    expected_min_ipsp_ampl = 5 # microV
+    expected_min_ipsp_ampl = 10 # microV
     shift_spike= 1 #ms
      
     spw_ipsps_list = []
@@ -1174,20 +1176,12 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
 
         # calculate the rise between the beginning of IPSP and next IPSP
         ipsp_rise = calculate_ipsp_rise(spw_ipsps_trace, data[:, trace, :], fs)
-        spw_ipsps_trace_rised = spw_ipsps_trace[(ipsp_rise > expected_min_ipsp_ampl)]        
+        spw_ipsps_trace_rised = spw_ipsps_trace[(np.abs(ipsp_rise) > expected_min_ipsp_ampl)]        
         
         # check in how many electrodes each IPSP appears
         n_electrodes_per_ipsp = count_coincident_ipsps(spw_ipsps_trace_rised, shift_ipsp)
         #import pdb; pdb.set_trace()
         spw_ipsps_trace = spw_ipsps_trace_rised[(n_electrodes_per_ipsp >= min_electr)]
-                                          
-
-        
-        # use only those IPSPs which appear in more than min_electr and
-        # the rise of them is higher then expected_min_ipsp_ampl
-        #import pdb; pdb.set_trace()
-        #spw_ipsps_trace = spw_ipsps_trace[(ipsp_rise > expected_min_ipsp_ampl) &
-        #                                  (n_electrodes_per_ipsp >= min_electr)]
 
         
         spw_ipsps_list.append(spw_ipsps_trace)
@@ -1204,13 +1198,14 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
 
         ipsp_amplitudes = calculate_amplitude_of_IPSP(ipsps_trace, 
                                                   data[:, trace, :], fs)
-            
-        ipsps_trace = add_rec_field(ipsps_trace, ipsp_amplitudes, 'amplitude')
+        group_ids = group_ipsps(ipsps_trace, shift_ipsp)
+        ipsps_trace = add_rec_field(ipsps_trace, [ipsp_amplitudes, group_ids],
+                                     ['amplitude', 'group'])
         
         if len(ipsps_trace) > 0:
             #import pdb; pdb.set_trace()
             ipsps_trace = shift_ipsp_start(ipsps_trace, spikes_trace, 
-                                       shift_ipsp, shift_spike)
+                                       shift_spike)
         
             #shift spw to first ipsp
             ipsps_trace = shift_spw_to_first_ipsp(ipsps_trace)

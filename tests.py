@@ -26,12 +26,21 @@ def test_group_ipsps_in_multi_electrode():
     group = group_ipsps(ipsps, 2)
     expected_group = np.array([0, 0, 1, 2, 2])
     assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
+    
+def test_group_ipsps_in_multi_electrode_reverse_order():
+    ipsps_start = [2, 3, 1, 4, 5]
+    electrode =   [1, 2, 2, 2, 3]
+    ipsps = np.rec.fromarrays([ipsps_start, electrode], 
+                              names='ipsp_start,electrode')
+    group = group_ipsps(ipsps, 2)
+    expected_group = np.array([0, 1, 0, 2, 2])
+    assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
 
 
 def test_add_rec_field():
     x = np.rec.fromarrays([[1,2], [3,4]], names='a,b')
     c = np.array([5,6])
-    y = add_rec_field(x, c, 'c')
+    y = add_rec_field(x, [c], ['c'])
     assert (y['c']==c).all()
 
 def test_count_coincident_spikes():
@@ -113,15 +122,16 @@ def test_shift_ipsp_to_closest_spike():
     ipsp_amplitude = [1,1]
     ipsp_spw_no = [1,1]
     spike_spw_no = [1,1,1]
+    group_ipsps = [1,1]
     
     spikes_trace = np.rec.fromarrays([spike_electrode, spike_time, spike_spw_no], 
                                     names='electrode,time,spw_no')
     ipsps_trace = np.rec.fromarrays([ipsp_start, ipsp_electrode, ipsp_amplitude,
-                                     ipsp_spw_no],
-                                        names='ipsp_start,electrode,amplitude,spw_no')
-    shift_ipsp = 2
+                                     ipsp_spw_no, group_ipsps],
+                                    names='ipsp_start,electrode,amplitude,spw_no,group')
+
     shift_spike = 2
-    shifted_ipsp = shift_ipsp_start(ipsps_trace, spikes_trace, shift_ipsp, shift_spike)
+    shifted_ipsp = shift_ipsp_start(ipsps_trace, spikes_trace, shift_spike)
     expected_time = np.array([1,1])
     time = shifted_ipsp['ipsp_start']
     assert (time==expected_time).all(), "%s != %s" % (time, expected_time)
@@ -135,15 +145,16 @@ def test_shift_ipsp_to_closest_spike_after():
     ipsp_amplitude = [1,1]
     ipsp_spw_no = [1,1]
     spike_spw_no = [1,1,1]
+    group_ipsps = [1,1]
     
     spikes_trace = np.rec.fromarrays([spike_electrode, spike_time, spike_spw_no], 
                                     names='electrode,time,spw_no')
     ipsps_trace = np.rec.fromarrays([ipsp_start, ipsp_electrode, ipsp_amplitude,
-                                     ipsp_spw_no],
-                                        names='ipsp_start,electrode,amplitude,spw_no')
-    shift_ipsp = 1
+                                     ipsp_spw_no, group_ipsps],
+                                names='ipsp_start,electrode,amplitude,spw_no,group')
+
     shift_spike = 2
-    shifted_ipsp = shift_ipsp_start(ipsps_trace, spikes_trace, shift_ipsp, shift_spike)
+    shifted_ipsp = shift_ipsp_start(ipsps_trace, spikes_trace, shift_spike)
     expected_time = np.array([4.5,4.5])
     time = shifted_ipsp['ipsp_start']
     assert (time==expected_time).all(), "%s != %s" % (time, expected_time)
