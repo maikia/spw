@@ -133,7 +133,10 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
     ipsps_old = npzfile['spw_ipsps'] 
     npzfile.close()
     
+    #import pdb; pdb.set_trace()
+
     npzfile = np.load(save_folder + spw_base)
+    #primitive_starts = npzfile['spw_details']
     primitive_starts = npzfile['starts']
     npzfile.close()
     #import pdb; pdb.set_trace()
