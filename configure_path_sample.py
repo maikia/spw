@@ -11,7 +11,7 @@ def find_folders(cell_no = 1, part = 1, oscil = 0):
         f_dir = 'Cell 1/'
         if oscil == 0:
             save_folder = 'cell1/gap_free/'
-            f_name = 'cell1.abf' # cell1
+            f_name = '25102011_0019_gap free.abf' # cell1
             intra = 1
         else:
             if part == 1:
