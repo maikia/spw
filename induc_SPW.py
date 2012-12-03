@@ -543,28 +543,43 @@ def find_nearest(array,value):
     idx=(np.abs(array-value)).argmin()
     return idx, array[idx]
 
+
+
+
+
 def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
     """ performs moving average and based on this calculates probable beginning and end of the wave"""
     npzfile = np.load(save_folder + load_datafile)
     data = npzfile['data']
     fs = npzfile['fs']
     npzfile.close()
-
     
-    thres_level = 5
+    thres = 0.25
     print
     print "removing averaged baseline and finding possible SPWs:",
     spws_starts = []
     spws_ends = []
+    plot_it = True
+    
     for electr in range(np.size(data,0)): 
         print electr,
         
-        for trace in range(np.size(data,1)):
-
+        
+        #thres_data = data[electr, :, :]
+        #thres_level = np.std(thres_data) * thres
+        #print "thres: ", thres_level
+        for trace in [0]: #range(np.size(data,1)):
+            #import pdb; pdb.set_trace() 
+            
             window = ms2pts(atten_len, fs) # define the size of the window for removing the baseline
             data_used = data[electr, trace, :]
             
+            #thres_level = np.std(thres_data) * thres
+            
+            #
             new_dat, moved_avg = filt.remove_baseloc(data_used, window)     
+            thres_level = np.std(moved_avg) * thres
+            print thres_level
             
             # find beginning and the end of the wave
             di = np.diff(moved_avg)
@@ -604,6 +619,18 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
             
             spws_starts.append(np.rec.fromarrays([electrodes, traces, spw_starts], names='electrode,trace,time'))
             spws_ends.append(np.rec.fromarrays([electrodes, traces, spw_ends], names='electrode,trace,time'))
+            #import pdb; pdb.set_trace() 
+            
+            if plot_it:
+                add_it = 100
+                t = dat.get_timeline(data_used, fs, 'ms')
+                plt.plot(t, data_used + add_it * electr)
+                plt.plot(t, moved_avg + add_it * electr)
+                plt.axhline(y=thres_level + add_it * electr, xmin=t[0], xmax=t[-1])
+    plt.show()
+                
+                
+                
                      
     spws_starts = np.concatenate(spws_starts)    
     spws_ends = np.concatenate(spws_ends)    
@@ -1722,13 +1749,15 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
     # it also numbers SPWs
     
     # load starts of spws
+    
+    
     npzfile         = np.load(save_folder + load_spwsfile)
     spw_starts      = npzfile['starts']
     spw_ends        = npzfile['ends']
     npzfile.close()
     
     #import pdb; pdb.set_trace() 
-    min_no_electr = 2
+    min_no_electr = 1
     max_move = 15 # ms
     min_spw_length = 5 #ms
     #min_dist_between_starts = 20
@@ -1742,6 +1771,7 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
     spw_starts, spw_ends = check_SPW_length(spw_starts, spw_ends, min_spw_length)
     last_group = 0
     for trace in np.unique(spw_starts['trace']):
+        #import pdb; pdb.set_trace() 
         print 'trace: ' + str(trace + 1) + '/' + str(no_traces)
         # get spws for each electrode and check if it's the same
         spw_st_trace = spw_starts[(spw_starts['trace'] == trace)]
@@ -1761,11 +1791,13 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
         move_to_ordered = move_to_ordered.searchsorted(spw_no)
         
         groups_ordered = move_to_ordered + last_group
+        if len(groups_ordered) == 0:
+            import pdb; pdb.set_trace()
         last_group = max(groups_ordered)
         
         # add spw no to already existing 'electrode', 'trace', and 'time' 
         # of a SPW
-        new_spw_trace = add_rec_field(selected_spw_trace, groups_ordered, 'spw_no')
+        new_spw_trace = add_rec_field(selected_spw_trace, groups_ordered, ['spw_no'])
         
         all_spw_traces.append(new_spw_trace)
        
@@ -1792,7 +1824,7 @@ def update_databas(data_load, save_folder, data_file = 'data_bas'):
         
         electro_data = data[electr, :, :] #data[data['electrode'] == electr]
         mean_datatime = np.mean(electro_data)
-        data = data - mean_datatime
+        data[electr, :, :] = data[electr, :, :] - mean_datatime
 
     np.savez(save_folder + data_file, data = data, fs = fs)   
     del data
