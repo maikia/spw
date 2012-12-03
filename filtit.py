@@ -100,10 +100,14 @@ def remove_baseloc(data, window):
     function added by: Maja    """
     weightings = np.repeat(1.0, window) / window
     moved_avg = np.convolve(data, weightings)[window - 1:-(window - 1)]
-
+    
+    #import pdb; pdb.set_trace() 
+    #print len(moved_avg), len(data)
     m1 = [moved_avg[0]] * (window / 2)
     m2 = [moved_avg[-1]] * (window / (2) - 1)
     moved_avg = np.concatenate((m1, moved_avg, m2))
+    if len(moved_avg) < len(data):
+        moved_avg = np.hstack([moved_avg, moved_avg[-1]])
 
     return np.subtract(data, moved_avg), moved_avg
 

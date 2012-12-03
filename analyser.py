@@ -136,10 +136,10 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
     #import pdb; pdb.set_trace()
 
     npzfile = np.load(save_folder + spw_base)
-    #primitive_starts = npzfile['spw_details']
-    primitive_starts = npzfile['starts']
+    primitive_starts = npzfile['spw_details']
+    #primitive_starts = npzfile['starts']
     npzfile.close()
-    #import pdb; pdb.set_trace()
+    
 
     ax = plt.subplot(111)
     plt.subplots_adjust(bottom=0.2)
@@ -170,6 +170,7 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
         actual_spikes = used_spikes[used_spikes['trace'] == used_trace]
         actual_spikes_all = spikes_all[spikes_all['trace'] == used_trace]
         actual_ipsps_old = used_ipsps_old[used_ipsps_old['trace'] == used_trace]
+        #import pdb; pdb.set_trace()
         actual_prim_starts = used_primStarts[used_primStarts['trace'] == used_trace]
         group_colors = np.array([(1.0,0., 0.), 
                                  (0., 1., 0.), 
@@ -179,6 +180,7 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
                                  (0.6, 0.6, 0)])
         ipsp_group_all = actual_ipsps['group']
         ipsps_group_colors = group_colors[ipsp_group_all % len(group_colors)]
+        
         for electr in range(np.size(data_used,0)):
             # plot data
             ax.plot(t, data_used[electr,:] + electr * add_it, 'k')

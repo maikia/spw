@@ -554,32 +554,32 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
     fs = npzfile['fs']
     npzfile.close()
     
-    thres = 0.25
+    thres = .5
+    min_length = 15
+    min_length_pts = ms2pts(min_length, fs)
     print
     print "removing averaged baseline and finding possible SPWs:",
     spws_starts = []
     spws_ends = []
-    plot_it = True
+    plot_it = False
     
     for electr in range(np.size(data,0)): 
         print electr,
         
         
-        #thres_data = data[electr, :, :]
-        #thres_level = np.std(thres_data) * thres
+        thres_data = data[electr, :, :]
+        thres_window = np.std(thres_data)
         #print "thres: ", thres_level
-        for trace in [0]: #range(np.size(data,1)):
+        for trace in range(np.size(data,1)):
             #import pdb; pdb.set_trace() 
             
-            window = ms2pts(atten_len, fs) # define the size of the window for removing the baseline
+            window = np.floor(ms2pts(thres_window, fs)) # define the size of the window for removing the baseline
             data_used = data[electr, trace, :]
             
             #thres_level = np.std(thres_data) * thres
-            
-            #
+            #import pdb; pdb.set_trace()
             new_dat, moved_avg = filt.remove_baseloc(data_used, window)     
             thres_level = np.std(moved_avg) * thres
-            print thres_level
             
             # find beginning and the end of the wave
             di = np.diff(moved_avg)
@@ -590,14 +590,24 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
             # find moved_avg above thres_level
             possible_spws = dw.find_above(moved_avg, thres_level)   
             starts, ends = dw.find_startend(possible_spws)
+            lengths = ends - starts
+            leng_enough = lengths >= min_length_pts
+            #import pdb; pdb.set_trace() 
+            starts = starts[leng_enough]
+            ends = ends[leng_enough]
             starts_di, temp = dw.find_startend(di)
             di = np.abs(di-1)
             temp, ends_di = dw.find_startend(di)
             
+            #spw_starts = pts2ms(starts, fs)
+            #spw_ends = pts2ms(ends, fs)
             
+            #import pdb; pdb.set_trace() 
             spw_starts = np.zeros(len(starts))
             spw_ends = np.zeros(len(ends))
             for st_idx, st in enumerate(starts):
+                #import pdb; pdb.set_trace() 
+                
                 st_used = starts_di[np.where(starts_di <= st)]
                 idx, st_value = find_nearest(st_used,st)
                 spw_starts[st_idx] = st_value
@@ -624,11 +634,18 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
             if plot_it:
                 add_it = 100
                 t = dat.get_timeline(data_used, fs, 'ms')
+                plt.plot(t,possible_spws* 50 + add_it * electr)
                 plt.plot(t, data_used + add_it * electr)
                 plt.plot(t, moved_avg + add_it * electr)
                 plt.axhline(y=thres_level + add_it * electr, xmin=t[0], xmax=t[-1])
-    plt.show()
                 
+                spw_pts = ms2pts(spw_starts, fs).astype('i4')
+                #import pdb; pdb.set_trace() 
+                plt.plot(t[spw_pts], data_used[spw_pts] + add_it * electr, '*r')
+                #print len(spw_pts)
+                
+    plt.show()
+              
                 
                 
                      
@@ -1111,10 +1128,13 @@ def take_element_or_nan(x, i):
     return y
 
 def add_rec_field(recarray, arrs, field_names):
+    #import pdb; pdb.set_trace()
     names = list(recarray.dtype.names)
     field_data = [recarray[d] for d in names]
-    field_data += arrs
+    #field_data += arrs
+    field_data.append(arrs)
     new_names = ','.join(names+field_names)
+    #import pdb; pdb.set_trace()
     return np.rec.fromarrays(field_data, names=new_names)
 
 def shift_ipsp_start(ipsps_trace, spikes_trace, shift_spike):
@@ -1613,7 +1633,11 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
     data_length_ms = pts2ms(np.size(data,2), fs)
     #import pdb; pdb.set_trace() 
     # take each SPW separately and find ipsps
-    spw_len = len(np.unique(spw_details['spw_no']))
+    try:
+        spw_len = len(np.unique(spw_details['spw_no']))
+    except: 
+        print 'tutaj'
+        import pdb; pdb.set_trace() 
     all_spw_numbers = np.unique(spw_details['spw_no'])
     for idx_spw, spw in enumerate(all_spw_numbers):
         spw_used = spw_details[spw_details['spw_no'] == spw]
@@ -1799,10 +1823,12 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
         # of a SPW
         new_spw_trace = add_rec_field(selected_spw_trace, groups_ordered, ['spw_no'])
         
+        
         all_spw_traces.append(new_spw_trace)
        
     spw_details = np.concatenate(all_spw_traces)   
     #import pdb; pdb.set_trace() 
+    
     np.savez(save_folder + data_file, spw_details = spw_details) 
     del spw_starts
 
@@ -1825,6 +1851,21 @@ def update_databas(data_load, save_folder, data_file = 'data_bas'):
         electro_data = data[electr, :, :] #data[data['electrode'] == electr]
         mean_datatime = np.mean(electro_data)
         data[electr, :, :] = data[electr, :, :] - mean_datatime
+
+
+
+    print
+    print "setting the data to local baseline, working on electrode:",
+    local_length = 5000
+    # remove by more local baseline
+    for electr in range(np.size(data, 0)):
+        print electr,
+        for trace in range(np.size(data, 1)):
+            new_dat, moved_avg = filt.remove_baseloc(data[electr, trace, :], local_length)     
+            #import pdb; pdb.set_trace() 
+            #electro_data = data[electr, :, :] #data[data['electrode'] == electr]
+            #mean_datatime = np.mean(electro_data)
+            data[electr, trace, :] = data[electr, trace, :] - moved_avg
 
     np.savez(save_folder + data_file, data = data, fs = fs)   
     del data
