@@ -321,6 +321,8 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
             self.actual_spikes_all = self.spikes_all[self.spikes_all['trace'] == self.used_trace]
             self.actual_ipsps_old = self.used_ipsps_old[self.used_ipsps_old['trace'] == self.used_trace]
             self.actual_prim_starts = self.used_primStarts[self.used_primStarts['trace'] == self.used_trace]
+            self.ipsp_group_all = self.actual_ipsps['group']
+            self.ipsps_group_colors = self.group_colors[self.ipsp_group_all % len(self.group_colors)]
             if len(all_spws) == 0:
                 self.no_spw_in_trace = 0
                 ax.set_xlim([self.xlims[0], self.xlims[1]]) 
@@ -346,7 +348,15 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
                 actual_ipsps_pts = ispw.ms2pts(actual_ipsps_electr, fs).astype('i4')
                 
                 ax.plot(self.t, self.data_used[electr,:] + electr * self.add_it, 'k')
-                ax.plot(self.t[actual_ipsps_pts], self.data_used[electr,actual_ipsps_pts] + electr * self.add_it, self.ipsps_color + self.ipsps_sign)         
+                #ax.plot(self.t[actual_ipsps_pts], self.data_used[electr,actual_ipsps_pts] + electr * self.add_it, self.ipsps_color + self.ipsps_sign)       
+                actual_ipsps_selected = self.actual_ipsps[self.actual_ipsps['electrode'] == electr]
+                actual_ipsps_electr = actual_ipsps_selected['ipsp_start']
+                ipsp_color = self.ipsps_group_colors[self.actual_ipsps['electrode'] == electr]
+                actual_ipsps_pts = ispw.ms2pts(actual_ipsps_electr, fs).astype('i4')
+                ax.scatter(self.t[actual_ipsps_pts], self.data_used[electr,actual_ipsps_pts] + electr * self.add_it, 
+                       c=ipsp_color, marker=self.ipsps_sign, s=70,zorder=10)
+                
+                  
                 
                 actual_spikes_allelectr = self.actual_spikes_all[self.actual_spikes_all['electrode'] == electr]['time']
                 actual_spikes_allpts = ispw.ms2pts(actual_spikes_allelectr, fs).astype('i4')
