@@ -1131,8 +1131,10 @@ def add_rec_field(recarray, arrs, field_names):
     #import pdb; pdb.set_trace()
     names = list(recarray.dtype.names)
     field_data = [recarray[d] for d in names]
-    #field_data += arrs
-    field_data.append(arrs)
+    if len(field_names) > 1:
+        field_data += arrs
+    else:
+        field_data.append(arrs)
     new_names = ','.join(names+field_names)
     #import pdb; pdb.set_trace()
     return np.rec.fromarrays(field_data, names=new_names)
@@ -1233,22 +1235,28 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         spw_ipsps_trace = spw_ipsps_trace_rised[(n_electrodes_per_ipsp >= min_electr)]
         #spw_ipsps_trace = spw_ipsps_trace_rised
         #group_ids = group_ipsps(spw_ipsps_trace, shift_ipsp)
-        cipsps = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
-        while np.min(cipsps)<min_electr:
-            print np.sum(cipsps<min_electr)
-            spw_ipsps_trace = spw_ipsps_trace[cipsps>=min_electr]
+        #import pdb; pdb.set_trace()
+        
+        #print cipsps
+        if len(spw_ipsps_trace) > 0:
             cipsps = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
+            while np.min(cipsps)<min_electr:
+                print np.sum(cipsps<min_electr)
+                spw_ipsps_trace = spw_ipsps_trace[cipsps>=min_electr]
+                cipsps = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
+                spw_ipsps_list.append(spw_ipsps_trace)
+        #else:
+        #    spw_ipsps_list.append([])
+            
         
-        
-
-        
-        spw_ipsps_list.append(spw_ipsps_trace)
         
     spw_selected = np.concatenate(spw_ipsps_list)
     
+    
+    all_traces_update = np.unique(spw_selected['trace'])
     all_ipsps = []
     all_spikes = []
-    for trace in all_traces:
+    for trace in all_traces_update:
         #import pdb; pdb.set_trace()
         ipsps_trace = spw_selected[spw_selected['trace']==trace]
         spikes_trace = spw_spike[spw_spike['trace']==trace]
