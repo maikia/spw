@@ -937,11 +937,13 @@ def group_ipsps(spw_ipsps_trace, shift_ipsp):
             max_group = group_ids.max()
 
             if len(ipsps_assigned)==0:
-                 group_ids[ipsps_to_assign] = np.arange(len(ipsps_to_assign))+max_group+1
-                 break
+                group_ids[ipsps_to_assign] = np.arange(len(ipsps_to_assign))+max_group+1
+                break
              
             time_assigned = ipsp_start[ipsps_assigned]
             time_to_assign = ipsp_start[ipsps_to_assign]
+            
+            assert (np.diff(time_assigned.argsort(kind='mergesort'))==1).all()
             i = np.searchsorted(time_assigned, time_to_assign)
             #compare times with ipsp to the left and right
             left = time_assigned[np.maximum(0,i-1)]
@@ -951,13 +953,12 @@ def group_ipsps(spw_ipsps_trace, shift_ipsp):
             i = np.minimum(np.maximum(i,0), len(time_assigned)-1)
             dist = np.abs((time_assigned[i]-time_to_assign))
             
-            #if closest ipsps is closer thas shift_ipsp assign the new ipsps to the same group
             new_group_ids = -1*np.ones(len(ipsps_to_assign), dtype=int) 
             
             new_group_ids[dist<=shift_ipsp] = group_ids[ipsps_assigned[i[dist<=shift_ipsp]]]
             new_group_ids[dist>shift_ipsp] = np.arange(np.sum(dist>shift_ipsp))+max_group+1
             
-            #assure that only one ipsp in assigned to a given group
+            #assure that only one ipsp is assigned to any given group
             u_groups, nonduplicated = np.unique(new_group_ids,return_index=True)
             group_ids[ipsps_to_assign[nonduplicated]] = new_group_ids[nonduplicated]
             
@@ -987,7 +988,7 @@ def count_coincident_ipsps(spw_ipsps_trace, shift_ipsp):
         
     electrode = spw_ipsps_sorted['electrode']
 
-    #count number of disitinct electrodes fin each IPSP group
+    #count number of disitinct electrodes in each IPSP group
     n_uniq_electrodes_per_group = [len(np.unique(electrode[group_idx==group])) 
                                    for group in range(group_idx.max()+1)]
     
@@ -995,7 +996,7 @@ def count_coincident_ipsps(spw_ipsps_trace, shift_ipsp):
     
     #assign to each IPSP number of coincident IPSPs in other electrodes
     n_electrodes_per_ipsp = n_uniq_electrodes_per_group[group_idx]
-    
+
     #inverse sorting
     inverse_i = np.argsort(i)
     return n_electrodes_per_ipsp[inverse_i]
@@ -1181,7 +1182,17 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         # check in how many electrodes each IPSP appears
         n_electrodes_per_ipsp = count_coincident_ipsps(spw_ipsps_trace_rised, shift_ipsp)
         #import pdb; pdb.set_trace()
+
         spw_ipsps_trace = spw_ipsps_trace_rised[(n_electrodes_per_ipsp >= min_electr)]
+        #spw_ipsps_trace = spw_ipsps_trace_rised
+        #group_ids = group_ipsps(spw_ipsps_trace, shift_ipsp)
+        cipsps = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
+        while np.min(cipsps)<min_electr:
+            print np.sum(cipsps<min_electr)
+            spw_ipsps_trace = spw_ipsps_trace[cipsps>=min_electr]
+            cipsps = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
+        
+        
 
         
         spw_ipsps_list.append(spw_ipsps_trace)
@@ -1202,6 +1213,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         ipsps_trace = add_rec_field(ipsps_trace, [ipsp_amplitudes, group_ids],
                                      ['amplitude', 'group'])
         
+
         if len(ipsps_trace) > 0:
             #import pdb; pdb.set_trace()
             ipsps_trace = shift_ipsp_start(ipsps_trace, spikes_trace, 

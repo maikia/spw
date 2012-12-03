@@ -36,6 +36,32 @@ def test_group_ipsps_in_multi_electrode_reverse_order():
     expected_group = np.array([0, 1, 0, 2, 2])
     assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
 
+def test_group_ipsps_in_multi_electrode_unsorted_electrodes():
+    ipsps_start = [2, 3, 1, 4, 5]
+    electrode =   [2, 3, 3, 3, 1]
+    ipsps = np.rec.fromarrays([ipsps_start, electrode], 
+                              names='ipsp_start,electrode')
+    group = group_ipsps(ipsps, 2)
+    expected_group = np.array([1, 2, 1, 0, 0])
+    assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
+
+def test_group_ipsps_maximum_one_ipsp_per_electrode():
+    ipsps_start = np.cumsum(np.random.rand(1000))
+    electrode =   np.random.randint(6, size=1000)
+    ipsps = np.rec.fromarrays([ipsps_start, electrode], 
+                              names='ipsp_start,electrode')
+    group = group_ipsps(ipsps, 1)
+    assert np.max(np.bincount(group))==6
+
+def test_group_ipsps_is_stable():
+    ipsps_start = np.random.randint(100,size=1000)*1.
+    electrode =   np.random.randint(6, size=1000)
+    ipsps = np.rec.fromarrays([ipsps_start, electrode], 
+                              names='ipsp_start,electrode')
+    group1 = group_ipsps(ipsps, 1)
+    group2 = group_ipsps(ipsps, 1)
+    assert (group1==group2).all()
+
 
 def test_add_rec_field():
     x = np.rec.fromarrays([[1,2], [3,4]], names='a,b')

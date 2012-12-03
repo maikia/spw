@@ -171,14 +171,25 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
         actual_spikes_all = spikes_all[spikes_all['trace'] == used_trace]
         actual_ipsps_old = used_ipsps_old[used_ipsps_old['trace'] == used_trace]
         actual_prim_starts = used_primStarts[used_primStarts['trace'] == used_trace]
+        group_colors = np.array([(1.0,0., 0.), 
+                                 (0., 1., 0.), 
+                                 (0., 0., 1.), 
+                                 (0.6,0., 0.6),
+                                 (0., 0.6, 0.6),
+                                 (0.6, 0.6, 0)])
+        ipsp_group_all = actual_ipsps['group']
+        ipsps_group_colors = group_colors[ipsp_group_all % len(group_colors)]
         for electr in range(np.size(data_used,0)):
             # plot data
             ax.plot(t, data_used[electr,:] + electr * add_it, 'k')
             
             # plot ipsps
-            actual_ipsps_electr = actual_ipsps[actual_ipsps['electrode'] == electr]['ipsp_start']
+            actual_ipsps_selected = actual_ipsps[actual_ipsps['electrode'] == electr]
+            actual_ipsps_electr = actual_ipsps_selected['ipsp_start']
+            ipsp_color = ipsps_group_colors[actual_ipsps['electrode'] == electr]
             actual_ipsps_pts = ispw.ms2pts(actual_ipsps_electr, fs).astype('i4')
-            ax.plot(t[actual_ipsps_pts], data_used[electr,actual_ipsps_pts] + electr * add_it, ipsps_color + ipsps_sign)
+            ax.scatter(t[actual_ipsps_pts], data_used[electr,actual_ipsps_pts] + electr * add_it, 
+                       c=ipsp_color, marker=ipsps_sign, s=70,zorder=10)
             
             # plot spikes
             actual_spikes_allelectr = actual_spikes_all[actual_spikes_all['electrode'] == electr]['time']
@@ -192,7 +203,7 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
             
             actual_ipsps_old_electr = actual_ipsps_old[actual_ipsps_old['electrode'] == electr]['ipsp_start']
             actual_ipsps_old_pts = ispw.ms2pts(actual_ipsps_old_electr, fs).astype('i4')
-            ax.plot(t[actual_ipsps_old_pts], data_used[electr,actual_ipsps_old_pts] + electr * add_it, ipsps_color + ipsps_sign,
+            ax.plot(t[actual_ipsps_old_pts], data_used[electr,actual_ipsps_old_pts] + electr * add_it,  ipsps_sign,
                      mfc='none', ms=7, linewidth = 4)
             
             actual_prim_starts_electr = actual_prim_starts[actual_prim_starts['electrode'] == electr]['time']
