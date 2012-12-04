@@ -671,12 +671,12 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
     npzfile.close()  
     print 'Looking for origin of each spike'
     
-
+    import pdb; pdb.set_trace() 
     el,tr,sp,am = [],[],[],[]
+    
     # make sure that you are not comparing spikes which appear on different traces
     for trace in np.unique(spike_idxs['trace']):
         # loop trough all the detected spikes sorted timewise
-        
         spike_idxs_used = spike_idxs[spike_idxs['trace'] == trace]
         
         sort_idx        = np.argsort(spike_idxs_used['time'])
@@ -685,13 +685,24 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
         spike_old = -1
         considered_spikes, considered_ampls = [], []
         
-        
         # check which spikes are enough close to each other to be considered one
         for (idx, spike) in enumerate(posortowane):
             # find amplitude of this particular spike
             sp_time = spike['time']
             ams = spike['amplitude']
-    
+
+            if idx == len(posortowane):
+                # analyse the last spike(s) - repeat of above (might be improved in the future)
+                highest_ampl = np.argmax(considered_ampls)
+                if np.size(highest_ampl) > 1:
+                    highest_ampl = highest_ampl[0]
+                wining_spike = considered_spikes[highest_ampl] 
+
+                el.append(wining_spike['electrode'])
+                tr.append(wining_spike['trace'])
+                sp.append(wining_spike['time'])
+                am.append(considered_ampls[highest_ampl])
+
             if (np.abs(sp_time - spike_old) < allow_shift) or (len(considered_spikes) == 0):
                 # remember this one! It's close enought to the previous one
                 considered_spikes.append(spike)
@@ -713,18 +724,7 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
                 considered_spikes.append(spike)
                 considered_ampls.append(ams)
             
-            if idx == len(posortowane):
-                # analyse the last spike(s) - repeat of above (might be improved in the future)
-                highest_ampl = np.argmax(considered_ampls)
-                if np.size(highest_ampl) > 1:
-                    highest_ampl = highest_ampl[0]
-                wining_spike = considered_spikes[highest_ampl] 
 
-                el.append(wining_spike['electrode'])
-                tr.append(wining_spike['trace'])
-                sp.append(wining_spike['time'])
-                am.append(considered_ampls[highest_ampl])
-                  
             spike_old = spike['time']
         
     electrode = np.array(el, dtype='i4')
@@ -1247,27 +1247,23 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     npzfile.close()     
     
     plot_it = False
-    distanse_from_point = 3 # ms
+    distanse_from_point = 5 # ms
     #import pdb; pdb.set_trace()
     shift_ipsp = 3 # ms
     min_electr = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    expected_min_ipsp_ampl = 50 # microV
-    shift_spike= 3 #ms
+    expected_min_ipsp_ampl = 30 # microV
+    shift_spike= 1 #ms
     min_length_ipsp = 4
     
      
     spw_ipsps_list = []
     all_traces= np.unique(spw_ipsps['trace'])
-    
-#    # find real beginning of the SPW
-#    for trace in all_traces:
-#        spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
-#        # calculate the amplitude for each IPSP (from start to distanse_from_point after)
-#        data_trace = data[:,trace,:]
-#        
-#        max_ampls = calculate_max_in_given_patch(data_trace, spw_ipsps_trace[['electrode','ipsp_start']], distanse_from_point, fs)
-#        import pdb; pdb.set_trace()
-#        possible_starts = max_ampls > expected_min_ipsp_ampl
+
+# treat all the IPSPS
+
+# use only for the beginning of SPW (stricter rules
+
+# use for all other IPSPs
     
     
     

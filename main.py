@@ -79,7 +79,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         updater.up_SPW_ipsp(save_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_waves = SPWs_potential_numb, load_spikes = spikes_largest, reanalize = reanalize)
     
     spikes_inWaves = 'spikes_inWaves.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # uses previously selected largest spikes
         updater.up_spikes_in_spw(save_folder, save_file =spikes_inWaves, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps, reanalize = reanalize, win = win)
 
@@ -97,7 +97,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     if not run_all_functions:
         # it makes the plot to exactly analyse each SPW
-        analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_beg, load_spikefile = spikes_inSPWs, load_spikesall = spikes_raw, load_ipspsOld = SPWs_ipsps, spw_base = SPWs_potential_numb)
+        analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_beg, load_spikefile = spikes_largest, load_spikesall = spikes_raw, load_ipspsOld = SPWs_ipsps, spw_base = SPWs_potential_numb)
     
     #print intr_electrode
     if intr_electrode == 1:
@@ -216,7 +216,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [13]: #range(12, len(all)):
+        for nex in [14]: #range(12, len(all)):
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()

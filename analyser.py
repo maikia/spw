@@ -122,7 +122,9 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
     
     #import pdb; pdb.set_trace()
     npzfile        = np.load(save_folder + load_spikefile)
-    spikes = npzfile['chosen_spikes']
+    #import pdb; pdb.set_trace()
+    spikes = npzfile['spike_idx'] 
+    #spikes = npzfile['chosen_spikes']
     npzfile.close()  
     
     npzfile        = np.load(save_folder + load_spikesall)
@@ -260,15 +262,18 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
             plt.draw()
             
         def next_trace(self, event):
-            #import pdb; pdb.set_trace()
-            self.used_trace = min(self.used_trace +1, np.size(self.all_data,1))
-            self.redraw_data()
+            temp_trace = min(self.used_trace +1, np.size(self.all_data,1)-1)
+            if temp_trace != self.used_trace:
+                self.used_trace = temp_trace
+                self.redraw_data()
             # update data used, 
             
         def prev_trace(self, event):
             #import pdb; pdb.set_trace()
-            self.used_trace = max(self.used_trace -1, 0)
-            self.redraw_data()
+            temp_trace = max(self.used_trace -1, 0)
+            if temp_trace != self.used_trace:
+                self.used_trace = temp_trace
+                self.redraw_data()
             #used_trace = max(used_trace - 1, 0)
             #sed_spw_no = min(ipsps['trace' == used_trace]['spw_no'])
             
