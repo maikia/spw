@@ -1149,7 +1149,6 @@ def shift_ipsp_start(ipsps_trace, spikes_trace, shift_spike):
     group_ids = ipsps_trace['group']
     
     # check which spikes are the closest to found beginnings of IPSPs 
-
     closest_spike_idx = define_spikes_closest2IPSP_starts(spikes_trace, 
                                                       ipsps_trace)
     
@@ -1213,7 +1212,7 @@ def calculate_max_in_given_patch(data, points, distanse_from_point, fs):
     index_reversed = np.argsort(index)
     return ipsp_maxs[index_reversed]
 
-def calc_distance_between(spw_points):
+def calc_distance_between(spw_points, min_dist, amplitudes):
     index = np.argsort(spw_points, order=['electrode', 'ipsp_start'])
     points_ordered = spw_points[index]    
     
@@ -1224,15 +1223,169 @@ def calc_distance_between(spw_points):
         dist = np.diff(points_ordered[points_ordered['electrode'] == electr]
                        ['ipsp_start'])
         
-        dist_electr[last_idx] = 100
-        dist_electr[last_idx+1:last_idx + len(dist)+1] = dist
+        #dist_electr[last_idx] = 100
+        #dist_electr[last_idx+1:last_idx + len(dist)+1] = dist
+        dist_electr[last_idx:last_idx + len(dist)] = dist
+        dist_electr[last_idx + len(dist)] = 100
         last_idx = last_idx + len(dist) + 1
-
+    #dist_electr[last_idx] = 100
+    
+    distances_alright = dist_electr > min_dist
+    
+    left_ampl = amplitudes[~distances_alright]
+    right_ampl = amplitudes[1:][~distances_alright[:-1]]
+    
+    correct = left_ampl - right_ampl
+    distances_alright[correct < 0] = False
+    distances_alright[1:][correct >= 0] = False
+    #amplitudes[]
     #import pdb; pdb.set_trace()
-    assert (dist>=0).all()
+    
+    
+    #assert (dist_electr>=0).all()
     index_reversed = np.argsort(index)
-    return dist_electr[index_reversed]
+    return distances_alright[index_reversed]
+
+def remove_too_short(distance_too_short, ipsp_amplitudes):
+    """ if the distance is too short, checks which amplitude is higher (from
+    right or from the left and returns only this for further use"""
+    ipsp_used = distance_too_short
+    
+    left_ampl = ipsp_amplitudes[:-1][distance_too_short[:-1]]
+    right_ampl = ipsp_amplitudes[1:][distance_too_short[:-1]]
+    
+    comparision = left_ampl - right_ampl
+    # it's negative - right is larger, if it's positive, left is larger
+    
+    #ipsp_used[]
+    
+    comparision[comparision < 0] = left_ampl[comparision < 0]
+    comparision[comparision >= 0] = right_ampl
+    
+    import pdb; pdb.set_trace()
+
+
 def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext, win = [-20, 80]):
+    """ checks all the ipsps and corrects them for each spw"""
+    npzfile         = np.load(save_folder + load_datafile)
+    data            = npzfile['data']
+    fs              = npzfile['fs']
+    npzfile.close()   
+    
+    npzfile         = np.load(save_folder + load_spwsipsp)
+    spw_ipsps       = npzfile['spw_ipsps']
+    npzfile.close()   
+    
+    npzfile         = np.load(save_folder + load_spwsspike)
+    #import pdb; pdb.set_trace()
+    spw_spike      = npzfile['spike_idx']  
+    npzfile.close()     
+    
+    plot_it = False
+    distanse_from_point = 5 # ms
+    #import pdb; pdb.set_trace()
+    shift_ipsp = 3 # ms
+    min_electr_first = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
+    min_electr_all = 2
+    expected_min_ipsp_ampl = 30 # microV
+    shift_spike= 1 #ms
+    min_length_ipsp = 3
+    
+     
+    spw_ipsps_list = []
+    #all_traces= np.unique(spw_ipsps['trace'])
+
+    #all_traces_update = np.unique(spw_selected['trace'])
+    all_ipsps = []
+    all_spikes = []
+    
+    all_traces= np.unique(spw_ipsps['trace'])
+
+    # treat all the IPSPS
+    for trace in all_traces:
+        spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
+        spikes_trace = spw_spike[spw_spike['trace']==trace]
+        # calculate the amplitude for each IPSP (from start to distanse_from_point after)
+        data_trace = data[:,trace,:]
+        
+        # check which spikes are the closest to each ipsp
+        closest_spike_idx = define_spikes_closest2IPSP_starts(spikes_trace, 
+                                                      spw_ipsps_trace) 
+        
+        closest_spike_times = spikes_trace['time'][closest_spike_idx]
+        spikes_close_enough = np.abs(closest_spike_times - spw_ipsps_trace['ipsp_start']) < shift_spike
+        spw_ipsps_trace['ipsp_start'][spikes_close_enough] = closest_spike_times[spikes_close_enough]
+        
+        # remove IPSPs which are too short (leave the second IPSP from the two (remove the one which has smaller amplitude)
+        ipsp_amplitudes = calculate_amplitude_of_IPSP(spw_ipsps_trace, 
+                                                  data[:, trace, :], fs)
+        distance_between = calc_distance_between(spw_ipsps_trace[['electrode','ipsp_start']], min_length_ipsp, ipsp_amplitudes)
+
+        #import pdb; pdb.set_trace()
+        #distance_too_short = distance_between >= min_length_ipsp
+        #indexes_correct = remove_too_short(distance_too_short, ipsp_amplitudes)
+        
+        #ipsp_amplitudes
+        spw_ipsps_trace = spw_ipsps_trace[distance_between]
+        
+        
+        
+        
+    # use only for the beginning of SPW (stricter rules)
+    for trace in all_traces:
+        # check which IPSPs are of too low amplitude
+        max_ampls = calculate_max_in_given_patch(data_trace, spw_ipsps_trace[['electrode','ipsp_start']], distanse_from_point, fs)
+        spw_ipsps_first = spw_ipsps_trace[max_ampls >= expected_min_ipsp_ampl]
+        
+        # calculate the rise between the beginning of IPSP and next IPSP
+        #ipsp_rise = calculate_ipsp_rise(spw_ipsps_trace, data[:, trace, :], fs)
+
+        #spw_ipsps_trace_rised = spw_ipsps_trace[(np.abs(ipsp_rise) > expected_min_ipsp_ampl)]        
+        # check in how many electrodes each IPSP appears
+        n_electrodes_per_ipsp = count_coincident_ipsps(spw_ipsps_first, shift_ipsp)
+        spw_ipsps_first = spw_ipsps_first[(n_electrodes_per_ipsp >= min_electr_first)]
+        
+#        import pdb; pdb.set_trace()
+#       
+#    
+#    # use for all other IPSPs
+#    for trace in all_traces:
+#        #spw_ipsps_trace_rised = spw_ipsps_trace[(np.abs(ipsp_rise) > expected_min_ipsp_ampl)]        
+#        # check in how many electrodes each IPSP appears
+#        n_electrodes_per_ipsp = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
+#        spw_ipsps_trace = spw_ipsps_trace[(n_electrodes_per_ipsp >= min_electr_all)]
+#        
+        ipsp_amplitudes = calculate_amplitude_of_IPSP(spw_ipsps_first, 
+                                                  data[:, trace, :], fs)
+        group_ids = group_ipsps(spw_ipsps_first, shift_ipsp)
+        #import pdb; pdb.set_trace()
+        spw_ipsps_first = add_rec_field(spw_ipsps_first, [ipsp_amplitudes, group_ids],
+                                     ['amplitude', 'group'])
+#
+#        #shift spw to first ipsp
+#        spw_ipsps_trace = shift_spw_to_first_ipsp(spw_ipsps_trace)
+        
+        
+        all_ipsps.append(spw_ipsps_first)
+    all_ipsps = np.concatenate(all_ipsps)
+#    all_spikes = np.concatenate(all_spikes)
+#    for trace in all_traces:
+#        #spw_ipsps_trace = spw_ipsps_trace_rised
+#        #group_ids = group_ipsps(spw_ipsps_trace, shift_ipsp)
+#        if len(spw_ipsps_trace) > 0:
+#            cipsps = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
+#            while np.min(cipsps)<min_electr:
+#                print np.sum(cipsps<min_electr)
+#                spw_ipsps_trace = spw_ipsps_trace[cipsps>=min_electr]
+#                cipsps = count_coincident_ipsps(spw_ipsps_trace, shift_ipsp)
+    #spw_ipsps_list.append(spw_ipsps_trace)
+    #spw_selected = np.concatenate(all_ipsps)
+    np.savez(save_folder + save_file, spw_ipsps = all_ipsps) 
+    
+
+
+
+def update_spws_beg_backup(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext, win = [-20, 80]):
     """ checks all the ipsps and corrects them for each spw"""
 
     npzfile         = np.load(save_folder + load_datafile)
