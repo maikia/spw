@@ -160,7 +160,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
     
         spikes_inSPWs_plot_fig3a = 'spikes_inSPWs_fig3a'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot_fig3a + '/', 
                                  save_plots = spikes_inSPWs_plot_fig3a, data_file = raw_baselined, 
                                  spike_data = spikes_inSPWs, spw_data = induc_spont_spw, 
@@ -168,7 +168,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         
         spikePerElectrode = 'spike_per_electrode'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_spike(save_folder, solutions_folder + spikePerElectrode + '/', save_plots = spikePerElectrode, 
                             spike_data = spikes_inSPWs, spw_data = induc_spont_spw, 
                             ext = ext, win = win)
@@ -220,7 +220,7 @@ if __name__=='__main__':
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()
-            ex_electr = range(intra, 7+intra)
+            ex_electr = range(intra, 8+intra)
             print 'intra ' + str(intra)
             work_on_all(filename, save_folder, ex_electr, intra)
     

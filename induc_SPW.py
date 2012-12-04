@@ -873,7 +873,9 @@ def update_induc_spont_spw(save_folder, save_file, load_distances, load_spwfile,
     npzfile.close()    
     
     npzfile    = np.load(save_folder + load_spwfile)
-    ipsps      = npzfile['ipsps']  
+    #ipsps      = npzfile['ipsps']  
+    ipsps = npzfile['spw_ipsps']
+    #import pdb; pdb.set_trace()
     npzfile.close()   
     #before_pts = ispw.ms2pts(win[0], fs)
     #after_pts = ispw.ms2pts(win[1], fs)
@@ -906,7 +908,8 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
     #allow_before = ms2pts(allow_before,fs)
     # load starts of spws
     npzfile         = np.load(save_folder + load_spwfile)
-    ipsps      = npzfile['ipsps']  
+    #import pdb; pdb.set_trace()
+    ipsps      = npzfile['spw_ipsps']  
     npzfile.close()    
     
     spw_no = []
@@ -1221,8 +1224,8 @@ def calc_distance_between(spw_points):
         dist = np.diff(points_ordered[points_ordered['electrode'] == electr]
                        ['ipsp_start'])
         
-        dist_electr[last_idx:last_idx + len(dist)] = dist
-        dist_electr[last_idx + len(dist)] = 100
+        dist_electr[last_idx] = 100
+        dist_electr[last_idx+1:last_idx + len(dist)+1] = dist
         last_idx = last_idx + len(dist) + 1
 
     #import pdb; pdb.set_trace()
@@ -1253,13 +1256,15 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     min_electr = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
     expected_min_ipsp_ampl = 30 # microV
     shift_spike= 1 #ms
-    min_length_ipsp = 4
+    min_length_ipsp = 3
     
      
     spw_ipsps_list = []
     all_traces= np.unique(spw_ipsps['trace'])
 
 # treat all the IPSPS
+
+
 
 # use only for the beginning of SPW (stricter rules
 

@@ -40,7 +40,7 @@ def plot_noIpsps2distance(save_folder, plot_folder, save_plots, spw_file, dist_f
     
     npzfile         = np.load(save_folder + spw_file)
     
-    ipsps      = npzfile['ipsps'] # spikes_all
+    ipsps      = npzfile['spw_ipsps'] # spikes_all
     npzfile.close()    
     
     npzfile         = np.load(save_folder + dist_file)
@@ -431,7 +431,7 @@ def plot_spike(save_folder, plot_folder, save_plots, spike_data = 'spike.npz', s
     
     
 
-def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 800.0):
+def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 600.0):
     """ plots every spw separately (in all electrodes)"""
     
     
