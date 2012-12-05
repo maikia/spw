@@ -85,7 +85,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 
 
     SPWs_ipsps_beg  = 'SPWs_ipsps_beg.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # finding properly each of the IPSP
         # it combines information on Waves/Ipsps and spikes to find the beginning of the SPW 
         updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
@@ -95,10 +95,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         # uses previously selected largest spikes
         updater.up_spikes_in_spw(save_folder, save_file =spikes_inSPWs, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps_beg, reanalize = reanalize, win = win)
     
-    if not run_all_functions:
-        # it makes the plot to exactly analyse each SPW
-        analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_beg, load_spikefile = spikes_largest, load_spikesall = spikes_raw, load_ipspsOld = SPWs_ipsps, spw_base = SPWs_potential_numb)
-    
+
     #print intr_electrode
     if intr_electrode == 1:
         
@@ -112,8 +109,16 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             analyser.display_data(save_folder, plot_folder, save_plots, data_intra, trace = 0, part = [0, 100000], ext = ext)
         
         intra_spikes = 'intra_spikes.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra, reanalize = reanalize)
+        
+        if not run_all_functions:
+            # it makes the plot to exactly analyse each SPW
+            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_beg, 
+                                           load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
+                                           load_ipspsOld = SPWs_ipsps, spw_base = SPWs_potential_numb,
+                                           load_dataintrafile = data_intra, load_intraSpikes = intra_spikes)
+    
         
         dist_spw_inspikes = 'spw_dist2first.npz'
         if run_all_functions:

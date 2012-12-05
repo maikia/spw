@@ -45,6 +45,7 @@ def detect_1spike(data, thres, fs, pulse_len = 500):
     spikes = detect_spikes(data, thres)
     pulse_len = ms2pts(pulse_len, fs)
     firsts = []
+    import pdb; pdb.set_trace()
     if len(spikes) > 0:
         dist = [int(pulse_len+1)]
         dist.extend(np.diff(spikes).tolist())
@@ -1285,7 +1286,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     distanse_from_point = 5 # ms
     #import pdb; pdb.set_trace()
     shift_ipsp = 3 # ms
-    min_electr_first = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
+    min_electr_first = 3 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
     min_electr_all = 2
     expected_min_ipsp_ampl = 30 # microV
     shift_spike= 1 #ms
@@ -1361,6 +1362,9 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         #import pdb; pdb.set_trace()
         spw_ipsps_first = add_rec_field(spw_ipsps_first, [ipsp_amplitudes, group_ids],
                                      ['amplitude', 'group'])
+        
+        #shift spw to first ipsp
+        spw_ipsps_first = shift_spw_to_first_ipsp(spw_ipsps_first)
 #
 #        #shift spw to first ipsp
 #        spw_ipsps_trace = shift_spw_to_first_ipsp(spw_ipsps_trace)
