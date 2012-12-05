@@ -45,7 +45,7 @@ def detect_1spike(data, thres, fs, pulse_len = 500):
     spikes = detect_spikes(data, thres)
     pulse_len = ms2pts(pulse_len, fs)
     firsts = []
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     if len(spikes) > 0:
         dist = [int(pulse_len+1)]
         dist.extend(np.diff(spikes).tolist())
@@ -239,7 +239,29 @@ def update_ripples(ripple_data, fs, save_folder, data_file = 'ripples'):
     np.savez(save_folder + data_file, rip_idxs, fs) 
     return rip_idxs, fs
 
-
+def define_first_spikes(spikes, current_pulse):
+    """ finds which spikes are the closest to the beginnings of IPSP but no 
+    further than shift_spike"""
+    
+    first_spikes = np.zeros(len(current_pulse))
+    
+    i_current = np.argsort(current_pulse)
+    i_spikes = np.argsort(spikes)
+    
+    current_sorted = current_pulse[i_current]
+    spikes_sorted = spikes[i_spikes]
+    
+    for idx, t in enumerate(current_sorted):
+        #import pdb; pdb.set_trace()
+        try:
+            idx_spike, nearest_spike = find_nearest(spikes[spikes > t],t)
+        except:
+            nearest_spike = np.nan
+        first_spikes[idx] = nearest_spike
+    
+    inverse_i = np.argsort(i_current)   
+    first_spikes = first_spikes[inverse_i]    
+    return first_spikes[~ np.isnan(first_spikes)]
 
 def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
 #(data, fs, save_folder, save_file = "intra_spikes", pulse_len = 500, ):
@@ -252,17 +274,21 @@ def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
     
     sp_all = []
     sp_first = []
-    
+    thres_mult = 6 #mV
     print 'Detecting intracellular spikes'
     for trace in range(np.size(data,1)):
-        spiking_thres = -10 #mV
+        data_used =data[0, trace, :]
+        spiking_thres = np.std(data_used)* thres_mult
 
         # detect only the first spike in the row 
-        sp_idx_first = detect_1spike(data[0, trace, :], spiking_thres, fs, pulse_len)
-        sp_idx_a = detect_spikes(data[0, trace, :], spiking_thres) # for detecting all the spikes 
+        #sp_idx_first = detect_1spike(data_used, spiking_thres, fs, pulse_len)
+        sp_idx_a = detect_spikes(data_used, spiking_thres) # for detecting all the spikes 
         
-        
+        input_current = detect_spikes(data_used*(-1), 25)
+        #import pdb; pdb.set_trace()
+        sp_idx_first = define_first_spikes(sp_idx_a, input_current)
         typ = 'f8'
+        
         spike_idxs_first = pts2ms(sp_idx_first, fs).astype(typ)
         electrodes_first = np.zeros(len(spike_idxs_first), dtype=np.int32)
         traces_first = np.ones(len(spike_idxs_first), dtype=np.int32)*trace
@@ -274,17 +300,18 @@ def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
         sp_all.append(np.rec.fromarrays([electrodes_all, traces_all, np.array(sp_idxs_all, dtype=typ)], names='electrode,trace,time'))
         sp_first.append(np.rec.fromarrays([electrodes_first, traces_first, np.array(spike_idxs_first, dtype=typ)], names='electrode,trace,time'))
 #        import pdb; pdb.set_trace()
-#        part = [0, 200000]
-#        data_temp = data[0,0,part[0]:part[1]]
+        #part = [0, 200000]
+#        data_temp = data[0,0,:]#part[0]:part[1]]
 #        
 #        t = dat.get_timeline(data_temp, fs, 'ms')
 #        plt.plot(t, data_temp)
 #        
 #        spik = np.concatenate(sp_first)
 #        spiks = ms2pts(spik['time'], fs).astype('i4')
-#        spiks_temp = spiks[(spiks < part[1]) & (spiks > part[0])]
-#        plt.plot(t[spiks_temp - part[0]], data_temp[spiks_temp - part[0]], 'go')
-        
+#        #spiks_temp = spiks[(spiks < part[1]) & (spiks > part[0])]
+#        #plt.plot(t[spiks_temp - part[0]], data_temp[spiks_temp - part[0]], 'go')
+#        plt.plot(t[spiks], data_temp[spiks], 'ro')
+#        plt.show()
         
         
     sp_all = np.concatenate(sp_all)

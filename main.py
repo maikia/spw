@@ -103,21 +103,26 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if run_all_functions:
             updater.up_intrafile(filename, save_folder, save_file = data_intra, int_electrodes = [0], reanalize = reanalize)
         
+        data_intra_base = 'data_baseintra.npz'
+        if run_all_functions:
+            # removes the baseline
+            updater.up_databas(save_folder, save_file = data_intra_base, load_file = data_intra, reanalize = reanalize)
+            
         plot_folder = 'full_data/'
         save_plots = 'data_intra'
         if run_all_functions:
-            analyser.display_data(save_folder, plot_folder, save_plots, data_intra, trace = 0, part = [0, 100000], ext = ext)
+            analyser.display_data(save_folder, plot_folder, save_plots, data_intra_base, trace = 0, part = [0, 100000], ext = ext)
         
         intra_spikes = 'intra_spikes.npz'
         if not run_all_functions:
-            updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra, reanalize = reanalize)
+            updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
         
         if not run_all_functions:
             # it makes the plot to exactly analyse each SPW
             analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_beg, 
                                            load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
                                            load_ipspsOld = SPWs_ipsps, spw_base = SPWs_potential_numb,
-                                           load_dataintrafile = data_intra, load_intraSpikes = intra_spikes)
+                                           load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
     
         
         dist_spw_inspikes = 'spw_dist2first.npz'
@@ -148,7 +153,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         alignedSPWs = 'aligned_SPWs'
         if run_all_functions:
 
-            analyser.plot_alignedSPW(save_folder, solutions_folder+alignedSPWs + '/', save_plots = alignedSPWs, data_file = raw_baselined, intra_data_file = data_intra, spike_file = induc_spont_spw, intra_spikes = intra_spikes, ext = ext)
+            analyser.plot_alignedSPW(save_folder, solutions_folder+alignedSPWs + '/', save_plots = alignedSPWs, data_file = raw_baselined, intra_data_file = data_intra_base, spike_file = induc_spont_spw, intra_spikes = intra_spikes, ext = ext)
         
         
         
