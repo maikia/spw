@@ -278,13 +278,13 @@ def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
     print 'Detecting intracellular spikes'
     for trace in range(np.size(data,1)):
         data_used =data[0, trace, :]
-        spiking_thres = np.std(data_used)* thres_mult
+        spiking_thres = 30 #np.std(data_used)* thres_mult
 
         # detect only the first spike in the row 
         #sp_idx_first = detect_1spike(data_used, spiking_thres, fs, pulse_len)
         sp_idx_a = detect_spikes(data_used, spiking_thres) # for detecting all the spikes 
         
-        input_current = detect_spikes(data_used*(-1), 25)
+        input_current = detect_spikes(data_used*(-1), 10)
         #import pdb; pdb.set_trace()
         sp_idx_first = define_first_spikes(sp_idx_a, input_current)
         typ = 'f8'
@@ -300,20 +300,21 @@ def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
         sp_all.append(np.rec.fromarrays([electrodes_all, traces_all, np.array(sp_idxs_all, dtype=typ)], names='electrode,trace,time'))
         sp_first.append(np.rec.fromarrays([electrodes_first, traces_first, np.array(spike_idxs_first, dtype=typ)], names='electrode,trace,time'))
 #        import pdb; pdb.set_trace()
-        #part = [0, 200000]
-#        data_temp = data[0,0,:]#part[0]:part[1]]
+#        part = [0, 200000]
+#        data_temp = data[0,trace,:]#part[0]:part[1]]
 #        
 #        t = dat.get_timeline(data_temp, fs, 'ms')
-#        plt.plot(t, data_temp)
+#        plt.plot(t, data_temp, 'k')
 #        
 #        spik = np.concatenate(sp_first)
 #        spiks = ms2pts(spik['time'], fs).astype('i4')
 #        #spiks_temp = spiks[(spiks < part[1]) & (spiks > part[0])]
 #        #plt.plot(t[spiks_temp - part[0]], data_temp[spiks_temp - part[0]], 'go')
 #        plt.plot(t[spiks], data_temp[spiks], 'ro')
-#        plt.show()
-        
-        
+#        #plt.show()
+#        
+#    plt.show()
+#    import pdb; pdb.set_trace()  
     sp_all = np.concatenate(sp_all)
     sp_first = np.concatenate(sp_first)    
        
@@ -699,7 +700,7 @@ def update_spikes_ampls(save_folder, save_file, load_spike_file):
     npzfile.close()  
     print 'Looking for origin of each spike'
     
-    import pdb; pdb.set_trace() 
+    #import pdb; pdb.set_trace() 
     el,tr,sp,am = [],[],[],[]
     
     # make sure that you are not comparing spikes which appear on different traces
@@ -1340,7 +1341,10 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         closest_spike_idx = define_spikes_closest2IPSP_starts(spikes_trace, 
                                                       spw_ipsps_trace) 
         
-        closest_spike_times = spikes_trace['time'][closest_spike_idx]
+        #take_element_or_nan(x, i)
+        #import pdb; pdb.set_trace()
+        #closest_spike_times = spikes_trace['time'][closest_spike_idx]
+        closest_spike_times = take_element_or_nan(spikes_trace['time'], closest_spike_idx)
         spikes_close_enough = np.abs(closest_spike_times - spw_ipsps_trace['ipsp_start']) < shift_spike
         spw_ipsps_trace['ipsp_start'][spikes_close_enough] = closest_spike_times[spikes_close_enough]
         
@@ -1360,7 +1364,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         
         
     # use only for the beginning of SPW (stricter rules)
-    for trace in all_traces:
+    #for trace in all_traces:
         # check which IPSPs are of too low amplitude
         max_ampls = calculate_max_in_given_patch(data_trace, spw_ipsps_trace[['electrode','ipsp_start']], distanse_from_point, fs)
         spw_ipsps_first = spw_ipsps_trace[max_ampls >= expected_min_ipsp_ampl]
@@ -1385,11 +1389,15 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
 #        
         ipsp_amplitudes = calculate_amplitude_of_IPSP(spw_ipsps_first, 
                                                   data[:, trace, :], fs)
-        group_ids = group_ipsps(spw_ipsps_first, shift_ipsp)
+        
+        if len(spw_ipsps_first) > 0:
+            group_ids = group_ipsps(spw_ipsps_first, shift_ipsp)
+        else:
+            group_ids = np.array([]).astype('i4')
         #import pdb; pdb.set_trace()
         spw_ipsps_first = add_rec_field(spw_ipsps_first, [ipsp_amplitudes, group_ids],
                                      ['amplitude', 'group'])
-        
+
         #shift spw to first ipsp
         spw_ipsps_first = shift_spw_to_first_ipsp(spw_ipsps_first)
 #
@@ -1398,6 +1406,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         
         
         all_ipsps.append(spw_ipsps_first)
+    #import pdb; pdb.set_trace()
     all_ipsps = np.concatenate(all_ipsps)
 #    all_spikes = np.concatenate(all_spikes)
 #    for trace in all_traces:
