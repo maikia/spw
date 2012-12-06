@@ -59,7 +59,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     #    updater.up_expikes_params(save_folder, save_file = spikes_params, load_datafile = raw_baselined, load_spikefile = spikes_raw, reanalize = reanalize)
     
     spikes_largest = 'spikes_largest.npz'
-    if run_all_functions:
+    if not run_all_functions:
         # checks which spikes have the highest amplitude (if the same spike is detected in multiple electrodes)
         #     only the spike of the highest amplitude will be kept - structrue stays the same
         updater.up_spikes_ampl(save_folder, save_file =spikes_largest, load_spike_file = spikes_raw, reanalize = reanalize)
@@ -82,13 +82,17 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 #    if not run_all_functions:
 #        # uses previously selected largest spikes
 #        updater.up_spikes_in_spw(save_folder, save_file =spikes_inWaves, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps, reanalize = reanalize, win = win)
-
+    ipsps_corrected = 'ipsps_corrected.npz'
+    if run_all_functions:
+        # correct the IPSPs (no matter if used for SPW start or for later
+        updater.up_correct_ipsps(save_folder, save_fig = 'spw_ipsp', save_file = ipsps_corrected, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
+    
 
     SPWs_ipsps_beg  = 'SPWs_ipsps_beg.npz'
-    if run_all_functions:
+    if not run_all_functions:
         # finding properly each of the IPSP
         # it combines information on Waves/Ipsps and spikes to find the beginning of the SPW 
-        updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
+        updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     
 #    spikes_inSPWs = 'spikes_inSpw.npz'
 #    if run_all_functions:
@@ -117,7 +121,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if run_all_functions:
             updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
         
-        if run_all_functions:
+        if not run_all_functions:
             # it makes the plot to exactly analyse each SPW
             analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_beg, 
                                            load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
@@ -126,12 +130,12 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
         
         dist_spw_inspikes = 'spw_dist2first.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, spikes = 'first', reanalize = reanalize)
         
-        dist_spw_inspikes2all = 'spw_dist2all.npz'
-        if run_all_functions:
-            updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes2all, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, spikes = 'all', reanalize = reanalize)
+#        dist_spw_inspikes2all = 'spw_dist2all.npz'
+#        if run_all_functions:
+#            updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes2all, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, spikes = 'all', reanalize = reanalize)
         
         induc_spont_spw = 'induc_spont_spw.npz'
         max_dist = 10 # ms
@@ -226,7 +230,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [15]: #range(12, len(all)):
+        for nex in [4]: #range(12, len(all)):
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()

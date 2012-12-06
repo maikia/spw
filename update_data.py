@@ -135,6 +135,21 @@ def up_spikes_ampl(save_folder, save_file ='spikes_in_spws', load_spike_file = '
         print 'origins of spikes were already calculated'
     gc.collect()    
 
+def up_correct_ipsps(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf'):
+    """analyse all the ipsps and correct them"""
+    # check if folder already exists
+    fold_mng.create_folder(save_folder)
+    
+    # check if this file already exists
+    exists = fold_mng.file_exists(save_folder, save_file)
+    if reanalize or not exists:
+        fig_fold_name = 'SPW_IPSPs/'
+        fold_mng.create_folder(save_folder + fig_fold_name)
+          
+        ispw.corect_ipsps(load_datafile, load_spwsipsp, load_spwsspike, save_folder, fig_fold_name + save_fig, save_file, ext)  
+    gc.collect()    
+    
+    
 def up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf'): 
     """analyse the beginning of each SPW - finds the beginnings - time and location"""
     # check if folder already exists
