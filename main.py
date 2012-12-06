@@ -59,7 +59,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     #    updater.up_expikes_params(save_folder, save_file = spikes_params, load_datafile = raw_baselined, load_spikefile = spikes_raw, reanalize = reanalize)
     
     spikes_largest = 'spikes_largest.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # checks which spikes have the highest amplitude (if the same spike is detected in multiple electrodes)
         #     only the spike of the highest amplitude will be kept - structrue stays the same
         updater.up_spikes_ampl(save_folder, save_file =spikes_largest, load_spike_file = spikes_raw, reanalize = reanalize)
@@ -143,7 +143,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             updater.up_induc_spont_spw(save_folder, save_file = induc_spont_spw, load_distances = dist_spw_inspikes, load_spwfile = SPWs_ipsps_beg, max_init_dist = max_dist, reanalize = reanalize, ext = ext)
     
         induc_spont_equal = 'induc_spont_equal.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.equalize_number_spws(save_folder, save_file = induc_spont_equal, induc_spont = induc_spont_spw, load_distances = dist_spw_inspikes, reanalize = reanalize)
             
     ##### - analyser - #####
@@ -184,9 +184,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         
         spikePerElectrode = 'spike_per_electrode'
+        hist_spike_bins = 'all_dists_hist.npz'
         if not run_all_functions:
             analyser.plot_spike(save_folder, solutions_folder + spikePerElectrode + '/', save_plots = spikePerElectrode, 
-                            spike_data = spikes_largest, spw_data = induc_spont_spw, 
+                            save_file = hist_spike_bins, spike_data = spikes_largest, spw_data = induc_spont_equal, 
                             ext = ext, win = win)
     
     
