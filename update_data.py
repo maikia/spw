@@ -203,6 +203,19 @@ def up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.np
 def update_ipsp_exSpikes(save_folder, save_file):
     pass
 
+def equalize_number_spws(save_folder, save_file, induc_spont, load_distances, reanalize):
+    fold_mng.create_folder(save_folder)
+    
+    # check if this file already exists
+    exists = fold_mng.file_exists(save_folder, save_file)
+
+    if reanalize or not exists:
+        # load the data        
+        ispw.update_equalize_number_spws(save_folder = save_folder, save_file = save_file, induc_spont = induc_spont, load_distances = load_distances)
+    else:
+        print 'Initiated SPWs were already saved'    
+    gc.collect()      
+
 def up_induc_spont_spw(save_folder, save_file = 'i_s_spws', load_distances = 'distances.npz', load_spwfile = 'spws.npz', max_init_dist = 10, reanalize = False, ext = '.pdf'):
     """ it finds which spws are initiated and which are sponteneaus"""
     fold_mng.create_folder(save_folder)
@@ -229,7 +242,7 @@ def up_dist_SpwfromSpike(save_folder, save_file = 'spw_dist.npz', load_intrafile
 
     if reanalize or not exists:
         # load the data        
-        ispw.update_dist_SPWfromSpike(save_folder = save_folder, save_file = save_file, load_intrafile = load_intrafile, load_spwfile = load_spwfile, max_dist = 10, spikes = spikes)
+        ispw.update_dist_SPWfromSpike(save_folder = save_folder, save_file = save_file, load_intrafile = load_intrafile, load_spwfile = load_spwfile, max_dist = 7, spikes = spikes)
     else:
         print 'distances of spws to intracellular spikes were already calculated'    
     gc.collect()    

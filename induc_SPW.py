@@ -13,6 +13,7 @@ import detect_waves as dw
 from scipy import signal
 import data_mang as dat
 import folder_manager as fold_mang
+from random import randint
 
 def find_envelope(data):
     """ finds envelope of the data"""
@@ -45,11 +46,12 @@ def detect_1spike(data, thres, fs, pulse_len = 500):
     spikes = detect_spikes(data, thres)
     pulse_len = ms2pts(pulse_len, fs)
     firsts = []
-    #import pdb; pdb.set_trace()
+
     if len(spikes) > 0:
         dist = [int(pulse_len+1)]
         dist.extend(np.diff(spikes).tolist())
         firsts = [spikes[i] for i in range(len(dist)) if dist[i] > pulse_len]
+
     return firsts
 
 def dist_fromSpike(spikes, events, fs):
@@ -263,14 +265,14 @@ def define_first_spikes(spikes, current_pulse):
     first_spikes = first_spikes[inverse_i]    
     return first_spikes[~ np.isnan(first_spikes)]
 
-def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
+def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 300):
 #(data, fs, save_folder, save_file = "intra_spikes", pulse_len = 500, ):
     """ pulse_len in ms - length of the stimulation pulse in intracellular electrode"""
     npzfile = np.load(save_folder + load_file)
     data = npzfile['data']
     fs = npzfile['fs'] 
     npzfile.close()
-    
+    way = 1
     
     sp_all = []
     sp_first = []
@@ -278,17 +280,26 @@ def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
     print 'Detecting intracellular spikes'
     for trace in range(np.size(data,1)):
         data_used =data[0, trace, :]
-        spiking_thres = 30 #np.std(data_used)* thres_mult
+        spiking_thres = np.std(data_used)* thres_mult
 
         # detect only the first spike in the row 
         #sp_idx_first = detect_1spike(data_used, spiking_thres, fs, pulse_len)
         sp_idx_a = detect_spikes(data_used, spiking_thres) # for detecting all the spikes 
-        
-        input_current = detect_spikes(data_used*(-1), 10)
-        #import pdb; pdb.set_trace()
-        sp_idx_first = define_first_spikes(sp_idx_a, input_current)
+        if way == 1:
+            sp_idx_first = detect_1spike(data[0, trace, :], spiking_thres, fs, pulse_len)
+            sp_idx_a = detect_spikes(data[0, trace, :], spiking_thres) # for detecting all the spikes 
+            
+        else: 
+            # detect only the first spike in the row 
+            #sp_idx_first = detect_1spike(data_used, spiking_thres, fs, pulse_len)
+            sp_idx_a = detect_spikes(data_used, spiking_thres) # for detecting all the spikes 
+            
+            input_current = detect_spikes(data_used*(-1), 10)
+            #import pdb; pdb.set_trace()
+            sp_idx_first = define_first_spikes(sp_idx_a, input_current)
         typ = 'f8'
         
+            
         spike_idxs_first = pts2ms(sp_idx_first, fs).astype(typ)
         electrodes_first = np.zeros(len(spike_idxs_first), dtype=np.int32)
         traces_first = np.ones(len(spike_idxs_first), dtype=np.int32)*trace
@@ -296,24 +307,27 @@ def update_intraSpikes(save_folder, save_file, load_file, pulse_len = 500):
         sp_idxs_all = pts2ms(sp_idx_a, fs).astype(typ)
         electrodes_all = np.zeros(len(sp_idxs_all), dtype=np.int32)
         traces_all = np.ones(len(sp_idxs_all), dtype=np.int32)*trace
-            
+                
         sp_all.append(np.rec.fromarrays([electrodes_all, traces_all, np.array(sp_idxs_all, dtype=typ)], names='electrode,trace,time'))
         sp_first.append(np.rec.fromarrays([electrodes_first, traces_first, np.array(spike_idxs_first, dtype=typ)], names='electrode,trace,time'))
-#        import pdb; pdb.set_trace()
+
+    
+    #        import pdb; pdb.set_trace()
+#        plt.figure()
 #        part = [0, 200000]
 #        data_temp = data[0,trace,:]#part[0]:part[1]]
 #        
 #        t = dat.get_timeline(data_temp, fs, 'ms')
 #        plt.plot(t, data_temp, 'k')
 #        
-#        spik = np.concatenate(sp_first)
-#        spiks = ms2pts(spik['time'], fs).astype('i4')
+#        spik = spike_idxs_first
+#        spiks = ms2pts(spik, fs).astype('i4')
 #        #spiks_temp = spiks[(spiks < part[1]) & (spiks > part[0])]
 #        #plt.plot(t[spiks_temp - part[0]], data_temp[spiks_temp - part[0]], 'go')
 #        plt.plot(t[spiks], data_temp[spiks], 'ro')
 #        #plt.show()
 #        
-#    plt.show()
+#        plt.show()
 #    import pdb; pdb.set_trace()  
     sp_all = np.concatenate(sp_all)
     sp_first = np.concatenate(sp_first)    
@@ -895,12 +909,74 @@ def update_SPW_spikes_ampl(load_spikefile, load_spwsspike, save_folder, save_nam
     np.savez(save_folder + save_name, chosen_spikes = chosen_spikes)        
     del spike_idxs, ampls, spw_spikes
 
+def take_random_elements(arr, no_elements):
+    siz = len(arr)
+    elements = np.zeros(no_elements)
+    #elements = []
+    data = arr.copy()
+    for numb in range(no_elements):
+        siz = siz - 1
+        index = randint(0, siz)
+        elem = data[index]
+        data[index] = data[siz]
+        #import pdb; pdb.set_trace()
+        elements[numb]= elem
+        #elements.append(elem)
+    #elements = np.concatenate(elements)
+    return elements
+
+def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distances):
+    """ it takes the same number of both induc and spontaneous spws"""
+    npzfile    = np.load(save_folder + load_distances)
+    distances      = npzfile['dist_spwspike'] 
+    npzfile.close()     
+    
+    npzfile    = np.load(save_folder + induc_spont)
+    spont = npzfile['spontaneous']
+    init = npzfile['initiated']
+    npzfile.close()     
+    
+    way = 'random' # 'random', 'closest', 
+    
+    if way == 'random':
+        # take randomly from both groups the number of elements equal smaller group
+        
+        no_elements = min(len(np.unique(spont['spw_no'])), len(np.unique(init['spw_no'])))
+        #import pdb; pdb.set_trace()
+        # choose init elements
+        
+        if len(np.unique(spont['spw_no'])) == no_elements:
+            # there is less spontaneous events
+            to_correct = init            
+        else:
+            # there is less induced events
+            to_correct = spont
+            
+        chosen_ones = take_random_elements(np.unique(to_correct['spw_no']), no_elements)
+        chosen_ones = np.sort(chosen_ones)
+        selected_ones = []
+        
+        for spw_no in chosen_ones:
+            selected_ones.append(to_correct[to_correct['spw_no'] == spw_no])
+            
+        if len(np.unique(spont['spw_no'])) == no_elements:
+            selected_init = np.concatenate(selected_ones)
+            selected_spont = spont
+        else:
+            # there is less induced events         
+            selected_spont = np.concatenate(selected_ones)
+            selected_init = init
+#    elif way == 'closest':
+        
+    
+    np.savez(save_folder + save_file, initiated = selected_init, spontaneous = selected_spont)
+    
 def update_induc_spont_spw(save_folder, save_file, load_distances, load_spwfile, max_dist, ext):
     """ checks which spws are initiated and which are sponteneaus"""
     npzfile    = np.load(save_folder + load_distances)
+    error_allowed = -0.5
     distances      = npzfile['dist_spwspike'] 
     npzfile.close()    
-    
     npzfile    = np.load(save_folder + load_spwfile)
     #ipsps      = npzfile['ipsps']  
     ipsps = npzfile['spw_ipsps']
@@ -908,13 +984,15 @@ def update_induc_spont_spw(save_folder, save_file, load_distances, load_spwfile,
     npzfile.close()   
     #before_pts = ispw.ms2pts(win[0], fs)
     #after_pts = ispw.ms2pts(win[1], fs)
-    d = distances['distance']
-    initiated_no = distances[(d <= max_dist) & (d>=0)]['spw_no']
-    spont_no = distances[(d > max_dist) | (d<0)]['spw_no']
-    
-    #import pdb; pdb.set_trace() 
+    dist = distances['distance']
+    initiated_no = distances[(dist <= max_dist) & (dist>=error_allowed)]['spw_no']
+    #import pdb; pdb.set_trace()
+    spont_no = distances[(dist > max_dist) | (dist<error_allowed)]['spw_no']
+    #unsure = unsure_spws
+     
     init_set = np.in1d(ipsps['spw_no'], initiated_no, assume_unique= False)
     initiated = ipsps[init_set]
+    
     spont_set = np.in1d(ipsps['spw_no'], spont_no, assume_unique=False)
     spontaneous = ipsps[spont_set]
     
@@ -933,7 +1011,7 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
     fs              = npzfile['fs']
     npzfile.close()
     
-
+    error_allowed = -0.5
     #allow_before = ms2pts(allow_before,fs)
     # load starts of spws
     npzfile         = np.load(save_folder + load_spwfile)
@@ -950,7 +1028,7 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
     #    print electr,
     #    #min_dist_all = []
     #    ipsps_electr = ipsps[ipsps['electrode'] == electr]
-        
+       
     for trace in np.unique(ipsps['trace']):
             #print trace,
             spw_electr_trace = np.unique(ipsps[ipsps['trace'] == trace])
