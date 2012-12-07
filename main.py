@@ -21,9 +21,9 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     print 'working on: ' +  filename
     reanalize = True # set to true if to analyze the data no matter if it was already analysed or not
     
-    delete_old = False #!!!!
+    delete_old = True #!!!!
     
-    run_all_functions = False
+    run_all_functions = True
     
     if delete_old: # !!!!!!
         fold_mng.remove_folder(save_folder)
@@ -121,7 +121,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if run_all_functions:
             updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
         
-        if run_all_functions:
+        if not run_all_functions:
             # it makes the plot to exactly analyse each SPW
             analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_beg, 
                                            load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
@@ -159,7 +159,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             analyser.plot_dist_spw2spike(save_folder, solutions_folder+dist_spw2psike + '/', save_plots = dist_spw2psike, dist_file = dist_spw_inspikes, ext = ext)
         
         alignedSPWs = 'aligned_SPWs'
-        if run_all_functions:
+        if not run_all_functions:
 
             analyser.plot_alignedSPW(save_folder, solutions_folder+alignedSPWs + '/', save_plots = alignedSPWs, data_file = raw_baselined, intra_data_file = data_intra_base, spike_file = induc_spont_spw, intra_spikes = intra_spikes, ext = ext)
         
@@ -168,7 +168,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 #            analyser.plot_alignedSPW(save_folder, solutions_folder+alignedSPWs + '/', save_plots = alignedSPWs_2all, data_file = raw_baselined, intra_data_file = data_intra, spw_file = induc_spont_spw, dist_file = dist_spw_inspikes2all, ext = ext)
         
         spikes_inSPWs_plot = 'spikes_inSPWs'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot + '/', 
                                  save_plots = spikes_inSPWs_plot, data_file = raw_baselined, 
                                  spike_data = spikes_largest, spw_data = induc_spont_spw, 
@@ -176,7 +176,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
     
         spikes_inSPWs_plot_fig3a = 'spikes_inSPWs_fig3a'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot_fig3a + '/', 
                                  save_plots = spikes_inSPWs_plot_fig3a, data_file = raw_baselined, 
                                  spike_data = spikes_largest, spw_data = induc_spont_spw, 
@@ -239,7 +239,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [18]: #range(12, len(all)):
+        for nex in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]: #range(12, len(all)):
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()

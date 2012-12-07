@@ -605,7 +605,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         #spikes_array = np.array(spikes_list)
         
         fig = plt.figure()   
-        plt.imshow(dist_electrode, aspect = 'auto', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5], vmin=0, vmax=0.1) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')  
+        plt.imshow(dist_electrode, aspect = 'auto', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5], vmin=0, vmax=0.1) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')  
         plt.colorbar()
         #import pdb; pdb.set_trace() 
         #plt.show()
@@ -628,8 +628,8 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     
     
     #ax = fig.add_subplot(111)
-    rects1 = plt.bar(left, all_dists_hist[0][::-1], width, color='r')
-    rects2 = plt.bar(left + width, all_dists_hist[1][::-1], width, color = 'b')
+    rects1 = plt.bar(left, all_dists_hist[0], width, color='r')
+    rects2 = plt.bar(left + width, all_dists_hist[1], width, color = 'b')
     plt.legend( (rects1[0], rects2[0]), ('Spontaneous', 'Induced') )
     #for len(all_dists_hist):
     
