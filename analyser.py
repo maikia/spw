@@ -403,6 +403,19 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
 
     plt.show()
 
+#def plot_by_ipsp_amplitude(save_folder, plot_folder, spw_data, ext):
+#
+#    npzfile        = np.load(save_folder + spw_data)
+#    spontaneous = npzfile['spontaneous']
+#    initiated = npzfile['initiated']
+#    npzfile.close()  
+#    #import pdb; pdb.set_trace()      
+#    
+#    for spw_no in initiated['spw_no']:
+#        import pdb; pdb.set_trace()     
+#        for ipsp_no in initiated[initiated['spw_no'] == spw_no]['group']
+
+
 def find_max_corr(x, y):
     
     nomean_x = x - np.mean(x)
@@ -553,10 +566,10 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     npzfile.close()           
     types = ['spontaneous', 'initiated']
     
-    n_bins = 10
+    n_bins = 3
     #start_pt = [0, 20]
     
-    window = [-1, 2]
+    window = [-1.25, 1.75]
     all_dists_hist = []
     for idx_type, typ in enumerate([spontaneous, initiated]):
         
@@ -572,7 +585,8 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
                     spikes_times = (spikes_spw[spikes_spw['electrode'] == electr]['time'] - spw_start).tolist()
                     
                     spikes_list[electr] = spikes_list[electr] + spikes_times
-
+        
+        for_histogram = []
         bins = np.linspace(window[0], window[1], n_bins)
         dist_electrode = []
         numb_spikes = 0
@@ -581,6 +595,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
             #import pdb; pdb.set_trace() 
             numb_spikes = numb_spikes + len(spikes_list[electr])
             dist_electrode.append(n_all)
+            for_histogram.append(n_all[1])
             
         numb_spikes = numb_spikes * 1.0
         dist_electrode = [dist_electrode[i]/numb_spikes for i in range(len(dist_electrode))]
@@ -603,9 +618,26 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         fig.savefig(save_fold + save_plots + types[idx_type] + ext, dpi=600)     
         fig.savefig(save_fold + save_plots + types[idx_type] + '.eps', dpi=600) 
         
-        all_dists_hist.append(dist_electrode)
+        
+        #for_histogram = [dist_electrode[electr][3] for electr in range(len(dist_electrode))]
+        all_dists_hist.append(for_histogram)
+    #import pdb; pdb.set_trace() 
+    fig = plt.figure()
+    width = 0.5
+    left = np.arange(len(for_histogram))
+    
+    
+    #ax = fig.add_subplot(111)
+    rects1 = plt.bar(left, all_dists_hist[0][::-1], width, color='r')
+    rects2 = plt.bar(left + width, all_dists_hist[1][::-1], width, color = 'b')
+    plt.legend( (rects1[0], rects2[0]), ('Spontaneous', 'Induced') )
+    #for len(all_dists_hist):
+    
+    plt.xlim([left[0] + 0.5, 1.5 + left[-1]])  
     #plt.show()     
-    np.savez(save_folder + save_file, init_hist = all_dists_hist[1], spont_hist = all_dists_hist[1], range = window)  
+    fig.savefig(save_fold + save_plots + types[idx_type] + '_hist' + ext, dpi=600)     
+    fig.savefig(save_fold + save_plots + types[idx_type] + '_hist' + '.eps', dpi=600) 
+    np.savez(save_folder + save_file, init_hist = all_dists_hist[1], spont_hist = all_dists_hist[0], range = window)  
 
     
     
@@ -635,11 +667,11 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
     before_pts = ispw.ms2pts(win[0], fs)
     after_pts = ispw.ms2pts(win[1], fs)
     
-
-    
+    use_filter = [200, 500]
+    plot_only_last = False
     
     print 'plotting the data and their spikes'
-    add_it = 150
+    add_it = 500
     for idx, typ in enumerate([spontaneous, initiated]):
         #data[:, ]
         #t = 
@@ -659,18 +691,36 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
             
             fig = plt.figure()
             
-            if spikes_filter != []:
+            
+            
+            mult_factor = 10
+            #import pdb; pdb.set_trace()
+            #
+            
+            #import pdb; pdb.set_trace()
+            if plot_only_last and spikes_filter != []:
                 mult_factor = 10
                 npzfile = np.load(save_folder + spikes_filter + str(filt) + '_0_' + str(trace) + '.npz')
                 #import pdb; pdb.set_trace()
                 filt_dat = npzfile['data']
                 npzfile.close() 
-                filt_dat = filt_dat[spw_start+before_pts:spw_end + after_pts]
-                plt.plot(t, filt_dat * mult_factor + add_it * -1.5,  'k')
+                data_fast = filt_dat[spw_start+before_pts:spw_end + after_pts]
+                plt.plot(t, data_fast * mult_factor + add_it * -1.5,  'k')
+                #filt_dat = filt_dat[spw_start+before_pts:spw_end + after_pts]
+                #plt.plot(t, data_fast[0, :]*mult_factor + add_it * -1.5,  'k')
                 #import pdb; pdb.set_trace()
-
+            #else:
+            #    filt_dat, fs = ispw.load_create(save_folder + spikes_filter, str(use_filter) + '_0_' + str(trace) + '.npz', use_filter, fs, data[:, trace, :], 100)
+            #    data_fast = filt_dat[:,spw_start+before_pts:spw_end + after_pts]
+            #    import pdb; pdb.set_trace()
             for electr in range(np.size(data_used, 0)):
-               
+                filt_dat, fs = ispw.load_create(save_folder + spikes_filter, str(use_filter) + '_' + str(electr) + '_' + str(trace) + '.npz', use_filter, fs, data[electr, trace, :], 100)
+                data_fast = filt_dat[spw_start+before_pts:spw_end + after_pts]
+                
+                if not plot_only_last:
+                    #filt_dat = filt_dat[spw_start+before_pts:spw_end + after_pts]
+                    plt.plot(t, data_fast*mult_factor + add_it* electr + (0.5 * max(data_used[electr, :])) ,  'k', alpha = 0.3)
+                    
                 plt.plot(t, data_used[electr, :] + add_it * electr,  'k') #color = colors[electr],
                 spikes_electr = spikes_used[spikes_used['electrode'] == electr]['time'].astype('i4')- spw_start
                 #plt.plot(t[spikes_electr], data_used[electr, spikes_electr], )
@@ -692,8 +742,8 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
             
             plt.xlim([t[0], t[-1]])
             #import pdb; pdb.set_trace()
-            if spikes_filter != []:
-                plt.ylim([min(filt_dat * mult_factor + add_it * -1.5)-100, data_used.max() + electr *add_it + 100])
+            if plot_only_last and spikes_filter != []:
+                plt.ylim([min(data_fast[0, :] * mult_factor + add_it * -1.5)-100, data_used.max() + electr *add_it + 100])
                 plt.ylabel('Voltage (' + micro() + 'V); filter multiplied by: '  + str(mult_factor))
             else:
                 plt.ylim([data_used.min()-100, data_used.max() + electr *add_it + 100])

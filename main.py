@@ -138,7 +138,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 #            updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes2all, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_beg, spikes = 'all', reanalize = reanalize)
         
         induc_spont_spw = 'induc_spont_spw.npz'
-        max_dist = 7 # ms
+        max_dist = 10 # ms
         if run_all_functions:
             updater.up_induc_spont_spw(save_folder, save_file = induc_spont_spw, load_distances = dist_spw_inspikes, load_spwfile = SPWs_ipsps_beg, max_init_dist = max_dist, reanalize = reanalize, ext = ext)
     
@@ -189,11 +189,15 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             analyser.plot_spike(save_folder, solutions_folder + spikePerElectrode + '/', save_plots = spikePerElectrode, 
                             save_file = hist_spike_bins, spike_data = spikes_largest, spw_data = induc_spont_equal, 
                             ext = ext, win = win)
+            
     
         alignmend_spws = 'alignmend_spws'
         if not run_all_functions:
             analyser.plot_spw_amplitude(save_folder, solutions_folder + spikePerElectrode + '/', save_plots = alignmend_spws, 
                             data_file = raw_baselined, spw_data = induc_spont_equal, ext = ext)
+        
+        
+            
     
 def analyse_all(filename, save_folder, intra = 1): 
     ext = '.pdf'  
@@ -235,7 +239,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [14]: #range(12, len(all)):
+        for nex in [18]: #range(12, len(all)):
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()

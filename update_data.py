@@ -242,7 +242,7 @@ def up_dist_SpwfromSpike(save_folder, save_file = 'spw_dist.npz', load_intrafile
 
     if reanalize or not exists:
         # load the data        
-        ispw.update_dist_SPWfromSpike(save_folder = save_folder, save_file = save_file, load_intrafile = load_intrafile, load_spwfile = load_spwfile, max_dist = 7, spikes = spikes)
+        ispw.update_dist_SPWfromSpike(save_folder = save_folder, save_file = save_file, load_intrafile = load_intrafile, load_spwfile = load_spwfile, max_dist = 15, spikes = spikes)
     else:
         print 'distances of spws to intracellular spikes were already calculated'    
     gc.collect()    
