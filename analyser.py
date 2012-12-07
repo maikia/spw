@@ -402,8 +402,143 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
     
 
     plt.show()
-    
 
+def find_max_corr(x, y):
+    
+    nomean_x = x - np.mean(x)
+    nomean_y = y - np.mean(y)
+
+    cxy = np.correlate(nomean_x,nomean_y,mode='full')
+    i = cxy.argmax()
+    lag = i - len(cxy)/2
+    return lag
+
+def plot_spw_amplitude(save_folder, plot_folder, save_plots, data_file, spw_data, ext):
+    npzfile        = np.load(save_folder + spw_data)
+    spontaneous = npzfile['spontaneous']
+    initiated = npzfile['initiated']
+    npzfile.close()           
+    
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close()           
+    
+    types = ['spontaneous', 'initiated']
+    all_ampls = []
+    type = spontaneous[np.unique(spontaneous['group']) > 2]
+    spw_numbs = []
+    for spw_no in np.unique(type['spw_no']):
+        spw_used = type[type['spw_no'] == spw_no]
+        
+        no_ipsps = len(np.unique(spw_used['group']))
+        spw_start = spw_used['spw_start'][0] - 10
+        spw_end = spw_start + 70#max(spw_used['ipsp_start'])
+        if spw_start == spw_end:
+            spw_end = spw_start + 10
+        spw_start_pts = ispw.ms2pts(spw_start, fs)
+        spw_end_pts = ispw.ms2pts(spw_end, fs)
+        trace = spw_used['trace'][0]
+        
+        data_used = data[:, trace, spw_start_pts:spw_end_pts]
+        ampls = [max(data_used[electr, :]) for electr in range(len(data_used))]
+        ampls = np.argsort(ampls)
+        all_ampls.append(ampls)
+        spw_numbs.append(spw_no)
+        electr_no =len(data_used)
+        np.zeros([electr_no, electr_no])
+        
+        all_shifts = []
+        all_similarities = []
+        for electr1 in range(electr_no - 1):
+            electr2 = electr1+1
+            #import pdb; pdb.set_trace()
+            #print electr1
+            #print electr2
+            #corr = signal.correlate(data_used[electr1, :],data_used[electr2, :])
+            dat1 =  data_used[electr1, :]# - data_used[electr1, :].mean()
+            #dat1/=dat1.std()
+            dat2 =  data_used[electr1, :] #- data_used[electr2, :].mean()
+            #dat2/=dat2.std()
+            
+            corr = find_max_corr(dat1,dat2)
+            #plt.plot(corr)
+            #plt.show()
+            
+            nsamples = dat1.size
+            shift = corr.argmax()
+            all_similarities.append(np.max(corr))
+            #dt = np.arange(nsamples) #np.arange(1-nsamples, nsamples) - len(dat1)
+            #recovered_time_shift = dt[corr.argmax()]
+
+            recovered_time_shift = shift - nsamples/2.
+            all_shifts.append(recovered_time_shift)
+            plt.plot(dat1 + 50 * electr1)
+            #import pdb; pdb.set_trace()
+            
+        print
+        print all_shifts
+        print all_similarities
+        t = dat.get_timeline(data_used[0,:], fs, 'ms')
+        #import pdb; pdb.set_trace()
+        #for electr in range(len(data_used)):
+        #    plt.plot(data_used[electr, :] + 50 * electr)
+        plt.show()
+                        
+
+## Load datasets, taking mean of 100 values in each table row
+#A = numpy.loadtxt("vb-sync-XReport.txt")[:,1:].mean(axis=1)
+#B = numpy.loadtxt("vb-sync-YReport.txt")[:,1:].mean(axis=1)
+#
+#nsamples = A.size
+#
+## Put in an artificial time shift between the two datasets
+#time_shift = 20
+#A = numpy.roll(A, time_shift)
+#
+## Find cross-correlation
+#xcorr = correlate(A, B)
+#
+## delta time array to match xcorr
+#dt = numpy.arange(1-nsamples, nsamples)
+#
+#recovered_time_shift = dt[xcorr.argmax()]
+#
+#print "Added time shift: %d" % (time_shift)
+#print "Recovered time shift: %d" % (recovered_time_shift)
+#
+## SAMPLE OUTPUT:
+## Added time shift: 20
+## Recovered time shift: 20
+
+
+            
+    import pdb; pdb.set_trace()
+    corr_matrix = np.array([[np.sum(x==y) for x in all_ampls] for y in all_ampls])
+    #all_ampls_redistributed = np.vstack(all_ampls)
+    #corr_matrix = np.dot(all_ampls_redistributed, all_ampls_redistributed.T)
+    #max_value = np.diag(corr_matrix)[0]
+    idx_i, idx_j = np.where(np.triu(corr_matrix,1)> 6)
+    for value in np.unique(np.append(idx_i,idx_j)):
+        the_same = np.concatenate([idx_j[idx_i==value], idx_i[idx_j==value]])
+        plt.figure()
+        for spw in the_same:
+            spw_no = spw_numbs[spw]
+            spw_used =  type[type['spw_no'] == spw_no]
+            trace = spw_used['trace'][0]
+            spw_start = spw_used['spw_start'][0] - 10
+            spw_end = spw_start + 70
+            spw_start_pts = ispw.ms2pts(spw_start, fs)
+            pw_end_pts = ispw.ms2pts(spw_end, fs)
+            data_used = data[:, trace, spw_start_pts:pw_end_pts]
+            t = dat.get_timeline(data_used[0,:], fs, 'ms')
+            #import pdb; pdb.set_trace()
+            for electr in range(len(data_used)):
+                plt.plot(t, data_used[electr, :] + 150 * electr)
+        plt.show()
+        #amls = [max(data_used[])]
+              
+    
 
 def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'spike.npz', spw_data = 'spw.npz', ext = '.pdf', win = [-20, 20]):
     """ counts how many spikes are in each electrode during all the spws and do the image shows """
@@ -1385,41 +1520,7 @@ def plot_hist(x, y, title_x, title_y, xlab = 'Time [ms]', ylab = 'Voltage [mV]',
 
 
 
-#def correlate_spw(save_folder, plot_it = 1, save_file = 'corr_SPWtimewise'):
-#    """ the spw will be correlated, and possibly results will be plotted"""
-#    use_before = 30 # ms
-#    use_after = 40 # ms
-#    
-#    # read spws and data
-#    #data_fast, freq, fs_new = read_filtered_fast(save_folder)
-#    data_bas, fs_new = reader.read_databas(save_folder)
-#    #data_spw, freq, fs_new = read_filtered_spw(save_folder)
-#    spw_idxs, spw_maxs, starts_spw, ends_spw, lengths_spw, fs = reader.read_SPWs(save_folder)
-#
-#    
-#    
-#    all_corr = []
-#    all_move = []
-#    all_idxs_new = []
-#    t = dat.get_timeline(data_bas[0][0], fs_new,'ms')
-#    plt.plot(t, data_bas[0][0])
-#
-#    for electr in range(np.size(spw_idxs,0)): 
-#        for trace in range(np.size(spw_idxs[electr])):
-#            if plot_it == 1:
-#                plt.figure()
-#            # for every electrode
-#
-#            electr_corr, electr_move = corr_two(data_bas[electr][trace], fs, spw_idxs[electr][trace], spw_idxs[electr][trace], use_before, use_after)
-#    
-#            if plot_it == 1:
-#                plt.imshow(electr_corr,interpolation='nearest',origin='lower')
-#                plt.colorbar()
-#        all_corr.append(electr_corr)
-#        all_move.append(electr_move)
-#        
-#    np.savez(save_folder + save_file, all_corr, all_move) 
-#    return all_corr, all_move
+
 
 
 
