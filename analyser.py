@@ -472,11 +472,42 @@ def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, sp
     # find groups for all the founded all_starts    
     #all_starts
     #groups_numbered = np.arange(len(np.unique(groups)))
-    
+    add_it = 150
+    window = [-2, 5]
+    win0 = ispw.ms2pts(window[0], fs)
+    window_plot = [-15, 40]
+    win_pts0 = ispw.ms2pts(window_plot[0], fs)
+    win_pts1 = ispw.ms2pts(window_plot[1], fs)
     for group in np.unique(groups):
-        import pdb; pdb.set_trace() 
+        #import pdb; pdb.set_trace() 
         group_idcs, = np.where(groups == group)
         spw_used = spw_nos[group_idcs]
+        colors = define_colors(len(spw_used))
+        
+        plt.figure()
+        for idx, spw_no in enumerate(spw_used):
+            #import pdb; pdb.set_trace() 
+            spw_used = spws[spws['spw_no'] == spw_no]
+            trace = spws['trace'][0]
+            
+            spw_start = spw_used['spw_start'][0] + window[0]
+            spw_end = spw_used['spw_start'][0] + window[1]
+            spw_start_pts = ispw.ms2pts(spw_start, fs)
+            spw_end_pts = ispw.ms2pts(spw_end, fs)
+            data_used = data[:,trace,spw_start_pts:spw_end_pts]
+            electr_max = np.argmax(np.max(data_used, axis = 1))
+            peak = np.argmax(data_used[electr_max, :]) + spw_start_pts - win0
+            #import pdb; pdb.set_trace() 
+            #
+            data_to_plot = data[:,trace,peak + win_pts0:peak + win_pts1]
+            t = dat.get_timeline(data_to_plot[0,:], fs, 'ms')
+            for electr in range(np.size(data,0)):
+                plt.plot(t, data_to_plot[electr, :] + add_it * electr, color = colors[idx])
+            #data_used
+            
+            
+        plt.title('Group: ' + str(group))
+        plt.show()
         
         
     
@@ -945,11 +976,16 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     
 #---------------------------old -----------------------------
 def define_colors(no_colors = 8):
-
+    import colorsys
+    RGB_tuples = []
+    #import pdb; pdb.set_trace()
+    for i in range(no_colors):
+        i = i * 1.0
+        RGB_tuples.append(colorsys.hsv_to_rgb(i/no_colors, 0.5, 0.5))
     #RGB_tuples = [(x*1.0/no_colors, x*0.5/no_colors,x*0.5/no_colors) for x in range(no_colors)]
-    #RGB_tuples = np.array(RGB_tuples)
+    RGB_tuples = np.array(RGB_tuples)
     #RGB_tuples = [(1, 0, 0), (1, 0.5, 0), (1, 1, 0), (0.5, 1, 0), (0, 1, 0.5), (0, 1, 1), (0, 0.5, 1), (0, 0, 1)]
-    RGB_tuples = [(0.5, 1, 0), (0, 1, 0.5), (0, 1, 1), (0, 0.5, 1), (0, 0, 1), (0.5, 0, 1), (1, 0, 1), (1, 0, 0.5)]
+    #RGB_tuples = [(0.5, 1, 0), (0, 1, 0.5), (0, 1, 1), (0, 0.5, 1), (0, 0, 1), (0.5, 0, 1), (1, 0, 1), (1, 0, 0.5)]
     return RGB_tuples
 
 def micro():
