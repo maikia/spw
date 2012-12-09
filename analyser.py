@@ -444,21 +444,47 @@ def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, sp
     all_ampls = []
     
     #type = spontaneous.copy()
-    type = [spws] #spontaneous[np.unique(spontaneous['group']) == 1]
+    type = spws #spws[len(np.unique(spws['group'])) == 1]
     all_starts = []
-    import pdb; pdb.set_trace() 
-    
+    spw_nos = []
+    #import pdb; pdb.set_trace() 
+    max_group = -1
+    groups = []
     for spw_no in np.unique(type['spw_no']):
         spw_used = type[type['spw_no'] == spw_no]
+
         min_ipsps_group = min(spw_used['group'])
+  
         starting_electrodes = spw_used[spw_used['group'] == min_ipsps_group]['electrode']
         trace = spw_used['trace'][0]
         spw_start = spw_used['spw_start'][0] - 10
         spw_end = spw_start + 60
         spw_start_pts = ispw.ms2pts(spw_start, fs)
         spw_end_pts = ispw.ms2pts(spw_end,fs)
-        
+
+        # convert all to the different groups (using binary system coding)
+        groups.append(np.sum(2**starting_electrodes))
+        spw_nos.append(spw_no)
         all_starts.append(starting_electrodes)
+    
+    groups = np.array(groups)
+    spw_nos = np.array(spw_nos)
+    # find groups for all the founded all_starts    
+    #all_starts
+    #groups_numbered = np.arange(len(np.unique(groups)))
+    
+    for group in np.unique(groups):
+        import pdb; pdb.set_trace() 
+        group_idcs, = np.where(groups == group)
+        spw_used = spw_nos[group_idcs]
+        
+        
+    
+    
+    
+    import pdb; pdb.set_trace() 
+    
+    if False:
         if np.all(starting_electrodes == np.array([2, 3, 4, 5])):
         
             data_used = data[:, trace, spw_start_pts:spw_end_pts]
