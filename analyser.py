@@ -450,12 +450,14 @@ def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, sp
     #import pdb; pdb.set_trace() 
     max_group = -1
     groups = []
+    # divide into groups looking at which electrode was the ipsp detected
     for spw_no in np.unique(type['spw_no']):
         spw_used = type[type['spw_no'] == spw_no]
 
-        min_ipsps_group = min(spw_used['group'])
-  
+        min_ipsps_group = spw_used[spw_used['ipsp_start'] == min(spw_used['ipsp_start'])]['group']
+        
         starting_electrodes = spw_used[spw_used['group'] == min_ipsps_group]['electrode']
+
         trace = spw_used['trace'][0]
         spw_start = spw_used['spw_start'][0] - 10
         spw_end = spw_start + 60
@@ -463,12 +465,24 @@ def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, sp
         spw_end_pts = ispw.ms2pts(spw_end,fs)
 
         # convert all to the different groups (using binary system coding)
+
         groups.append(np.sum(2**starting_electrodes))
         spw_nos.append(spw_no)
         all_starts.append(starting_electrodes)
     
+    # divide groups into subgroups by the amplitude of the first ipsp in different
+    # electrodes (kmeans)
+    
     groups = np.array(groups)
     spw_nos = np.array(spw_nos)
+#    
+#    for group in np.unique(groups):
+#        group_idcs, = np.where(groups == group)
+#        spw_used = spw_nos[group_idcs]
+#        amplitudes = []
+#        for idx, spw_no in enumerate(spw_used):
+#            ampls = spws[spws['spw_no'] == spw_no]['amplitude']
+#        import pdb; pdb.set_trace()
     # find groups for all the founded all_starts    
     #all_starts
     #groups_numbered = np.arange(len(np.unique(groups)))
