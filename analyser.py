@@ -11,7 +11,7 @@ import folder_manager as fold_mng
 from matplotlib.widgets import Slider, Button
 from matplotlib.transforms import Bbox
 from matplotlib.path import Path
-
+import logging 
 def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     """ plots the histogram of the distribution of spws from the spike"""
     npzfile         = np.load(save_folder + dist_file)
@@ -426,6 +426,46 @@ def find_max_corr(x, y):
     lag = i - len(cxy)/2
     return lag
 
+def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, spw_data, ext):
+    npzfile        = np.load(save_folder + spw_data)
+    spontaneous = npzfile['spontaneous']
+    initiated = npzfile['initiated']
+    npzfile.close()           
+    
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close()      
+    
+    types = ['spontaneous', 'initiated']
+    all_ampls = []
+    #type = spontaneous.copy()
+    type = spontaneous[np.unique(spontaneous['group']) == 1]
+    all_starts = []
+    for spw_no in np.unique(type['spw_no']):
+        spw_used = type[type['spw_no'] == spw_no]
+        min_ipsps_group = min(spw_used['group'])
+        starting_electrodes = spw_used[spw_used['group'] == min_ipsps_group]['electrode']
+        trace = spw_used['trace'][0]
+        spw_start = spw_used['spw_start'][0] - 10
+        spw_end = spw_start + 60
+        spw_start_pts = ispw.ms2pts(spw_start, fs)
+        spw_end_pts = ispw.ms2pts(spw_end,fs)
+        
+        all_starts.append(starting_electrodes)
+        if np.all(starting_electrodes == np.array([2, 3, 4, 5])):
+        
+            data_used = data[:, trace, spw_start_pts:spw_end_pts]
+            t = dat.get_timeline(data_used[0,:], fs, 'ms')
+            
+            for electr in range(len(data_used)):
+                plt.plot(t, data_used[electr, :] + 150 * electr)
+    plt.show()
+    import pdb; pdb.set_trace()
+    
+    
+    
+
 def plot_spw_amplitude(save_folder, plot_folder, save_plots, data_file, spw_data, ext):
     npzfile        = np.load(save_folder + spw_data)
     spontaneous = npzfile['spontaneous']
@@ -605,7 +645,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         #spikes_array = np.array(spikes_list)
         
         fig = plt.figure()   
-        plt.imshow(dist_electrode, aspect = 'auto', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5], vmin=0, vmax=0.1) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')  
+        plt.imshow(dist_electrode, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5], vmin=0, vmax=0.1) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')  
         plt.colorbar()
         #import pdb; pdb.set_trace() 
         #plt.show()
@@ -754,7 +794,7 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
             fold_mng.create_folder(save_fold)
             fig.savefig(save_fold + save_plots + str(spw_used) + types[idx] + ext,dpi=600)     
             fig.savefig(save_fold + save_plots + str(spw_used) + types[idx] + '.eps',dpi=600) 
-            #plt.show() 
+            #plt.+() 
             plt.close()   
 
         
@@ -857,7 +897,11 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
         save_fold = save_folder + plot_folder
         fold_mng.create_folder(save_fold)
         #plt.show()
-        fig.savefig(save_fold + save_plots + titles[idx] + ext,dpi=600)     
+        fig_fname = save_fold + save_plots + titles[idx] + ext
+        logging.info("saving figure %s" % fig_fname)
+        fig.savefig(fig_fname,dpi=600)    
+        fig_fname = save_fold + save_plots + titles[idx] + '.eps'
+        logging.info("saving figure %s" % fig_fname)
         fig.savefig(save_fold + save_plots + titles[idx] + '.eps',dpi=600)    
         
         plt.close() 

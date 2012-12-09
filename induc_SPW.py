@@ -1306,12 +1306,12 @@ def shift_spw_to_first_ipsp(ipsps_trace, min_distance_between):
         spw_starts = spw_starts*spw_start
         if (spw_starts[0] - spw_start_old) < min_distance_between:
             spw_starts = spw_starts * 0 + spw_start_old
-            ipsps_trace['spw_start'][ipsps_trace['spw_no'] == spw_no] = spw_starts
-            ipsps_trace['spw_no'][ipsps_trace['spw_no'] == spw_no] = spw_no_used
+            ipsps_trace['spw_start'][ipsps_trace['spw_no'] == spw_no] = spw_starts.astype('f8')
+            ipsps_trace['spw_no'][ipsps_trace['spw_no'] == spw_no] = spw_no_used.astype('i4')
             #import pdb; pdb.set_trace()
         else:
-            spw_no_used = spw_no
-            ipsps_trace['spw_start'][ipsps_trace['spw_no'] == spw_no] = spw_starts
+            spw_no_used = spw_no.astype('i4')
+            ipsps_trace['spw_start'][ipsps_trace['spw_no'] == spw_no] = spw_starts.astype('f8')
         spw_start_old = spw_starts[0]
         #ipsps_trace[ipsps_trace['spw_no'] == spw_no]['spw_start'] = spw_starts
         
@@ -1502,7 +1502,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
             ipsp_amplitudes = np.array([]).astype('f8')
         
         if len(spw_ipsps_first) > 0:
-            group_ids = group_ipsps(spw_ipsps_first, shift_ipsp)
+            group_ids = group_ipsps(spw_ipsps_first, shift_ipsp).astype('i4')
         else:
             group_ids = np.array([]).astype('i4')
         #import pdb; pdb.set_trace()
@@ -1518,6 +1518,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
         spw_ipsps_first = shift_spw_to_first_ipsp(spw_ipsps_first, min_distance_between_spw)
         
         all_ipsps.append(spw_ipsps_first)
+    #import pdb; pdb.set_trace()    
     all_ipsps = np.concatenate(all_ipsps)
     
     # update the numbers of SPWs 
