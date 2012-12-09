@@ -216,6 +216,20 @@ def equalize_number_spws(save_folder, save_file, induc_spont, load_distances, re
         print 'Initiated SPWs were already saved'    
     gc.collect()      
 
+
+def up_fill_gap_between_ipsp_groups(save_folder, save_file, spw_file, data_file, reanalize = False):
+    fold_mng.create_folder(save_folder)
+    
+    # check if this file already exists
+    exists = fold_mng.file_exists(save_folder, save_file)
+
+    if reanalize or not exists:
+        # load the data        
+        ispw.update_fill_gap_between_ipsp_groups(save_folder = save_folder, save_file = save_file, spw_file = spw_file, data_file = data_file)
+    else:
+        print 'Initiated SPWs were already saved'    
+    gc.collect()  
+    
 def up_induc_spont_spw(save_folder, save_file = 'i_s_spws', load_distances = 'distances.npz', load_spwfile = 'spws.npz', max_init_dist = 10, reanalize = False, ext = '.pdf'):
     """ it finds which spws are initiated and which are sponteneaus"""
     fold_mng.create_folder(save_folder)

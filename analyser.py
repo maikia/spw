@@ -425,11 +425,14 @@ def find_max_corr(x, y):
     i = cxy.argmax()
     lag = i - len(cxy)/2
     return lag
+ 
+       
 
 def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, spw_data, ext):
     npzfile        = np.load(save_folder + spw_data)
-    spontaneous = npzfile['spontaneous']
-    initiated = npzfile['initiated']
+    
+    spws = npzfile['spw_ipsps']
+    #initiated = npzfile['initiated']
     npzfile.close()           
     
     npzfile        = np.load(save_folder + data_file)
@@ -439,9 +442,12 @@ def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, sp
     
     types = ['spontaneous', 'initiated']
     all_ampls = []
+    
     #type = spontaneous.copy()
-    type = spontaneous[np.unique(spontaneous['group']) == 1]
+    type = [spws] #spontaneous[np.unique(spontaneous['group']) == 1]
     all_starts = []
+    import pdb; pdb.set_trace() 
+    
     for spw_no in np.unique(type['spw_no']):
         spw_used = type[type['spw_no'] == spw_no]
         min_ipsps_group = min(spw_used['group'])

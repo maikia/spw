@@ -925,6 +925,80 @@ def take_random_elements(arr, no_elements):
     #elements = np.concatenate(elements)
     return elements
 
+
+def update_fill_gap_between_ipsp_groups(save_folder, save_file, spw_file, data_file):
+    """ takes all the groups of the spws and IPSPs and fills the electrode which
+    did not have ipsp detected but electrodes from both sides have this group"""
+    npzfile        = np.load(save_folder + spw_file)
+    spws = npzfile['spw_ipsps']
+    npzfile.close()   
+    
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close()       
+    new_ipsps = []
+    
+    for group in np.unique(spws['group']):
+        group_used = spws[spws['group'] == group]
+        electrodes = group_used['electrode']
+        
+        # check if all the electrodes in the row are defined for this group
+        luki = np.diff(electrodes)
+        if np.any(luki > 1):
+            luki = np.diff(electrodes)
+            new_electrodes = np.arange(electrodes[0], electrodes[-1] + 1)
+            missing_electrodes = np.setdiff1d(new_electrodes, electrodes).astype('i4')
+            mis_no = len(missing_electrodes)
+            
+            # detect all the variables for this new IPSPs
+            groups = (np.ones(mis_no) * group).astype('i4')
+            trace = group_used['trace'][0]
+            
+            traces = (np.ones(mis_no) * trace).astype('i4')
+            
+            spw_no = group_used['spw_no'][0]
+            spw_nos = (np.ones(mis_no) * spw_no).astype('i4')
+            
+            spw_start = group_used['spw_start'][0]
+            spw_starts = (np.ones(mis_no) * spw_start).astype('f8')
+            
+            spw_end = group_used['spw_end'][0]
+            spw_ends = (np.ones(mis_no) * spw_end).astype('f8')
+            
+            ipsps_no = max(group_used['ipsp_no'])
+            ipsps_nos = (np.ones(mis_no) * ipsps_no).astype('i4')
+            
+            ipsp_start = min(group_used['ipsp_start'])
+            ipsp_starts = (np.ones(mis_no) * ipsp_start).astype('f8')
+            
+            temp_ampls = (np.zeros(mis_no) * ipsps_no).astype('f8')
+            new_ipsps.append(np.rec.fromarrays([missing_electrodes, traces, 
+                                                    spw_nos, spw_starts, spw_ends,
+                                                    ipsps_nos, ipsp_starts, temp_ampls, groups],
+                                                       names='electrode,trace, spw_no, spw_start, spw_end, ipsp_no, ipsp_start, amplitude, group'))   
+            #import pdb; pdb.set_trace()
+    new_ipsps.append(spws)
+    all_ipsps = np.concatenate(new_ipsps)
+    #import pdb; pdb.set_trace()
+    for trace in range(np.size(data,1)):
+        data_trace = data[:,trace,:]
+        #amplitude = (np.ones(mis_no) * group).astype('i4')
+        # renew the electrodes
+        #import pdb; pdb.set_trace()
+        #ampls = calculate_ipsp_rise(new_ipsps, data_trace, fs)
+        new_ipsps = all_ipsps[all_ipsps['trace'] == trace]
+        amplitude = calculate_amplitude_of_IPSP(new_ipsps, data_trace, fs)
+        all_ipsps['amplitude'] [all_ipsps['trace'] == trace]= amplitude
+    
+    
+        #amplitudes = (np.ones(mis_no) * ampls).astype('f8')
+        #new_ipsps.append(add_rec_field(new_ipsps, amplitudes, 'amplitude'))
+            
+        #import pdb; pdb.set_trace()
+    np.savez(save_folder + save_file, spw_ipsps = all_ipsps)
+    
+    
 def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distances):
     """ it takes the same number of both induc and spontaneous spws"""
     npzfile    = np.load(save_folder + load_distances)
