@@ -461,9 +461,24 @@ def PCA(data,ncomps=2):
     score = score/np.sqrt(evals[:ncomps, np.newaxis])
     return evals,evecs,score
 
-def calculate_PCA():
+def calculate_PCA(new_starts_pts, traces, data, fs):
     # give new beginning of SPWs and data
-    PCA(data,ncomps=2)
+    window = [-5, 60]
+    win_pts = [ispw.ms2pts(window[0], fs), ispw.ms2pts(window[1], fs)]
+    pc = []
+    for electr in range(np.size(data,0)):
+        #import pdb; pdb.set_trace() 
+        data_used = []
+        for spw in range(len(traces)):
+            data_used.append(data[electr, traces[spw], new_starts_pts[spw] - 
+                                  win_pts[0]:new_starts_pts[spw] + win_pts[1]].copy())
+
+        #import pdb; pdb.set_trace() 
+        a1, b1, principal_components = PCA(np.transpose(np.array(data_used)),ncomps=2)
+        #import pdb; pdb.set_trace() 
+        pc.append(principal_components[0])
+    pc = np.transpose(pc)
+    return np.vstack(pc)
     
 
 def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ext):
@@ -521,8 +536,8 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                 print 'analysing subgroup: ' + str(sub)
                 print subgroups
                 group_name = str(group) + '.' +  str(sub)
-                ampls_used, output = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
-                
+                ampls_used, new_starts_pts, traces, output = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
+                #import pdb; pdb.set_trace()
                 if output ==True:
                     # group is alright
                     already_clustered[subgroups == sub] = True
@@ -532,8 +547,10 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                     # group has to be further divided
                     #ampls_used2 = ampls[subgroups == sub]
                     #try:
-                    #PCA = calculate_PCA()
-                    klastry = cluster.vq.kmeans2(ampls_used, 2,minit='points')
+                    
+                    PCA = calculate_PCA(new_starts_pts, traces, data, fs)
+                    characteristics = np.concatenate([PCA, ampls_used], axis = 1)
+                    klastry = cluster.vq.kmeans2(characteristics, 2,minit='points')
                     #except:
                     #import pdb; pdb.set_trace()
                     actual_clusters = klastry[1]
@@ -730,7 +747,8 @@ def display_group_data(spws, spw_used, data, fs, tit):
     #fig.set_size_inches(18.5,10.5)
     ax = plt.subplot(111)
     plt.subplots_adjust(bottom=0.2)
-    
+    new_starts_pts = []
+    traces = []
     for idx, spw_no in enumerate(spw_used):
         
         #import pdb; pdb.set_trace() 
@@ -738,7 +756,7 @@ def display_group_data(spws, spw_used, data, fs, tit):
         spw_used = np.sort(spw_used, order = 'electrode')
         trace = spws['trace'][0]
 
-        spw_start = spw_used['spw_start'][0] + window[0]
+        
 
         if remove_baseline:
             s_p_temp1 = ispw.ms2pts(spw_used['spw_start'][0], fs).astype('i4') -10
@@ -749,10 +767,10 @@ def display_group_data(spws, spw_used, data, fs, tit):
             #import pdb; pdb.set_trace()
         else:
             baseline = np.zeros(np.size(data, 0))
-        
+        spw_start = spw_used['spw_start'][0] + window[0]
         spw_end = spw_used['spw_start'][0] + window[1]
-        spw_start_pts = ispw.ms2pts(spw_start, fs)
-        spw_end_pts = ispw.ms2pts(spw_end, fs)
+        spw_start_pts = ispw.ms2pts(spw_start, fs).astype('i4')
+        spw_end_pts = ispw.ms2pts(spw_end, fs).astype('i4')
         
         #import pdb; pdb.set_trace() 
         data_used = data[:,trace,spw_start_pts:spw_end_pts].copy()
@@ -771,7 +789,10 @@ def display_group_data(spws, spw_used, data, fs, tit):
             maxs = np.max(data_used, axis = 1)
             ampls_used.append(maxs)
             #import pdb; pdb.set_trace() 
-            peak = np.argmax(data_used[electr_max, :]) + spw_start_pts
+            peak = spw_start_pts + ispw.ms2pts(window[0],fs).astype('i4') + np.argmax(data_used[electr_max, :])
+            new_starts_pts.append(peak)
+            traces.append(trace)
+            #import pdb; pdb.set_trace() 
         
         if version == 1:
             data_to_plot = data_used
@@ -816,7 +837,7 @@ def display_group_data(spws, spw_used, data, fs, tit):
     bprev.on_clicked(yes_button)
     plt.show()
     
-    return np.vstack(ampls_used), answer
+    return np.vstack(ampls_used), new_starts_pts, traces, answer
 
 
 def plot_spw_amplitude(save_folder, plot_folder, save_plots, data_file, spw_data, ext):
