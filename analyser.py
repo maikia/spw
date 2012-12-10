@@ -461,6 +461,11 @@ def PCA(data,ncomps=2):
     score = score/np.sqrt(evals[:ncomps, np.newaxis])
     return evals,evecs,score
 
+def calculate_PCA():
+    # give new beginning of SPWs and data
+    PCA(data,ncomps=2)
+    
+
 def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ext):
     """ similar to plot_spw_ipsps_no_groups but does not divide first group into
     origin of the first ipsp"""
@@ -527,6 +532,7 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                     # group has to be further divided
                     #ampls_used2 = ampls[subgroups == sub]
                     #try:
+                    #PCA = calculate_PCA()
                     klastry = cluster.vq.kmeans2(ampls_used, 2,minit='points')
                     #except:
                     #import pdb; pdb.set_trace()
@@ -697,7 +703,8 @@ def display_group_data(spws, spw_used, data, fs, tit):
         # version 2 - aligns everything to the peak of the first IPSP and calculates
         # its' amplitude
         
-        
+    align_on_max = False
+    remove_baseline = True
     if version == 1:
         window = [-10, 50]
     else:
@@ -709,7 +716,8 @@ def display_group_data(spws, spw_used, data, fs, tit):
     window_plot = [-15, 40]
     win_pts0 = ispw.ms2pts(window_plot[0], fs)
     win_pts1 = ispw.ms2pts(window_plot[1], fs)
-
+    baselin_length = 5 # ms
+    baselin_len_pts = ispw.ms2pts(baselin_length, fs)
         
     #for group in np.unique(groups):
         #import pdb; pdb.set_trace() 
@@ -717,7 +725,8 @@ def display_group_data(spws, spw_used, data, fs, tit):
     #spw_used = spw_nos[group_idcs]
     colors = define_colors(len(spw_used))
     ampls_used = []
-    fig = plt.figure(figsize=(20,10))
+    #fig = plt.figure(figsize=(20,10))
+    fig = plt.figure(figsize = (15, 8))
     #fig.set_size_inches(18.5,10.5)
     ax = plt.subplot(111)
     plt.subplots_adjust(bottom=0.2)
@@ -728,12 +737,30 @@ def display_group_data(spws, spw_used, data, fs, tit):
         spw_used = spws[spws['spw_no'] == spw_no]
         spw_used = np.sort(spw_used, order = 'electrode')
         trace = spws['trace'][0]
-    
+
         spw_start = spw_used['spw_start'][0] + window[0]
+
+        if remove_baseline:
+            s_p_temp1 = ispw.ms2pts(spw_used['spw_start'][0], fs).astype('i4') -10
+            s_p_temp2 = ispw.ms2pts(spw_used['spw_start'][0], fs).astype('i4') -5
+            baseline = data[:, trace, s_p_temp1 : s_p_temp2]
+            #import pdb; pdb.set_trace() 
+            baseline = np.mean(baseline, axis = 1)
+            #import pdb; pdb.set_trace()
+        else:
+            baseline = np.zeros(np.size(data, 0))
+        
         spw_end = spw_used['spw_start'][0] + window[1]
         spw_start_pts = ispw.ms2pts(spw_start, fs)
         spw_end_pts = ispw.ms2pts(spw_end, fs)
-        data_used = data[:,trace,spw_start_pts:spw_end_pts]
+        
+        #import pdb; pdb.set_trace() 
+        data_used = data[:,trace,spw_start_pts:spw_end_pts].copy()
+        if remove_baseline:
+            #data_base = np.ones(np.size(data_used, 1)) * baseline
+            for electr in range(len(data_used)):
+                data_used[electr,:] = data_used[electr,:] - baseline[electr]
+                
         electr_max = np.argmax(np.max(data_used, axis = 1))
         if version == 1:
             min_group = spw_used[spw_used['ipsp_no'] == min(spw_used['ipsp_no'])]['group'][0]
@@ -744,16 +771,25 @@ def display_group_data(spws, spw_used, data, fs, tit):
             maxs = np.max(data_used, axis = 1)
             ampls_used.append(maxs)
             #import pdb; pdb.set_trace() 
-            peak = np.argmax(data_used[electr_max, :]) + spw_start_pts - win0
+            peak = np.argmax(data_used[electr_max, :]) + spw_start_pts
         
         if version == 1:
             data_to_plot = data_used
         else:
-            data_to_plot = data[:,trace,peak + win_pts0:peak + win_pts1]
+            data_to_plot = data[:,trace,peak + win_pts0:peak + win_pts1].copy()
         
         t = dat.get_timeline(data_to_plot[0,:], fs, 'ms')
         for electr in range(np.size(data,0)):
-            ax.plot(t, data_to_plot[electr, :] - maxs[electr] + add_it * electr, color = colors[idx])
+            if remove_baseline:
+                #import pdb; pdb.set_trace()
+                baseline = np.mean(data_to_plot[electr,:baselin_len_pts])
+                #import pdb; pdb.set_trace()
+                data_to_plot[electr,:] = data_to_plot[electr,:] - baseline
+
+            if align_on_max:
+                ax.plot(t, data_to_plot[electr, :] - maxs[electr] + add_it * electr, color = colors[idx])
+            else:
+                ax.plot(t, data_to_plot[electr, :] + add_it * electr, color = colors[idx])
             #data_used
         
     #class Update_Plot():
