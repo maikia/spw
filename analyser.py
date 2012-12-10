@@ -510,18 +510,14 @@ def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, sp
                 print 'analysing subgroup: ' + str(sub)
                 print subgroups
                 group_name = str(group) + '.' +  str(sub)
-                ampls_used = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
+                ampls_used, output = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
                 
-                output = ''
-                while output != 'y' and output != 'n':
-                    output = raw_input('Is the group alright?: (y, n)')
-                
-                if output == 'y':
+                if output ==True:
                     # group is alright
                     already_clustered[subgroups == sub] = True
                     sub = sub + 1
                     
-                elif output == 'n':
+                elif output == False:
                     # group has to be further divided
                     ampls_used2 = ampls[subgroups == sub]
                     #try:
@@ -579,7 +575,11 @@ def display_group_data(spws, spw_used, data, fs, tit):
     #spw_used = spw_nos[group_idcs]
     colors = define_colors(len(spw_used))
     ampls_used = []
-    plt.figure()
+    fig = plt.figure(figsize=(20,10))
+    #fig.set_size_inches(18.5,10.5)
+    ax = plt.subplot(111)
+    plt.subplots_adjust(bottom=0.2)
+    
     for idx, spw_no in enumerate(spw_used):
         #import pdb; pdb.set_trace() 
         spw_used = spws[spws['spw_no'] == spw_no]
@@ -598,14 +598,35 @@ def display_group_data(spws, spw_used, data, fs, tit):
         data_to_plot = data[:,trace,peak + win_pts0:peak + win_pts1]
         t = dat.get_timeline(data_to_plot[0,:], fs, 'ms')
         for electr in range(np.size(data,0)):
-            plt.plot(t, data_to_plot[electr, :] + add_it * electr, color = colors[idx])
+            ax.plot(t, data_to_plot[electr, :] + add_it * electr, color = colors[idx])
             #data_used
-            
-            
+        
+    #class Update_Plot():
+    # initiate all the variable used throughout the class
+    #global answer
+    def yes_button(event):
+        #ax.Destroy()
+        plt.close()
+    #sys.exit(0)
+        global answer
+        answer = True
+                      
+    def no_button(event):
+        plt.close()
+        global answer 
+        answer = False 
+           
     plt.title('Group: ' + tit)
+    axnext = plt.axes([0.75, 0.05, 0.15, 0.075])    
+    bnext = Button(axnext, 'Update')
+    bnext.on_clicked(no_button)
+    axprev = plt.axes([0.6, 0.05, 0.15, 0.075])  
+    bprev = Button(axprev, 'Keep')
+    bprev.on_clicked(yes_button)
     plt.show()
-    #import pdb; pdb.set_trace()
-    return np.vstack(ampls_used)
+    
+    return np.vstack(ampls_used), answer
+
 
 def plot_spw_amplitude(save_folder, plot_folder, save_plots, data_file, spw_data, ext):
     npzfile        = np.load(save_folder + spw_data)
