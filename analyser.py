@@ -430,9 +430,9 @@ def find_max_corr(x, y):
  
        
 
-def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, spw_data, ext):
-    npzfile        = np.load(save_folder + spw_data)
+def plot_spw_ipsps_no_groups(save_folder, save_file, data_file, spw_data, ext):
     
+    npzfile        = np.load(save_folder + spw_data)
     spws = npzfile['spw_ipsps']
     #initiated = npzfile['initiated']
     npzfile.close()           
@@ -481,6 +481,8 @@ def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, sp
     groups = np.array(groups)
     spw_nos = np.array(spw_nos)
     
+    
+    all_spw = []
     
     for group in np.unique(groups):
         group_idcs, = np.where(groups == group)
@@ -535,33 +537,27 @@ def plot_spw_ipsps_no_groups(save_folder, plot_folder, save_plots, data_file, sp
                 if sub > np.max(subgroups):
                     answer = True  
                 #import pdb; pdb.set_trace()
-                print len(spw_used[subgroups == sub])
-                print sub
+
                 while len(spw_used[subgroups == sub]) == 1:
                     sub = sub+1
                     if sub > np.max(subgroups):
                         answer = True  
                         break;
-            #import pdb; pdb.set_trace()
-         
-#        import pdb; pdb.set_trace()
-    # find groups for all the founded all_starts    
-    #all_starts
-    #groups_numbered = np.arange(len(np.unique(groups)))
-    
-    import pdb; pdb.set_trace() 
-    
-    if False:
-        if np.all(starting_electrodes == np.array([2, 3, 4, 5])):
+        else:
+            subgroups = np.zeros(len(spw_used))            
+        # add the different spws to their groups and subgroups
+        #import pdb; pdb.set_trace()  
+        spw_no_temp = spw_used
+        subgroups_temp = group + subgroups/10. 
         
-            data_used = data[:, trace, spw_start_pts:spw_end_pts]
-            t = dat.get_timeline(data_used[0,:], fs, 'ms')
-            
-            for electr in range(len(data_used)):
-                plt.plot(t, data_used[electr, :] + 150 * electr)
-    plt.show()
-    import pdb; pdb.set_trace()
-    
+        new_spw_groups =  np.rec.fromarrays([spw_no_temp, subgroups_temp], names='spw_no, group')
+        
+        all_spw.append(new_spw_groups)
+    all_spw = np.concatenate(all_spw)       
+    np.savez(save_folder + save_file, group = all_spw)  
+
+
+
 def display_group_data(spws, spw_used, data, fs, tit):    
     add_it = 150
     window = [-2, 5]
