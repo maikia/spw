@@ -96,7 +96,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 
 
     SPWs_ipsps_corrected = 'SPWs_ipsps_corrected.npz'
-    if run_all_functions:
+    if not run_all_functions:
         updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, SPWs_ipsps_beg, data_file = raw_baselined, reanalize = reanalize)
     
 #    spikes_inSPWs = 'spikes_inSpw.npz'
@@ -251,7 +251,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [16]: #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in [12]: #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()
