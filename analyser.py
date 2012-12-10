@@ -428,6 +428,161 @@ def find_max_corr(x, y):
     lag = i - len(cxy)/2
     return lag
  
+def PCA(data,ncomps=2):
+    """Perfrom a principle component analysis.
+    
+    Parameters
+    ----------
+    data : array
+    (n_vars, n_obs) array where `n_vars` is the number of
+    variables (vector dimensions) and `n_obs` the number of
+    observations
+    
+    Returns
+    -------
+    evals : array
+    sorted eigenvalues
+    evecs : array
+    sorted eigenvectors
+    score : array
+    projection of the data on `ncomps` components
+    """
+
+    #norm=data/np.std(data,1)[:,np.newaxis]
+    #norm[np.isnan(norm)]=0
+    #norm = data
+    data = data.astype(np.float64)
+    K=np.cov(data)
+    evals,evecs=np.linalg.eig(K)
+    order=np.argsort(evals)[::-1]
+    evecs=np.real(evecs[:,order])
+    evals=np.abs(evals[order])
+    score= np.dot(evecs[:,:ncomps].T,data)
+    score = score/np.sqrt(evals[:ncomps, np.newaxis])
+    return evals,evecs,score
+
+def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ext):
+    """ similar to plot_spw_ipsps_no_groups but does not divide first group into
+    origin of the first ipsp"""
+    
+    npzfile        = np.load(save_folder + spw_data)
+    spws = npzfile['spw_ipsps']
+    npzfile.close()           
+    
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close()      
+    
+    types = ['spontaneous', 'initiated']
+    all_ampls = []
+    
+    type = spws #spws[len(np.unique(spws['group'])) == 1]
+    all_starts = []
+    spw_nos = []
+    #import pdb; pdb.set_trace() 
+    max_group = -1
+    groups = []
+    # divide into groups looking at which electrode was the ipsp detected
+#    for spw_no in np.unique(type['spw_no']):
+#        spw_used = type[type['spw_no'] == spw_no]
+#
+#        min_ipsps_group = spw_used[spw_used['ipsp_start'] == min(spw_used['ipsp_start'])]['group'][0]
+#        
+#        starting_electrodes = spw_used[spw_used['group'] == min_ipsps_group]['electrode']
+#
+#        trace = spw_used['trace'][0]
+#        spw_start = spw_used['spw_start'][0] - 10
+#        spw_end = spw_start + 60
+#        spw_start_pts = ispw.ms2pts(spw_start, fs)
+#        spw_end_pts = ispw.ms2pts(spw_end,fs)
+#
+#        # convert all to the different groups (using binary system coding)
+#        #if np.sum(2**(starting_electrodes + 1)) == 2:
+#        #    import pdb; pdb.set_trace()
+#            
+#        groups.append(np.sum(2**(starting_electrodes + 1)))
+#        spw_nos.append(spw_no)
+#        all_starts.append(starting_electrodes)
+#    
+    # divide groups into subgroups by the amplitude of the first ipsp in different
+    # electrodes (kmeans)
+    
+    spw_nos = np.unique(spws['spw_no']) #np.array(spw_nos)
+    groups = np.zeros(len(spw_nos))
+    
+    all_spw = []
+    
+    for group in np.unique(groups):
+        group_idcs, = np.where(groups == group)
+        spw_used = spw_nos[group_idcs]
+        if np.size(spw_used,0) != 1:
+            amplitudes = []
+            #subgroup = '.'
+            answer = False
+            subgroups = np.zeros(len(spw_used))
+            spw_used_subgroup = spw_used.copy()
+            for idx, spw_no in enumerate(spw_used_subgroup):
+                spw_temp = spws[spws['spw_no'] == spw_no]
+                min_group = spw_temp[spw_temp['ipsp_start'] == min(spw_temp['ipsp_start'])]['group'][0]
+                ampls = spw_temp[spw_temp['group']==min_group]['amplitude']
+                amplitudes.append(ampls)
+            print amplitudes
+#            try:
+#                ampls = np.vstack(amplitudes)
+#            except:
+#                import pdb; pdb.set_trace()
+            sub = 0
+            already_clustered = subgroups > 0
+            print np.size(spw_used,0)
+            while not answer:
+                print 'analysing subgroup: ' + str(sub)
+                print subgroups
+                group_name = str(group) + '.' +  str(sub)
+                ampls_used, output = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
+                
+                if output ==True:
+                    # group is alright
+                    already_clustered[subgroups == sub] = True
+                    sub = sub + 1
+                    
+                elif output == False:
+                    # group has to be further divided
+                    #ampls_used2 = ampls[subgroups == sub]
+                    #try:
+                    klastry = cluster.vq.kmeans2(ampls_used, 2,minit='points')
+                    #except:
+                    #import pdb; pdb.set_trace()
+                    actual_clusters = klastry[1]
+                    print actual_clusters
+                    actual_clusters[actual_clusters==1] =  np.max(subgroups) + 1
+                    actual_clusters[actual_clusters==0] =  sub
+                    
+                    print actual_clusters
+                    subgroups[subgroups == sub] = actual_clusters
+                
+                if sub > np.max(subgroups):
+                    answer = True  
+                #import pdb; pdb.set_trace()
+
+                while len(spw_used[subgroups == sub]) == 1:
+                    sub = sub+1
+                    if sub > np.max(subgroups):
+                        answer = True  
+                        break;
+        else:
+            subgroups = np.zeros(len(spw_used))            
+        # add the different spws to their groups and subgroups
+        #import pdb; pdb.set_trace()  
+        spw_no_temp = spw_used
+        subgroups_temp = group + subgroups/10. 
+        
+        new_spw_groups =  np.rec.fromarrays([spw_no_temp, subgroups_temp], names='spw_no, group')
+        
+        all_spw.append(new_spw_groups)
+    all_spw = np.concatenate(all_spw)       
+    np.savez(save_folder + save_file, group = all_spw)  
+
        
 
 def plot_spw_ipsps_no_groups(save_folder, save_file, data_file, spw_data, ext):
@@ -559,12 +714,26 @@ def plot_spw_ipsps_no_groups(save_folder, save_file, data_file, spw_data, ext):
 
 
 def display_group_data(spws, spw_used, data, fs, tit):    
+   
+    
+    version = 2 # version 1 - keep original amplitudes and original data for plotting
+        # version 2 - aligns everything to the peak of the first IPSP and calculates
+        # its' amplitude
+        
+        
+    if version == 1:
+        window = [-10, 50]
+    else:
+        window = [-2, 5]
+        
     add_it = 150
-    window = [-2, 5]
+    
     win0 = ispw.ms2pts(window[0], fs)
     window_plot = [-15, 40]
     win_pts0 = ispw.ms2pts(window_plot[0], fs)
     win_pts1 = ispw.ms2pts(window_plot[1], fs)
+
+        
     #for group in np.unique(groups):
         #import pdb; pdb.set_trace() 
     #group_idcs, = np.where(groups == group)
@@ -577,21 +746,32 @@ def display_group_data(spws, spw_used, data, fs, tit):
     plt.subplots_adjust(bottom=0.2)
     
     for idx, spw_no in enumerate(spw_used):
+        
         #import pdb; pdb.set_trace() 
         spw_used = spws[spws['spw_no'] == spw_no]
+        spw_used = np.sort(spw_used, order = 'electrode')
         trace = spws['trace'][0]
-        
+    
         spw_start = spw_used['spw_start'][0] + window[0]
         spw_end = spw_used['spw_start'][0] + window[1]
         spw_start_pts = ispw.ms2pts(spw_start, fs)
         spw_end_pts = ispw.ms2pts(spw_end, fs)
         data_used = data[:,trace,spw_start_pts:spw_end_pts]
         electr_max = np.argmax(np.max(data_used, axis = 1))
-        ampls_used.append(np.max(data_used, axis = 1))
-        peak = np.argmax(data_used[electr_max, :]) + spw_start_pts - win0
-        #import pdb; pdb.set_trace() 
-        #
-        data_to_plot = data[:,trace,peak + win_pts0:peak + win_pts1]
+        if version == 1:
+            min_group = spw_used[spw_used['ipsp_no'] == min(spw_used['ipsp_no'])]['group'][0]
+            ampls = spw_used[spw_used['group'] == min_group]['amplitude']
+            ampls_used.append(ampls)
+        else:
+            ampls_used.append(np.max(data_used, axis = 1))
+            #import pdb; pdb.set_trace() 
+            peak = np.argmax(data_used[electr_max, :]) + spw_start_pts - win0
+        
+        if version == 1:
+            data_to_plot = data_used
+        else:
+            data_to_plot = data[:,trace,peak + win_pts0:peak + win_pts1]
+        
         t = dat.get_timeline(data_to_plot[0,:], fs, 'ms')
         for electr in range(np.size(data,0)):
             ax.plot(t, data_to_plot[electr, :] + add_it * electr, color = colors[idx])

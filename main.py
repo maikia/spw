@@ -202,9 +202,15 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                             data_file = raw_baselined, spw_data = induc_spont_spw, ext = ext)
         
         group_per_isps = 'group_per_isps.npz.'
-        if not run_all_functions:
+        if run_all_functions:
             analyser.plot_spw_ipsps_no_groups(save_folder, save_file = group_per_isps, data_file = raw_baselined, 
                                               spw_data = SPWs_ipsps_corrected, ext = ext)
+        
+        group_per_isps_all = 'group_per_isps_all.npz.'
+        if not run_all_functions:
+            analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_baselined, 
+                                              spw_data = SPWs_ipsps_corrected, ext = ext)
+        
         
 
     
