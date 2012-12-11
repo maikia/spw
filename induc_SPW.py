@@ -1201,7 +1201,11 @@ def group_ipsps(spw_ipsps_trace, shift_ipsp):
             rep_gids = _find_repeated_group_ids(new_group_ids)
             for gid in rep_gids:
                 idx_in_group, =  np.where(new_group_ids==gid)
-                i_closest_ipsp = np.argmin(dist[idx_in_group])
+                idx_in_electrode, = np.where(group_ids==gid)
+                closest_electrode = idx_in_electrode[np.argmax(electrodes[idx_in_electrode])]
+            
+                dist_to_electrode = np.abs(time_to_assign[idx_in_group]-ipsp_start[closest_electrode])
+                i_closest_ipsp = np.argmin(dist_to_electrode)
                 new_group_ids[idx_in_group] = -1
                 new_group_ids[idx_in_group[i_closest_ipsp]] = gid
                 
@@ -1581,7 +1585,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     npzfile.close()     
     
     #plot_it = False
-    distanse_from_point = 1 # ms
+    distanse_from_point = 5 # ms
     #import pdb; pdb.set_trace()
     shift_ipsp = 2.5 # ms
     min_electr_first = 3 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)

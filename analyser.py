@@ -718,7 +718,7 @@ def plot_spw_ipsps_no_groups(save_folder, save_file, data_file, spw_data, ext):
 def display_group_data(spws, spw_used, data, fs, tit):    
    
     
-    version = 2 # version 1 - keep original amplitudes and original data for plotting
+    version = 1 # version 1 - keep original amplitudes and original data for plotting
         # version 2 - aligns everything to the peak of the first IPSP and calculates
         # its' amplitude
         
