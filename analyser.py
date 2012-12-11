@@ -428,7 +428,7 @@ def find_max_corr(x, y):
     lag = i - len(cxy)/2
     return lag
  
-def PCA(data,ncomps=2):
+def PCA(data,ncomps=2, start_comp=0):
     """Perfrom a principle component analysis.
     
     Parameters
@@ -457,28 +457,26 @@ def PCA(data,ncomps=2):
     order=np.argsort(evals)[::-1]
     evecs=np.real(evecs[:,order])
     evals=np.abs(evals[order])
-    score= np.dot(evecs[:,:ncomps].T,data)
+    score= np.dot(evecs[:,start_comp:start_comp+ncomps].T,data)
     score = score/np.sqrt(evals[:ncomps, np.newaxis])
     return evals,evecs,score
 
-def calculate_PCA(new_starts_pts, traces, data, fs):
+def calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, ncomps, window):
     # give new beginning of SPWs and data
-    window = [-5, 60]
+ 
     win_pts = [ispw.ms2pts(window[0], fs), ispw.ms2pts(window[1], fs)]
     pc = []
-    for electr in range(np.size(data,0)):
+    for electr in electr_to_use:
         #import pdb; pdb.set_trace() 
         data_used = []
         for spw in range(len(traces)):
-            data_used.append(data[electr, traces[spw], new_starts_pts[spw] - 
-                                  win_pts[0]:new_starts_pts[spw] + win_pts[1]].copy())
+            data_used.append(data[electr, traces[spw], new_starts_pts[spw] + 
+                                  win_pts[0]:new_starts_pts[spw] + win_pts[1]:10].copy())
 
-        #import pdb; pdb.set_trace() 
-        a1, b1, principal_components = PCA(np.transpose(np.array(data_used)),ncomps=2)
-        #import pdb; pdb.set_trace() 
-        pc.append(principal_components[0])
-    pc = np.transpose(pc)
-    return np.vstack(pc)
+        a1, b1, principal_components = PCA(np.transpose(np.array(data_used)),ncomps=ncomps)
+        #plt.plot(b1[:,:4]) # plot first 4 comps
+        pc.append(principal_components)
+    return np.vstack(pc).T
     
 
 def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ext):
@@ -547,12 +545,15 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                     # group has to be further divided
                     #ampls_used2 = ampls[subgroups == sub]
                     #try:
-                    
-                    PCA = calculate_PCA(new_starts_pts, traces, data, fs)
-                    characteristics = np.concatenate([PCA, ampls_used], axis = 1)
-                    klastry = cluster.vq.kmeans2(characteristics, 2,minit='points')
+                    #import pdb; pdb.set_trace()
+                    #electr_to_use = range(np.size(data,0))
+                    electr_to_use = [6, 7]
+                    PCA = calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, 3, [-5, 10])
+                    #characteristics = np.concatenate([PCA, ampls_used], axis = 1)
+                    klastry = cluster.vq.kmeans2(PCA, 2,minit='points')
                     #except:
                     #import pdb; pdb.set_trace()
+                    assert len(klastry[1])==len(traces),  "Cluster analysis failed-wrong feature dimensions"
                     actual_clusters = klastry[1]
                     print actual_clusters
                     actual_clusters[actual_clusters==1] =  np.max(subgroups) + 1
@@ -727,7 +728,7 @@ def display_group_data(spws, spw_used, data, fs, tit):
     else:
         window = [-5, 5]
         
-    add_it = 150
+    add_it = 500
     
     win0 = ispw.ms2pts(window[0], fs)
     window_plot = [-15, 40]
