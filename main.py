@@ -89,14 +89,20 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
 
     SPWs_ipsps_beg  = 'SPWs_ipsps_beg.npz'
-    if run_all_functions:
+    if not run_all_functions:
         # finding properly each of the IPSP
         # it combines information on Waves/Ipsps and spikes to find the beginning of the SPW 
         updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
 
+    SPWs_ipsps_first_max = 'SPWs_ipsps_first_max.npz'
+    if not run_all_functions:
+        updater.up_spws_first_max(save_folder, save_file = SPWs_ipsps_first_max, spws = SPWs_ipsps_beg, datafile = raw_baselined, reanalize = reanalize)
 
+    #display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
+    
+    
     SPWs_ipsps_corrected = 'SPWs_ipsps_corrected.npz'
-    if run_all_functions:
+    if not run_all_functions:
         updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, SPWs_ipsps_beg, data_file = raw_baselined, reanalize = reanalize)
     
 #    spikes_inSPWs = 'spikes_inSpw.npz'
@@ -126,7 +132,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if run_all_functions:
             updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
 #        
-        if run_all_functions:
+        if not run_all_functions:
             # it makes the plot to exactly analyse each SPW
             analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_corrected, 
                                            load_spikefile = spikes_largest, load_spikesall = spikes_raw, 

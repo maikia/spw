@@ -205,7 +205,6 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
         used_spw_start = used_spws['spw_no' == used_spw_no]['spw_start'] 
         no_spw_in_trace = np.unique(used_spws['spw_no'])
         no_spw_all = np.unique(ipsps_used['spw_no'])
-        
 
         # purly plot variables
         spike_sign = '^'
@@ -322,7 +321,7 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
                 self.no_spw_in_trace = np.unique(self.used_spws['spw_no'])
                 
                 #self.used_spw_idx = 0
-                self.used_spw_start = self.used_spws['spw_no' == self.used_spw_no]['spw_start']
+                self.used_spw_start = self.used_spws[self.used_spws['spw_no']==self.used_spw_no]['spw_start'][0]
 
                 self.set_lim(self.used_spw_start)
                 
@@ -330,6 +329,7 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
                     rect = plt.Rectangle((self.used_spws['spw_start'][sp], self.ylims[0]), 1, self.ylims[1] + self.add_it, facecolor='y', lw=0)
                     #plt.gca().add_patch(rect)
                     ax.add_patch(rect)
+            
             for electr in range(np.size(self.data_used,0)):
                 actual_ipsps_electr = self.actual_ipsps[self.actual_ipsps['electrode'] == electr]['ipsp_start']
                 actual_ipsps_pts = ispw.ms2pts(actual_ipsps_electr, fs).astype('i4')
@@ -345,7 +345,6 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
                     actual_ipsps_pts = ispw.ms2pts(actual_ipsps_electr, fs).astype('i4')
                     ax.scatter(self.t[actual_ipsps_pts], self.data_used[electr,actual_ipsps_pts] + electr * self.add_it, 
                            c=ipsp_color, marker=self.ipsps_sign, s=70,zorder=10)
-                    
                       
                     
                 actual_spikes_allelectr = self.actual_spikes_all[self.actual_spikes_all['electrode'] == electr]['time']
@@ -366,6 +365,7 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
                 actual_prim_starts_pts = ispw.ms2pts(actual_prim_starts_electr, fs).astype('i4')
                 ax.plot(self.t[actual_prim_starts_pts], self.data_used[electr,actual_prim_starts_pts] + electr * self.add_it, 'r*', 
                         ms=7, linewidth = 4)  
+               
              
             ax.plot(self.t, self.intradata_used[0,:] + (electr+3) * self.add_it, 'k')     
             
@@ -535,7 +535,8 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                 print subgroups
                 group_name = str(group) + '.' +  str(sub)
                 ampls_used, new_starts_pts, traces, output = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
-                #import pdb; pdb.set_trace()
+                
+                import pdb; pdb.set_trace()
                 if output ==True:
                     # group is alright
                     already_clustered[subgroups == sub] = True
@@ -547,7 +548,7 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                     #try:
                     #import pdb; pdb.set_trace()
                     #electr_to_use = range(np.size(data,0))
-                    electr_to_use = [6, 7]
+                    electr_to_use = [0, 3, 5, 7]
                     PCA = calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, 3, [-5, 10])
                     #characteristics = np.concatenate([PCA, ampls_used], axis = 1)
                     klastry = cluster.vq.kmeans2(PCA, 2,minit='points')
@@ -790,8 +791,9 @@ def display_group_data(spws, spw_used, data, fs, tit):
             maxs = np.max(data_used, axis = 1)
             ampls_used.append(maxs)
             #import pdb; pdb.set_trace() 
-            peak = spw_start_pts + ispw.ms2pts(window[0],fs).astype('i4') + np.argmax(data_used[electr_max, :])
+            peak = spw_start_pts + np.argmax(data_used[electr_max, :]) # ispw.ms2pts(window[0],fs).astype('i4') 
             new_starts_pts.append(peak)
+            #new_starts_pts.append(spw_used['spw_start'][0])
             traces.append(trace)
             #import pdb; pdb.set_trace() 
         

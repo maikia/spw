@@ -1145,6 +1145,14 @@ def update_dist_SPWfromSpike(save_folder, save_file, load_intrafile, load_spwfil
 def group_ipsps(spw_ipsps_trace, shift_ipsp):
     """Assign coincident spikes (closer than shift_ipsp) to one group
     and return the group's index"""
+    
+    def _find_repeated_group_ids(ids):
+        sorted_ids = np.sort(ids)
+        repeated = (np.diff(sorted_ids)==0)
+        repeated_ids = np.unique(sorted_ids[repeated])
+        return repeated_ids[repeated_ids>=0]
+    
+    
     order = np.argsort(spw_ipsps_trace['ipsp_start'])
     spw_ipsps_sorted = spw_ipsps_trace[order]
     
@@ -1190,11 +1198,17 @@ def group_ipsps(spw_ipsps_trace, shift_ipsp):
             new_group_ids[dist>shift_ipsp] = np.arange(np.sum(dist>shift_ipsp))+max_group+1
             
             #assure that only one ipsp is assigned to any given group
-            u_groups, nonduplicated = np.unique(new_group_ids,return_index=True)
-            group_ids[ipsps_to_assign[nonduplicated]] = new_group_ids[nonduplicated]
+            rep_gids = _find_repeated_group_ids(new_group_ids)
+            for gid in rep_gids:
+                idx_in_group, =  np.where(new_group_ids==gid)
+                i_closest_ipsp = np.argmin(dist[idx_in_group])
+                new_group_ids[idx_in_group] = -1
+                new_group_ids[idx_in_group[i_closest_ipsp]] = gid
+                
+            group_ids[ipsps_to_assign] = new_group_ids
             
             #remove ipsps from assign list that were already used for this electrode
-            was_used  = np.in1d(group_ids[ipsps_assigned], u_groups)
+            was_used  = np.in1d(group_ids[ipsps_assigned], new_group_ids)
             ipsps_assigned = ipsps_assigned[~was_used] 
             ipsps_to_assign = ipsps_to_assign[group_ids[ipsps_to_assign]<0]
             #if closest ipsps is closer thas shift_ipsp assign the new ipsps to the same group
@@ -1318,7 +1332,7 @@ def add_rec_field(recarray, arrs, field_names):
     #import pdb; pdb.set_trace()
     names = list(recarray.dtype.names)
     field_data = [recarray[d] for d in names]
-    if len(field_names) > 1:
+    if np.ndim(arrs) > 1:
         field_data += arrs
     else:
         field_data.append(arrs)
@@ -1460,6 +1474,45 @@ def remove_too_short(distance_too_short, ipsp_amplitudes):
     
     import pdb; pdb.set_trace()
 
+def update_spws_first_max(save_folder, spws, datafile, save_file, window = [-3, 3]):
+    npzfile         = np.load(save_folder + datafile)
+    data            = npzfile['data']
+    fs              = npzfile['fs']
+    npzfile.close()   
+    
+    npzfile         = np.load(save_folder + spws)
+    spws      = npzfile['spw_ipsps']
+    npzfile.close()       
+    #win0 = ms2pts(window[0], fs)
+    
+    
+#    traces = []
+    for spw_no in np.unique(spws['spw_no']):
+        print 
+        print spws['spw_start'][spws['spw_no'] == spw_no]
+        #import pdb; pdb.set_trace() 
+        spw_used = spws[spws['spw_no'] == spw_no]
+        spw_used = np.sort(spw_used, order = 'electrode')
+        trace = spws['trace'][0]
+
+        spw_start = spw_used['spw_start'][0] + window[0]
+        spw_end = spw_used['spw_start'][0] + window[1]
+        spw_start_pts = ms2pts(spw_start, fs).astype('i4')
+        spw_end_pts = ms2pts(spw_end, fs).astype('i4')
+        
+        data_used = data[:,trace,spw_start_pts:spw_end_pts].copy()
+
+        electr_max = np.argmax(np.max(data_used, axis = 1))
+        #import pdb; pdb.set_trace()
+        peak = spw_start_pts + np.argmax(data_used[electr_max, :])
+        new_start = pts2ms(peak, fs).astype('f8')
+
+        spws['spw_start'][spws['spw_no'] == spw_no] = np.ones(len( spws['spw_start'][spws['spw_no'] == spw_no])) * new_start
+        print spws['spw_start'][spws['spw_no'] == spw_no]
+    np.savez(save_folder + save_file, spw_ipsps = spws) 
+
+
+
 def corect_ipsps(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext):
     npzfile         = np.load(save_folder + load_datafile)
     data            = npzfile['data']
@@ -1527,23 +1580,23 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     spw_spike      = npzfile['spike_idx']  
     npzfile.close()     
     
-    plot_it = False
-    distanse_from_point = 5 # ms
+    #plot_it = False
+    distanse_from_point = 1 # ms
     #import pdb; pdb.set_trace()
-    shift_ipsp = 3 # ms
+    shift_ipsp = 2.5 # ms
     min_electr_first = 3 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    min_electr_all = 2
+    #min_electr_all = 2
     expected_min_ipsp_ampl = 30 # microV
-    shift_spike= 1 #ms
-    min_length_spw = 3
+    #shift_spike= 1 #ms
+    #min_length_spw = 3
     min_distance_between_spw = 30 #ms
      
-    spw_ipsps_list = []
+    #spw_ipsps_list = []
     #all_traces= np.unique(spw_ipsps['trace'])
 
     #all_traces_update = np.unique(spw_selected['trace'])
     all_ipsps = []
-    all_spikes = []
+    #all_spikes = []
     
     
     all_traces= np.unique(spw_ipsps['trace'])
@@ -1625,7 +1678,7 @@ def update_spws_beg_backup(load_datafile, load_spwsipsp, load_spwsspike, save_fo
     plot_it = False
     distanse_from_point = 5 # ms
     #import pdb; pdb.set_trace()
-    shift_ipsp = 3 # ms
+    shift_ipsp = 1 # ms
     min_electr = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
     expected_min_ipsp_ampl = 30 # microV
     shift_spike= 1 #ms

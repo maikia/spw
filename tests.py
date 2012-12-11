@@ -45,6 +45,23 @@ def test_group_ipsps_in_multi_electrode_unsorted_electrodes():
     expected_group = np.array([1, 2, 1, 0, 0])
     assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
 
+def test_group_ipsps_assign_closest_element_to_existing_group():
+    ipsps_start = [2, 2.5, 1]
+    electrode =   [1, 2, 2]
+    ipsps = np.rec.fromarrays([ipsps_start, electrode], 
+                              names='ipsp_start,electrode')
+    group = group_ipsps(ipsps, 2)
+    expected_group = np.array([0,0,1])
+    assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
+    
+    ipsps_start = [2, 1, 2.5]
+    electrode =   [1, 2, 2]
+    ipsps = np.rec.fromarrays([ipsps_start, electrode], 
+                              names='ipsp_start,electrode')
+    group = group_ipsps(ipsps, 2)
+    expected_group = np.array([0,1,0])
+    assert (group == expected_group).all(), "%s != %s" % (group, expected_group)
+    
 def test_group_ipsps_maximum_one_ipsp_per_electrode():
     ipsps_start = np.cumsum(np.random.rand(1000))
     electrode =   np.random.randint(6, size=1000)
