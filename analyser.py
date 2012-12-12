@@ -464,21 +464,78 @@ def PCA(data,ncomps=2, start_comp=0):
 def calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, ncomps, window):
     # give new beginning of SPWs and data
  
-    win_pts = [ispw.ms2pts(window[0], fs), ispw.ms2pts(window[1], fs)]
+    
     pc = []
     for electr in electr_to_use:
         #import pdb; pdb.set_trace() 
-        data_used = []
-        for spw in range(len(traces)):
-            data_used.append(data[electr, traces[spw], new_starts_pts[spw] + 
-                                  win_pts[0]:new_starts_pts[spw] + win_pts[1]:10].copy())
-
-        a1, b1, principal_components = PCA(np.transpose(np.array(data_used)),ncomps=ncomps)
+        data_used = get_spws(data, traces, electr, window, fs, new_starts_pts)
+        a1, b1, principal_components = PCA(data_used,ncomps=ncomps)
+        
+        #plt.figure()
         #plt.plot(b1[:,:4]) # plot first 4 comps
+        #plt.figure()
+
         pc.append(principal_components)
     return np.vstack(pc).T
-    
 
+def get_spws(data, traces, electr, window, fs, start_pts):
+    data_used = []
+    win_pts = [ispw.ms2pts(window[0], fs), ispw.ms2pts(window[1], fs)]
+    for spw in range(len(traces)):
+        t = start_pts[spw]
+        data_used.append(data[electr, traces[spw], t + win_pts[0]:t + win_pts[1]])
+    return np.transpose(np.array(data_used))
+
+def compare_spws(data, traces, electrodes, window, fs, start_pts, labels): 
+    plt.figure()    
+    n_electr = len(electrodes)
+    colors = ['r','b','g']
+    for i,el in enumerate(electrodes):
+        plt.subplot(n_electr,1,i+1)
+        spw_traces = get_spws(data, traces, el, window, fs, start_pts)
+        for l in np.unique(labels):
+            plt.plot(spw_traces[:, labels==l], colors[l],  alpha=0.2)
+
+    
+def compare_clusters(sc, labels, names=None):
+    n_fets = sc.shape[0]
+    plt.figure()
+    colors = ['r', 'b', 'g']
+    ulabs = np.unique(labels)
+    for i in range(n_fets):
+        for j in range(n_fets):
+            f1 = sc[i,:]
+            f2 = sc[j,:]
+            plt.subplot(n_fets, n_fets, i+j*n_fets+1)
+            if i==j:
+                for l in ulabs:
+                    plt.hist(f1[labels==l], 30, histtype='stepfilled', 
+                             normed=True,alpha=0.4, color=colors[l])
+            else:
+                for l in ulabs:                                
+                    plt.plot(f1[labels==l],f2[labels==l], colors[l]+'.')
+            if i==0 and names is not None:
+                plt.ylabel(names[j])
+            if j==0 and names is not None:
+                plt.title(names[i])
+                            
+
+def remove_with_less_ipsps(save_folder, save_file, spw_data ,min_ipsps_group):
+    npzfile        = np.load(save_folder + spw_data)
+    spws = npzfile['spw_ipsps']
+    npzfile.close()          
+   
+    new_spw = []
+    for spw_no in np.unique(spws['spw_no']):
+        spw_used = spws[spws['spw_no'] == spw_no]
+        groups = np.unique(spw_used['group'])
+        number_groups = len(groups)
+        if number_groups >= min_ipsps_group:
+            new_spw.append(spw_used)
+    new_spw = np.concatenate(new_spw)
+    np.savez(save_folder + save_file, spw_ipsps = new_spw) 
+     
+     
 def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ext):
     """ similar to plot_spw_ipsps_no_groups but does not divide first group into
     origin of the first ipsp"""
@@ -508,10 +565,15 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
     
     all_spw = []
     
+    
+    
     for group in np.unique(groups):
         group_idcs, = np.where(groups == group)
         spw_used = spw_nos[group_idcs]
+        
+        
         if np.size(spw_used,0) != 1:
+            
             amplitudes = []
             #subgroup = '.'
             answer = False
@@ -534,9 +596,9 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                 print 'analysing subgroup: ' + str(sub)
                 print subgroups
                 group_name = str(group) + '.' +  str(sub)
-                ampls_used, new_starts_pts, traces, output = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
+                ampls_used, new_starts_pts, traces, output = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name, window = [-3, 5])
                 
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
                 if output ==True:
                     # group is alright
                     already_clustered[subgroups == sub] = True
@@ -548,21 +610,25 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                     #try:
                     #import pdb; pdb.set_trace()
                     #electr_to_use = range(np.size(data,0))
-                    electr_to_use = [0, 3, 5, 7]
-                    PCA = calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, 3, [-5, 10])
-                    #characteristics = np.concatenate([PCA, ampls_used], axis = 1)
-                    klastry = cluster.vq.kmeans2(PCA, 2,minit='points')
+                    electr_to_use = [3, 7]
+                    n_comps = 4
+                    window = [2.5, 10]
+                    pcs = calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, n_comps, window = window)
+                    #characteristics = np.concatenate([PCA, ampls_used[:,[1, 6]]], axis = 1)
+                    _, actual_clusters = cluster.vq.kmeans2(pcs, 2,minit='points')
+                    names = ["E%d:P%d" % (e, p) for e in electr_to_use for p in range(n_comps) ]
+                    compare_clusters(pcs.T, actual_clusters, names)
+                    compare_spws(data, traces, electr_to_use, window, fs, new_starts_pts, actual_clusters)
                     #except:
                     #import pdb; pdb.set_trace()
-                    assert len(klastry[1])==len(traces),  "Cluster analysis failed-wrong feature dimensions"
-                    actual_clusters = klastry[1]
-                    print actual_clusters
+                    assert len(actual_clusters)==len(traces),  "Cluster analysis failed-wrong feature dimensions"
                     actual_clusters[actual_clusters==1] =  np.max(subgroups) + 1
                     actual_clusters[actual_clusters==0] =  sub
                     
                     print actual_clusters
                     subgroups[subgroups == sub] = actual_clusters
-                
+                                    
+                    plt.show()
                 if sub > np.max(subgroups):
                     answer = True  
                 #import pdb; pdb.set_trace()
@@ -715,7 +781,7 @@ def plot_spw_ipsps_no_groups(save_folder, save_file, data_file, spw_data, ext):
 
 
 
-def display_group_data(spws, spw_used, data, fs, tit):    
+def display_group_data(spws, spw_to_use, data, fs, tit, window):    
    
     
     version = 1 # version 1 - keep original amplitudes and original data for plotting
@@ -724,15 +790,16 @@ def display_group_data(spws, spw_used, data, fs, tit):
         
     align_on_max = False
     remove_baseline = True
-    if version == 1:
-        window = [-10, 50]
-    else:
-        window = [-5, 5]
-        
-    add_it = 500
+    #if version == 1:
+    #    window = [-10, 50]
+    #else:
+    #window = [-5, 5]
+    window_pts0 = ispw.ms2pts(window[0], fs)   
+    window_pts1 = ispw.ms2pts(window[1], fs) 
+    add_it = 300
     
-    win0 = ispw.ms2pts(window[0], fs)
-    window_plot = [-15, 40]
+    #win0 = ispw.ms2pts(window[0], fs)
+    window_plot = [-5, 30]
     win_pts0 = ispw.ms2pts(window_plot[0], fs)
     win_pts1 = ispw.ms2pts(window_plot[1], fs)
     baselin_length = 5 # ms
@@ -742,7 +809,7 @@ def display_group_data(spws, spw_used, data, fs, tit):
         #import pdb; pdb.set_trace() 
     #group_idcs, = np.where(groups == group)
     #spw_used = spw_nos[group_idcs]
-    colors = define_colors(len(spw_used))
+    colors = define_colors(len(spw_to_use))
     ampls_used = []
     #fig = plt.figure(figsize=(20,10))
     fig = plt.figure(figsize = (15, 8))
@@ -751,56 +818,54 @@ def display_group_data(spws, spw_used, data, fs, tit):
     plt.subplots_adjust(bottom=0.2)
     new_starts_pts = []
     traces = []
-    for idx, spw_no in enumerate(spw_used):
-        
+    
+    # plot every spw given by spw_used
+    for idx, spw_no in enumerate(spw_to_use):    
         #import pdb; pdb.set_trace() 
         spw_used = spws[spws['spw_no'] == spw_no]
         spw_used = np.sort(spw_used, order = 'electrode')
-        trace = spws['trace'][0]
-
-        
+        trace = spw_used['trace'][0]
 
         if remove_baseline:
-            s_p_temp1 = ispw.ms2pts(spw_used['spw_start'][0], fs).astype('i4') -10
-            s_p_temp2 = ispw.ms2pts(spw_used['spw_start'][0], fs).astype('i4') -5
+            s_p_temp1 = ispw.ms2pts(spw_used['spw_start'][0]-10, fs).astype('i4') 
+            s_p_temp2 = ispw.ms2pts(spw_used['spw_start'][0] -5, fs).astype('i4')
             baseline = data[:, trace, s_p_temp1 : s_p_temp2]
-            #import pdb; pdb.set_trace() 
             baseline = np.mean(baseline, axis = 1)
             #import pdb; pdb.set_trace()
-        else:
-            baseline = np.zeros(np.size(data, 0))
-        spw_start = spw_used['spw_start'][0] + window[0]
-        spw_end = spw_used['spw_start'][0] + window[1]
-        spw_start_pts = ispw.ms2pts(spw_start, fs).astype('i4')
-        spw_end_pts = ispw.ms2pts(spw_end, fs).astype('i4')
+
+        spw_start = spw_used['spw_start'][0]
+        #spw_end = spw_used['spw_start'][0] + window[1]
         
-        #import pdb; pdb.set_trace() 
-        data_used = data[:,trace,spw_start_pts:spw_end_pts].copy()
+        spw_start_pts = ispw.ms2pts(spw_start, fs).astype('i4')
+        #spw_end_pts = ispw.ms2pts(spw_end, fs).astype('i4')
+        
+        
+        data_used = data[:,trace,spw_start_pts + window_pts0:
+                         spw_start_pts + window_pts1].copy()
         if remove_baseline:
-            #data_base = np.ones(np.size(data_used, 1)) * baseline
-            for electr in range(len(data_used)):
-                data_used[electr,:] = data_used[electr,:] - baseline[electr]
+            data_used[:,:] = data_used[:,:] - baseline[:,np.newaxis]
                 
         electr_max = np.argmax(np.max(data_used, axis = 1))
+#        if version == 1:
+#            min_group = spw_used[spw_used['ipsp_no'] == min(spw_used['ipsp_no'])]['group'][0]
+#            ampls = spw_used[spw_used['group'] == min_group]['amplitude']
+#            ampls_used.append(ampls)
+#            maxs = ampls
+#        else:
+        maxs = np.max(data_used, axis = 1)
+        ampls_used.append(maxs)
+        #import pdb; pdb.set_trace() 
         if version == 1:
-            min_group = spw_used[spw_used['ipsp_no'] == min(spw_used['ipsp_no'])]['group'][0]
-            ampls = spw_used[spw_used['group'] == min_group]['amplitude']
-            ampls_used.append(ampls)
-            maxs = ampls
+            peak = spw_start_pts
         else:
-            maxs = np.max(data_used, axis = 1)
-            ampls_used.append(maxs)
             #import pdb; pdb.set_trace() 
-            peak = spw_start_pts + np.argmax(data_used[electr_max, :]) # ispw.ms2pts(window[0],fs).astype('i4') 
-            new_starts_pts.append(peak)
-            #new_starts_pts.append(spw_used['spw_start'][0])
-            traces.append(trace)
-            #import pdb; pdb.set_trace() 
-        
-        if version == 1:
-            data_to_plot = data_used
-        else:
-            data_to_plot = data[:,trace,peak + win_pts0:peak + win_pts1].copy()
+            peak = spw_start_pts + np.argmax(data_used[electr_max, :]) +window_pts0
+        new_starts_pts.append(peak)
+        #new_starts_pts.append(ispw.ms2pts(spw_used['spw_start'][0], fs))
+        traces.append(trace)
+        #import pdb; pdb.set_trace() 
+    
+        data_to_plot = data[:,trace,peak + win_pts0:peak + win_pts1].copy()
         
         t = dat.get_timeline(data_to_plot[0,:], fs, 'ms')
         for electr in range(np.size(data,0)):
