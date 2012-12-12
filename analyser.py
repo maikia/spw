@@ -593,10 +593,11 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
             already_clustered = subgroups > 0
             print np.size(spw_used,0)
             while not answer:
+                window = [2.5, 7.5]
                 print 'analysing subgroup: ' + str(sub)
                 print subgroups
                 group_name = str(group) + '.' +  str(sub)
-                ampls_used, new_starts_pts, traces, output = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name, window = [-3, 5])
+                ampls_used, new_starts_pts, traces, output = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name, window = window)
                 
                 #import pdb; pdb.set_trace()
                 if output ==True:
@@ -610,12 +611,12 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                     #try:
                     #import pdb; pdb.set_trace()
                     #electr_to_use = range(np.size(data,0))
-                    electr_to_use = [3, 7]
-                    n_comps = 4
-                    window = [2.5, 10]
+                    electr_to_use = [2, 4, 6]
+                    n_comps = 3
+                    
                     pcs = calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, n_comps, window = window)
-                    #characteristics = np.concatenate([PCA, ampls_used[:,[1, 6]]], axis = 1)
-                    _, actual_clusters = cluster.vq.kmeans2(pcs, 2,minit='points')
+                    characteristics = np.concatenate([pcs, ampls_used[:,[1, 4, 7]]], axis = 1)
+                    _, actual_clusters = cluster.vq.kmeans2(characteristics, 2,minit='points')
                     names = ["E%d:P%d" % (e, p) for e in electr_to_use for p in range(n_comps) ]
                     compare_clusters(pcs.T, actual_clusters, names)
                     compare_spws(data, traces, electr_to_use, window, fs, new_starts_pts, actual_clusters)
