@@ -1037,7 +1037,19 @@ def plot_spw_amplitude(save_folder, plot_folder, save_plots, data_file, spw_data
                 plt.plot(t, data_used[electr, :] + 150 * electr)
         plt.show()
         #amls = [max(data_used[])]
-              
+            
+def plot_imshow_origin(dane, window, save_name, title, electrodes):
+    # plots and saves imshow form the given parameters
+    fig = plt.figure()   
+    plt.imshow(dane, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(electrodes)+0.5]) #, vmin=0, vmax=0.3) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')
+    plt.colorbar()
+
+    plt.title(title)
+    plt.ylabel('electrode number')
+    plt.xlabel('time from beginning of the detected start of SPW (ms)')
+        
+    fig.savefig(save_name, dpi=600)     
+        
     
 
 def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'spike.npz', spw_data = 'spw.npz', ext = '.pdf', win = [-20, 20]):
@@ -1053,171 +1065,135 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     npzfile.close()           
     types = ['spontaneous', 'initiated']
     
-    #n_bins = 9
-    n_bins = 6
-    #start_pt = [0, 20]
+    n_bins = 3
     all_p_dist = []
-    window = [-1., 2.]
-    #window = [-1.25, 1.75]
+    window = [-.5, 1.]
     all_dists_hist = []
     for_imshow = []
+    bins = np.linspace(window[0], window[1], n_bins + 1)
+    considered_bin = np.where(bins <= 0)[0][-1]
+    
+    save_fold = save_folder + plot_folder
+    fold_mng.create_folder(save_fold)
+    save_base = save_fold + save_plots
+    
+    # calculate all the spikes which are within given window
     for idx_type, typ in enumerate([spontaneous, initiated]):
         
         spikes_list = [[] for x in range(0,len(np.unique(typ['electrode'])))]
-        for idx_spw_no, spw_start in enumerate(np.unique(typ['spw_start'])):
+        
+        # go through every spw in this group
+        for spw_start in np.unique(typ['spw_start']):
             if spw_start > -window[0]:
                 trace = typ[typ['spw_start'] == spw_start]['trace'][0]
-                #spikes_used = 
                 spikes_used = spikes[spikes['trace'] == trace]
                 spikes_spw = spikes_used[(spikes_used['time'] > spw_start + window[0]) & 
                                          (spikes_used['time'] < spw_start + window[1])]
+                
+                # look for spikes in each electrode
                 for electr in np.unique(spikes_spw['electrode']):
                     spikes_times = (spikes_spw[spikes_spw['electrode'] == electr]['time'] - spw_start).tolist()
-                    
                     spikes_list[electr] = spikes_list[electr] + spikes_times
         
         for_histogram = []
-        bins = np.linspace(window[0], window[1], n_bins + 1)
         dist_electrode = []
         numb_spikes = 0
+        
+        # check how many spikes are in every bin
         for electr in np.unique(typ['electrode']):
             n_all, _ = np.histogram(spikes_list[electr], bins) #, normed = True)
-            #import pdb; pdb.set_trace() 
-            numb_spikes = numb_spikes + len(spikes_list[electr])
+            numb_spikes = (numb_spikes + len(spikes_list[electr])) * 1.0
             dist_electrode.append(n_all)
-            #for_histogram.append(n_all[n_bins/3])
-            #import pdb; pdb.set_trace() 
-            for_histogram.append(n_all[np.where(bins <= 0)[0][-1]])
-
-        numb_spikes = numb_spikes * 1.0
+            for_histogram.append(n_all[considered_bin])
+        
+        # dist_electrode - just simple number of spikes in each electrode
         dist_electrode = [dist_electrode[i]/numb_spikes for i in range(len(dist_electrode))]
+        
+        # numb_spikes - number of spikes all together
+        numb_spikes = numb_spikes * 1.0
+        
+        # for_histogram - only those dist_electrode from considered_bin
         for_histogram = np.array(for_histogram)
+        
+        # same as for_histogram, but will not be normalized - used for chi-sqare later
         for_p_distribution = for_histogram.copy()
+        
+        # divide by all number of spikes in this histogram
         for_histogram = for_histogram / (for_histogram.sum() * 1.0)
-        #for_histogram /= (for_histogram.sum() * 1.0)
         
-        
-        #aba = 0
-        #aba = [aba + sum(dist_electrode[i]) for i in range(len(dist_electrode))]
-        #import pdb; pdb.set_trace()     
-        #spikes_array = np.array(spikes_list)
-        
-        fig = plt.figure()   
-        # plt.imshow(dist_electrode, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5], vmin=0, vmax=0.1) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')   
-        plt.imshow(dist_electrode, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5]) #, vmin=0, vmax=0.3) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')
-        #import pdb; pdb.set_trace()  
-        plt.colorbar()
-        #import pdb; pdb.set_trace() 
-        #plt.show()
-        plt.title(types[idx_type] + ', found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes))
-        plt.ylabel('electrode number')
-        plt.xlabel('time from beginning of the detected start of SPW (ms)')
-        #plt.xlim([win[0], 80+win[1]])
-        save_fold = save_folder + plot_folder
-        fold_mng.create_folder(save_fold)
-        
-        fig.savefig(save_fold + save_plots + types[idx_type] + ext, dpi=600)     
-        fig.savefig(save_fold + save_plots + types[idx_type] + '.eps', dpi=600) 
-        
-        
-        #for_histogram = [dist_electrode[electr][3] for electr in range(len(dist_electrode))]
         for_imshow.append(dist_electrode)
         all_dists_hist.append(for_histogram)
         all_p_dist.append(for_p_distribution)
-    #import pdb; pdb.set_trace() 
+    
+    # plot imshow - not normalized
+    for idx_type, typ in enumerate([spontaneous, initiated]):  
+        title = types[idx_type] + ', found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes)
+        save_name =  save_base + types[idx_type] + ext
+        electrs = np.unique(typ['electrode'])
+        plot_imshow_origin(for_imshow[idx_type], window,save_name, title, electrs) 
+        
     
     # calculate chi_spare between the two distributions
     import scipy.stats.mstats as mst
-#    #import pdb; pdb.set_trace() 
-#    
-#    sum_of_spikes = np.sum(all_dists_hist,0) * 1.0
-#    
-    #all_dists_hist = all_dists_hist/sum_of_spikes
-    #statistic, p_value = mst.chisquare(np.array(all_dists_hist[0]), np.array(all_dists_hist[1]))
-    #import pdb; pdb.set_trace() 
     fig = plt.figure()
     width = 0.5
     left = np.arange(0.5, len(for_histogram) + 0.5)
-    #import scipy.stats as stat
     find_zeros = np.sum(all_p_dist,0)
-    
-    
     x_squared, p_value = mst.chisquare(np.array(all_p_dist[0][find_zeros != 0]), np.array(all_p_dist[1][find_zeros != 0]))
-    #ax = fig.add_subplot(111)
+
     #import pdb; pdb.set_trace()
+    # plot bar plot for the distributions
     rects1 = plt.bar(left , all_dists_hist[0], width, color='r')
     rects2 = plt.bar(left + width, all_dists_hist[1], width, color = 'b')
     plt.title('p: ' + str(p_value))
     plt.legend( (rects1[0], rects2[0]), ('Spontaneous', 'Induced') )
-    #for len(all_dists_hist):
     plt.title(str(p_value))
-    plt.xlim([left[0] + 0.5, 1.5 + left[-1]])  
-    #plt.show()     
+    plt.xlim([left[0], 1 + left[-1]])     
     fig.savefig(save_fold + save_plots + types[idx_type] + '_hist' + ext, dpi=600)     
-    fig.savefig(save_fold + save_plots + types[idx_type] + '_hist' + '.eps', dpi=600) 
-    np.savez(save_folder + save_file, init_hist = all_dists_hist[1], spont_hist = all_dists_hist[0], range = window)  
+    
     
     # normalize by sum in each pixel
     #import pdb; pdb.set_trace()
-    sum_in_each = np.sum(for_imshow,0)
-    # group 1 # spontaneous
-    for group in range(len(for_imshow)):
-        #import pdb; pdb.set_trace()
-        to_plot = np.array(for_imshow[group])/sum_in_each
+    sum_in_each = (np.sum(for_imshow,0)) * 1.0
+    for idx_type, typ in enumerate([spontaneous, initiated]):  
+        title = types[idx_type] + ', norm_pixel, found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes)
+        save_name =  save_base + types[idx_type]+'norm_pixel' + ext
+        electrs = np.unique(typ['electrode'])
         
-        fig = plt.figure()   
-        # plt.imshow(dist_electrode, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5], vmin=0, vmax=0.1) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')   
-        plt.imshow(to_plot, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5]) #, vmin=0, vmax=0.3) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')
-        #import pdb; pdb.set_trace()  
-        plt.colorbar()
-        #import pdb; pdb.set_trace() 
-        #plt.show()
-        plt.title(types[group] + ',style 2, found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes))
-        plt.ylabel('electrode number')
-        plt.xlabel('time from beginning of the detected start of SPW (ms)')
-        #plt.xlim([win[0], 80+win[1]])
-        save_fold = save_folder + plot_folder
-        fold_mng.create_folder(save_fold)
+        dane = np.array(for_imshow[idx_type])/sum_in_each
+        dane[sum_in_each == 0.] = 0.
+        dane[dane == np.nan] = 0
+        plot_imshow_origin(dane, window,save_name, title, electrs) 
     
+    # plot bar for normalized data        
     plt.figure()
     column_used = np.where(bins <= 0)[0][-1]
-
     rects1 = plt.bar(left , all_dists_hist[0]/sum_in_each[:,column_used] , width, color='r')
     rects2 = plt.bar(left + width, all_dists_hist[1]/sum_in_each[:,column_used], width, color = 'b')
     plt.legend( (rects1[0], rects2[0]), ('Spontaneous', 'Induced') )
-    #for len(all_dists_hist):
     plt.title(str(p_value))
-    plt.xlim([left[0] + 0.5, 1.5 + left[-1]])
+    plt.xlim([left[0], 1 + left[-1]])
+    fig.savefig(save_fold + save_plots + types[idx_type] + '_hist_norm_pixel' + ext, dpi=600)   
     
     #import pdb; pdb.set_trace()
     # normalize by sum in each electrode
     sum_in_electr = np.sum(for_imshow,2)
     sum_between = np.sum(sum_in_electr, 0)
-    
-    for group in range(len(for_imshow)):
-        #import pdb; pdb.set_trace()
-        to_plot = [np.array(for_imshow[group][electr])/sum_between[electr] for electr in range(len(for_imshow[group]))]
+    for idx_type, typ in enumerate([spontaneous, initiated]):  
+        title = types[idx_type] + ', norm_electr, found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes)
+        save_name =  save_base + types[idx_type]+'norm_electr' + ext
+        electrs = np.unique(typ['electrode'])
         
-        fig = plt.figure()   
-        # plt.imshow(dist_electrode, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5], vmin=0, vmax=0.1) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')   
-        plt.imshow(to_plot, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5]) #, vmin=0, vmax=0.3) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')
-        #import pdb; pdb.set_trace()  
-        plt.colorbar()
-        #import pdb; pdb.set_trace() 
-        #plt.show()
-        plt.title(types[group] + ',style 2, found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes))
-        plt.ylabel('electrode number')
-        plt.xlabel('time from beginning of the detected start of SPW (ms)')
-        #plt.xlim([win[0], 80+win[1]])
-        save_fold = save_folder + plot_folder
-        fold_mng.create_folder(save_fold)   
-    
-    
-    
+        dane = []
+        for electr in range(len(for_imshow[idx_type])):
+            if sum_between[electr] != 0:
+                dane.append(np.array(for_imshow[idx_type][electr])/sum_between[electr])
+            else:
+                dane.append(np.array(for_imshow[idx_type][electr] - for_imshow[idx_type][electr]))
+        
+        plot_imshow_origin(np.array(dane), window,save_name, title, electrs) 
+        
     plt.show()
-    fig.clf()
-
-    #plt.show()
     
 
 def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 600.0):
