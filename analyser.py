@@ -1060,6 +1060,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     window = [-1., 2.]
     #window = [-1.25, 1.75]
     all_dists_hist = []
+    for_imshow = []
     for idx_type, typ in enumerate([spontaneous, initiated]):
         
         spikes_list = [[] for x in range(0,len(np.unique(typ['electrode'])))]
@@ -1120,6 +1121,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         
         
         #for_histogram = [dist_electrode[electr][3] for electr in range(len(dist_electrode))]
+        for_imshow.append(dist_electrode)
         all_dists_hist.append(for_histogram)
         all_p_dist.append(for_p_distribution)
     #import pdb; pdb.set_trace() 
@@ -1131,7 +1133,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
 #    sum_of_spikes = np.sum(all_dists_hist,0) * 1.0
 #    
     #all_dists_hist = all_dists_hist/sum_of_spikes
-    statistic, p_value = mst.chisquare(np.array(all_dists_hist[0]), np.array(all_dists_hist[1]))
+    #statistic, p_value = mst.chisquare(np.array(all_dists_hist[0]), np.array(all_dists_hist[1]))
     #import pdb; pdb.set_trace() 
     fig = plt.figure()
     width = 0.5
@@ -1154,6 +1156,64 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     fig.savefig(save_fold + save_plots + types[idx_type] + '_hist' + ext, dpi=600)     
     fig.savefig(save_fold + save_plots + types[idx_type] + '_hist' + '.eps', dpi=600) 
     np.savez(save_folder + save_file, init_hist = all_dists_hist[1], spont_hist = all_dists_hist[0], range = window)  
+    
+    # normalize by sum in each pixel
+    #import pdb; pdb.set_trace()
+    sum_in_each = np.sum(for_imshow,0)
+    # group 1 # spontaneous
+    for group in range(len(for_imshow)):
+        #import pdb; pdb.set_trace()
+        to_plot = np.array(for_imshow[group])/sum_in_each
+        
+        fig = plt.figure()   
+        # plt.imshow(dist_electrode, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5], vmin=0, vmax=0.1) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')   
+        plt.imshow(to_plot, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5]) #, vmin=0, vmax=0.3) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')
+        #import pdb; pdb.set_trace()  
+        plt.colorbar()
+        #import pdb; pdb.set_trace() 
+        #plt.show()
+        plt.title(types[group] + ',style 2, found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes))
+        plt.ylabel('electrode number')
+        plt.xlabel('time from beginning of the detected start of SPW (ms)')
+        #plt.xlim([win[0], 80+win[1]])
+        save_fold = save_folder + plot_folder
+        fold_mng.create_folder(save_fold)
+    
+    plt.figure()
+    column_used = np.where(bins <= 0)[0][-1]
+
+    rects1 = plt.bar(left , all_dists_hist[0]/sum_in_each[:,column_used] , width, color='r')
+    rects2 = plt.bar(left + width, all_dists_hist[1]/sum_in_each[:,column_used], width, color = 'b')
+    plt.legend( (rects1[0], rects2[0]), ('Spontaneous', 'Induced') )
+    #for len(all_dists_hist):
+    plt.title(str(p_value))
+    plt.xlim([left[0] + 0.5, 1.5 + left[-1]])
+    
+    #import pdb; pdb.set_trace()
+    # normalize by sum in each electrode
+    sum_in_electr = np.sum(for_imshow,2)
+    sum_between = np.sum(sum_in_electr, 0)
+    
+    for group in range(len(for_imshow)):
+        #import pdb; pdb.set_trace()
+        to_plot = [np.array(for_imshow[group][electr])/sum_between[electr] for electr in range(len(for_imshow[group]))]
+        
+        fig = plt.figure()   
+        # plt.imshow(dist_electrode, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5], vmin=0, vmax=0.1) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')   
+        plt.imshow(to_plot, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(np.unique(typ['electrode']))+0.5]) #, vmin=0, vmax=0.3) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')
+        #import pdb; pdb.set_trace()  
+        plt.colorbar()
+        #import pdb; pdb.set_trace() 
+        #plt.show()
+        plt.title(types[group] + ',style 2, found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes))
+        plt.ylabel('electrode number')
+        plt.xlabel('time from beginning of the detected start of SPW (ms)')
+        #plt.xlim([win[0], 80+win[1]])
+        save_fold = save_folder + plot_folder
+        fold_mng.create_folder(save_fold)   
+    
+    
+    
     plt.show()
     fig.clf()
 
