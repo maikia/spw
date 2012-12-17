@@ -87,19 +87,17 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         # correct the IPSPs (no matter if used for SPW start or for later
         updater.up_correct_ipsps(save_folder, save_fig = 'spw_ipsp', save_file = ipsps_corrected, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     
-
     SPWs_ipsps_beg  = 'SPWs_ipsps_beg.npz'
     if run_all_functions:
         # finding properly each of the IPSP
         # it combines information on Waves/Ipsps and spikes to find the beginning of the SPW 
         updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
 
-    SPWs_ipsps_first_max = 'SPWs_ipsps_first_max.npz'
-    if run_all_functions:
-        updater.up_spws_first_max(save_folder, save_file = SPWs_ipsps_first_max, spws = SPWs_ipsps_beg, datafile = raw_baselined, reanalize = reanalize)
+#    SPWs_ipsps_first_max = 'SPWs_ipsps_first_max.npz'
+#    if run_all_functions:
+#        updater.up_spws_first_max(save_folder, save_file = SPWs_ipsps_first_max, spws = SPWs_ipsps_beg, datafile = raw_baselined, reanalize = reanalize)
 
     #display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
-    
     
     SPWs_ipsps_corrected = 'SPWs_ipsps_corrected.npz'
     if run_all_functions:
@@ -110,7 +108,6 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 #        # uses previously selected largest spikes
 #        updater.up_spikes_in_spw(save_folder, save_file =spikes_inSPWs, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps_beg, reanalize = reanalize, win = win)
     
-
     #print intr_electrode
     if intr_electrode == 1:
         
@@ -215,7 +212,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         spw_more_ipsps = 'spw_more_ipsps.npz'
         if run_all_functions:
             analyser.remove_with_less_ipsps(save_folder, save_file = spw_more_ipsps, 
-                                            spw_data = SPWs_ipsps_corrected,min_ipsps_group = 3)
+                                            spw_data = SPWs_ipsps_corrected,min_ipsps_group = [3])
         
         group_per_isps_all = 'group_per_isps_all.npz'
         if run_all_functions:
@@ -267,7 +264,11 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
+<<<<<<< HEAD
         for nex in range(0,14): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
+=======
+        for nex in range(len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
+>>>>>>> refs/remotes/origin/master
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             #import pdb; pdb.set_trace()
