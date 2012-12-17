@@ -1049,10 +1049,10 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     npzfile.close()           
     types = ['spontaneous', 'initiated']
     
-    n_bins = 3
+    n_bins = 9
     #start_pt = [0, 20]
     
-    window = [-1.25, 1.75]
+    window = [-1., 2.]
     all_dists_hist = []
     for idx_type, typ in enumerate([spontaneous, initiated]):
         
@@ -1070,7 +1070,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
                     spikes_list[electr] = spikes_list[electr] + spikes_times
         
         for_histogram = []
-        bins = np.linspace(window[0], window[1], n_bins)
+        bins = np.linspace(window[0], window[1], n_bins + 1)
         dist_electrode = []
         numb_spikes = 0
         for electr in np.unique(typ['electrode']):
@@ -1078,7 +1078,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
             #import pdb; pdb.set_trace() 
             numb_spikes = numb_spikes + len(spikes_list[electr])
             dist_electrode.append(n_all)
-            for_histogram.append(n_all[1])
+            for_histogram.append(n_all[n_bins/3])
             
         numb_spikes = numb_spikes * 1.0
         dist_electrode = [dist_electrode[i]/numb_spikes for i in range(len(dist_electrode))]
@@ -1098,6 +1098,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         #plt.xlim([win[0], 80+win[1]])
         save_fold = save_folder + plot_folder
         fold_mng.create_folder(save_fold)
+        
         fig.savefig(save_fold + save_plots + types[idx_type] + ext, dpi=600)     
         fig.savefig(save_fold + save_plots + types[idx_type] + '.eps', dpi=600) 
         
@@ -1105,6 +1106,16 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         #for_histogram = [dist_electrode[electr][3] for electr in range(len(dist_electrode))]
         all_dists_hist.append(for_histogram)
     #import pdb; pdb.set_trace() 
+    
+    # calculate chi_spare between the two distributions
+    import scipy.stats.mstats as mst
+    #import pdb; pdb.set_trace() 
+    
+    sum_of_spikes = np.sum(all_dists_hist,0) * 1.0
+    
+    #all_dists_hist = all_dists_hist/sum_of_spikes
+    statistic, p_value = mst.chisquare(np.array(all_dists_hist[0]), np.array(all_dists_hist[1]))
+    
     fig = plt.figure()
     width = 0.5
     left = np.arange(len(for_histogram))
@@ -1115,14 +1126,14 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     rects2 = plt.bar(left + width, all_dists_hist[1], width, color = 'b')
     plt.legend( (rects1[0], rects2[0]), ('Spontaneous', 'Induced') )
     #for len(all_dists_hist):
-    
+    plt.title(str(p_value))
     plt.xlim([left[0] + 0.5, 1.5 + left[-1]])  
     #plt.show()     
     fig.savefig(save_fold + save_plots + types[idx_type] + '_hist' + ext, dpi=600)     
     fig.savefig(save_fold + save_plots + types[idx_type] + '_hist' + '.eps', dpi=600) 
     np.savez(save_folder + save_file, init_hist = all_dists_hist[1], spont_hist = all_dists_hist[0], range = window)  
 
-    
+    #plt.show()
     
 
 def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 600.0):
