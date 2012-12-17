@@ -1058,7 +1058,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     #start_pt = [0, 20]
     all_p_dist = []
     window = [-1., 2.]
-    # window = [-1.25, 1.75]
+    #window = [-1.25, 1.75]
     all_dists_hist = []
     for idx_type, typ in enumerate([spontaneous, initiated]):
         
@@ -1085,8 +1085,8 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
             numb_spikes = numb_spikes + len(spikes_list[electr])
             dist_electrode.append(n_all)
             #for_histogram.append(n_all[n_bins/3])
-        
-            for_histogram.append(n_all[np.where(bins < 0)[0][-1]])
+            #import pdb; pdb.set_trace() 
+            for_histogram.append(n_all[np.where(bins <= 0)[0][-1]])
 
         numb_spikes = numb_spikes * 1.0
         dist_electrode = [dist_electrode[i]/numb_spikes for i in range(len(dist_electrode))]
@@ -1125,25 +1125,25 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     #import pdb; pdb.set_trace() 
     
     # calculate chi_spare between the two distributions
-#    import scipy.stats.mstats as mst
+    import scipy.stats.mstats as mst
 #    #import pdb; pdb.set_trace() 
 #    
 #    sum_of_spikes = np.sum(all_dists_hist,0) * 1.0
 #    
-#    #all_dists_hist = all_dists_hist/sum_of_spikes
-#   statistic, p_value = mst.chisquare(np.array(all_dists_hist[0]), np.array(all_dists_hist[1]))
-    
+    #all_dists_hist = all_dists_hist/sum_of_spikes
+    statistic, p_value = mst.chisquare(np.array(all_dists_hist[0]), np.array(all_dists_hist[1]))
+    #import pdb; pdb.set_trace() 
     fig = plt.figure()
     width = 0.5
-    left = np.arange(len(for_histogram))
-    import scipy.stats as stat
+    left = np.arange(0.5, len(for_histogram) + 0.5)
+    #import scipy.stats as stat
     find_zeros = np.sum(all_p_dist,0)
     
     
-    x_squared, p_value = stat.chisquare(all_p_dist[0][find_zeros != 0], all_p_dist[1][find_zeros != 0])
+    x_squared, p_value = mst.chisquare(np.array(all_p_dist[0][find_zeros != 0]), np.array(all_p_dist[1][find_zeros != 0]))
     #ax = fig.add_subplot(111)
     #import pdb; pdb.set_trace()
-    rects1 = plt.bar(left, all_dists_hist[0], width, color='r')
+    rects1 = plt.bar(left , all_dists_hist[0], width, color='r')
     rects2 = plt.bar(left + width, all_dists_hist[1], width, color = 'b')
     plt.title('p: ' + str(p_value))
     plt.legend( (rects1[0], rects2[0]), ('Spontaneous', 'Induced') )
@@ -1154,6 +1154,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     fig.savefig(save_fold + save_plots + types[idx_type] + '_hist' + ext, dpi=600)     
     fig.savefig(save_fold + save_plots + types[idx_type] + '_hist' + '.eps', dpi=600) 
     np.savez(save_folder + save_file, init_hist = all_dists_hist[1], spont_hist = all_dists_hist[0], range = window)  
+    plt.show()
     fig.clf()
 
     #plt.show()
