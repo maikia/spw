@@ -193,7 +193,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         spikePerElectrode = 'spike_per_electrode'
         hist_spike_bins = 'all_dists_hist.npz'
-        if not run_all_functions:
+        if run_all_functions:
             analyser.plot_spike(save_folder, solutions_folder + spikePerElectrode + '/', save_plots = spikePerElectrode, 
                             save_file = hist_spike_bins, spike_data = spikes_largest, spw_data = induc_spont_equal, 
                             ext = ext, win = win)
@@ -215,9 +215,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                                             spw_data = SPWs_ipsps_corrected,min_ipsps_group = [3])
         
         group_per_isps_all = 'group_per_isps_all.npz'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_baselined, 
-                                              spw_data = spw_more_ipsps, ext = ext)
+                                              spw_data = induc_spont_equal, ext = ext)#
+                                              #spw_data = spw_more_ipsps, ext = ext)
         
         
 
@@ -264,7 +265,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in range(14, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(1, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
 
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])

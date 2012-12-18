@@ -545,63 +545,59 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
     origin of the first ipsp"""
     
     npzfile        = np.load(save_folder + spw_data)
-    spws = npzfile['spw_ipsps']
-    npzfile.close()           
+    try:
+        spws = [npzfile['spw_ipsps']]
+        types = ['all']
+    except:
+        spont = npzfile['spontaneous']
+        init = npzfile['initiated']
+        types = ['spontaneous', 'initiated']
+        spws = [spont, init]     
+    npzfile.close()  
     
     npzfile        = np.load(save_folder + data_file)
     data = npzfile['data']
     fs = npzfile['fs']
     npzfile.close()      
+    all_group_spws = []
     
-    types = ['spontaneous', 'initiated']
-    all_ampls = []
-    
-    type = spws #spws[len(np.unique(spws['group'])) == 1]
-    all_starts = []
-    spw_nos = []
-    #import pdb; pdb.set_trace() 
-    max_group = -1
-    groups = []
-
-    
-    spw_nos = np.unique(spws['spw_no']) #np.array(spw_nos)
-    groups = np.zeros(len(spw_nos))
-    
-    all_spw = []
-    
-    
-    
-    for group in np.unique(groups):
-        group_idcs, = np.where(groups == group)
+    for typ in range(len(spws)):
+        # if there spws are divided into spontaneous and initiated, it will
+        # analyze both groups separately, otherwise it will do everything as the whole
+        type = spws[typ] #spws[len(np.unique(spws['group'])) == 1]
+        spw_nos = []
+        groups = []
+        
+        spw_nos = np.unique(type['spw_no']) #np.array(spw_nos)
+        groups = np.zeros(len(spw_nos))
+        all_spw = []
+        
+        #import pdb; pdb.set_trace() 
+        group_idcs, = np.where(groups == 0)
         spw_used = spw_nos[group_idcs]
         
-        
+        # don't event bother if the group is has only 1 spw
         if np.size(spw_used,0) != 1:
-            
             amplitudes = []
-            #subgroup = '.'
             answer = False
             subgroups = np.zeros(len(spw_used))
             spw_used_subgroup = spw_used.copy()
-            for idx, spw_no in enumerate(spw_used_subgroup):
-                spw_temp = spws[spws['spw_no'] == spw_no]
-                min_group = spw_temp[spw_temp['ipsp_start'] == min(spw_temp['ipsp_start'])]['group'][0]
-                ampls = spw_temp[spw_temp['group']==min_group]['amplitude']
-                amplitudes.append(ampls)
-            print amplitudes
-#            try:
-#                ampls = np.vstack(amplitudes)
-#            except:
-#                import pdb; pdb.set_trace()
+#            for idx, spw_no in enumerate(spw_used_subgroup):
+#                spw_temp = type[type['spw_no'] == spw_no]
+#                min_group = spw_temp[spw_temp['ipsp_start'] == min(spw_temp['ipsp_start'])]['group'][0]
+#                ampls = spw_temp[spw_temp['group']==min_group]['amplitude']
+#                amplitudes.append(ampls)
+            
+            #import pdb; pdb.set_trace() 
             sub = 0
             already_clustered = subgroups > 0
-            print np.size(spw_used,0)
             while not answer:
                 window = [2.5, 7.5]
                 print 'analysing subgroup: ' + str(sub)
                 print subgroups
-                group_name = str(group) + '.' +  str(sub)
-                ampls_used, new_starts_pts, traces, output = display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name, window = window)
+                group_name = str(0) + '.' +  str(sub) + ' ' + types[typ]
+                #import pdb; pdb.set_trace() 
+                ampls_used, new_starts_pts, traces, output = display_group_data(type, spw_used[subgroups == sub], data, fs, tit = group_name, window = window)
                 
                 #import pdb; pdb.set_trace()
                 if output ==True:
@@ -611,26 +607,24 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                     
                 elif output == False:
                     # group has to be further divided
-                    #ampls_used2 = ampls[subgroups == sub]
-                    #try:
-                    #import pdb; pdb.set_trace()
-                    #electr_to_use = range(np.size(data,0))
+                    
+                    # variables set for pca calculations
                     electr_to_use = [2, 4, 6]
                     n_comps = 3
-                    
                     pcs = calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, n_comps, window = window)
-                    characteristics = np.concatenate([pcs, ampls_used[:,[1, 4, 7]]], axis = 1)
-                    _, actual_clusters = cluster.vq.kmeans2(characteristics, 2,minit='points')
+                    
+                    #characteristics = np.concatenate([pcs, ampls_used[:,[1, 4, 7]]], axis = 1)
+                    _, actual_clusters = cluster.vq.kmeans2(pcs, 2,minit='points')
+                    
                     names = ["E%d:P%d" % (e, p) for e in electr_to_use for p in range(n_comps) ]
                     compare_clusters(pcs.T, actual_clusters, names)
                     compare_spws(data, traces, electr_to_use, window, fs, new_starts_pts, actual_clusters)
-                    #except:
+
                     #import pdb; pdb.set_trace()
                     assert len(actual_clusters)==len(traces),  "Cluster analysis failed-wrong feature dimensions"
                     actual_clusters[actual_clusters==1] =  np.max(subgroups) + 1
                     actual_clusters[actual_clusters==0] =  sub
                     
-                    print actual_clusters
                     subgroups[subgroups == sub] = actual_clusters
                                     
                     plt.show()
@@ -648,13 +642,16 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
         # add the different spws to their groups and subgroups
         #import pdb; pdb.set_trace()  
         spw_no_temp = spw_used
-        subgroups_temp = group + subgroups/10. 
+        subgroups_temp = subgroups/10. 
         
         new_spw_groups =  np.rec.fromarrays([spw_no_temp, subgroups_temp], names='spw_no, group')
         
         all_spw.append(new_spw_groups)
-    all_spw = np.concatenate(all_spw)       
-    np.savez(save_folder + save_file, group = all_spw)  
+        #import pdb; pdb.set_trace()
+        all_spw = np.concatenate(all_spw)  
+        all_group_spws.append(all_spw)
+          
+    np.savez(save_folder + save_file, group = all_group_spws, names = types)  
 
        
 
@@ -1170,7 +1167,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     column_used = np.where(bins <= 0)[0][-1]
     rects1 = plt.bar(left , all_dists_hist[0]/sum_in_each[:,column_used] , width, color='r')
     rects2 = plt.bar(left + width, all_dists_hist[1]/sum_in_each[:,column_used], width, color = 'b')
-    plt.legend( (rects1[0], rects2[0]), ('Spontaneous', 'Induced') )
+    plt.legend( (rects1[0], rects2[0]), ('Spontaneous', 'Induced'))
     plt.title(str(p_value))
     plt.xlim([left[0], 1 + left[-1]])
     fig.savefig(save_fold + save_plots + types[idx_type] + '_hist_norm_pixel' + ext, dpi=600)   
@@ -1193,7 +1190,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         
         plot_imshow_origin(np.array(dane), window,save_name, title, electrs) 
         
-    plt.show()
+    #plt.show()
     
 
 def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 600.0):
