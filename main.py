@@ -276,7 +276,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in range(13, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(0, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
 
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])

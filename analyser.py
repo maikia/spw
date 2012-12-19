@@ -1156,10 +1156,14 @@ def plot_spw_amplitude(save_folder, plot_folder, save_plots, data_file, spw_data
         plt.show()
         #amls = [max(data_used[])]
             
-def plot_imshow_origin(dane, window, save_name, title, electrodes):
+def plot_imshow_origin(dane, window, save_name, title, electrodes, vrange = [0, 0]):
     # plots and saves imshow form the given parameters
-    fig = plt.figure()   
-    plt.imshow(dane, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(electrodes)+0.5]) #, vmin=0, vmax=0.3) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')
+    fig = plt.figure()  
+    if vrange[0] == vrange[1] == 0: 
+        plt.imshow(dane, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(electrodes)+0.5]) #, vmin=0, vmax=0.3) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')
+    else: 
+        plt.imshow(dane, aspect = 'auto', interpolation='nearest', origin='lower', extent=[window[0],window[1],0.5,len(electrodes)+0.5], vmin=vrange[0], vmax=vrange[1]) #, interpolation='bilinear', aspect = 'auto') #interpolation='nearest', aspect='auto')
+
     plt.colorbar()
 
     plt.title(title)
@@ -1249,7 +1253,6 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         save_name =  save_base + types[idx_type] + ext
         electrs = np.unique(typ['electrode'])
         plot_imshow_origin(for_imshow[idx_type], window,save_name, title, electrs) 
-        
     
     # calculate chi_spare between the two distributions
     import scipy.stats.mstats as mst
@@ -1312,7 +1315,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         plot_imshow_origin(np.array(dane), window,save_name, title, electrs) 
 
     # plot bar by substracting not normalized data  
-    plt.figure()
+    fig = plt.figure()
     column_used = np.where(bins <= 0)[0][-1]
     difference_between = all_dists_hist[0]-all_dists_hist[1]
     spont_part = difference_between.copy()
@@ -1326,8 +1329,19 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     plt.title(str(p_value))
     plt.xlim([left[0], 1 + left[-1]])
     fig.savefig(save_fold + save_plots + types[idx_type] + '_hist_difference' + ext, dpi=600)          
-    plt.show()
     
+
+    # plot imshow - difference between the two
+    #for idx_type, typ in enumerate([spontaneous, initiated]):  
+    title = 'found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes)
+    save_name =  save_base + types[idx_type] + '_difference_' + ext
+    electrs = np.unique(typ['electrode'])
+    #import pdb; pdb.set_trace()
+    
+    difference = [for_imshow[0][electr] - for_imshow[1][electr] for electr in range(len(for_imshow[0]))]
+    max_value = max(abs(difference_between))
+    plot_imshow_origin(difference, window,save_name, title, electrs, vrange = [-max_value, max_value])   
+    #plt.show()
 
 def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 600.0):
     """ plots every spw separately (in all electrodes)"""
