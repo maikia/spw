@@ -182,13 +182,6 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                                  spike_data = spikes_largest, spw_data = induc_spont_spw, 
                                  spikes_filter = [], ext = ext, win = win)
         
-    
-        spikes_inSPWs_plot_fig3a = 'spikes_inSPWs_fig3a'
-        if run_all_functions:
-            analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot_fig3a + '/', 
-                                 save_plots = spikes_inSPWs_plot_fig3a, data_file = raw_baselined, 
-                                 spike_data = spikes_largest, spw_data = induc_spont_spw, 
-                                 spikes_filter = filter_folder + spikes_filter, ext = ext, win = win)
         
         
         spikePerElectrode = 'spike_per_electrode'
@@ -214,12 +207,30 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             analyser.remove_with_less_ipsps(save_folder, save_file = spw_more_ipsps, 
                                             spw_data = SPWs_ipsps_corrected,min_ipsps_group = [3])
         
+        
+        spikes_inSPWs_plot_fig3a = 'spikes_inSPWs_fig3a'
+        if run_all_functions:
+            analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot_fig3a + '/', 
+                                 save_plots = spikes_inSPWs_plot_fig3a, data_file = raw_baselined, 
+                                 spike_data = spikes_largest, spw_data = induc_spont_spw, 
+                                 spikes_filter = filter_folder + spikes_filter, ext = ext, win = win)
+            
+            
+        used_spw_data = induc_spont_equal
         group_per_isps_all = 'group_per_isps_all.npz'
-        if not run_all_functions:
+        if run_all_functions:
             analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_baselined, 
-                                              spw_data = induc_spont_equal, ext = ext)#
+                                              spw_data = used_spw_data, ext = ext)#
                                               #spw_data = spw_more_ipsps, ext = ext)
         
+        final_results = 'final_results'
+        groups_w_firing_rate = 'groups_w_firing_rate'
+        if not run_all_functions:
+            analyser.plot_groups_w_fr(save_folder, plot_folder = solutions_folder + final_results + '/', 
+                                      plot_file = groups_w_firing_rate, data_file = raw_baselined, 
+                                      spw_groups = group_per_isps_all, spw_details = used_spw_data,
+                                      spike_data = spikes_largest, ext = ext, win = win)
+                                    # spikes_raw
         
 
     
@@ -265,7 +276,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in range(1, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(14, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
 
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])

@@ -539,7 +539,119 @@ def remove_with_less_ipsps(save_folder, save_file, spw_data ,min_ipsps_group):
     new_spw = np.concatenate(new_spw)
     np.savez(save_folder + save_file, spw_ipsps = new_spw) 
      
-     
+
+def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details, spike_data, ext, win):
+    """ makes the plot of every given group and finds the firing rate for it"""
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close() 
+    
+    npzfile        = np.load(save_folder + spike_data)
+    spike_idx = npzfile['spike_idx']
+    npzfile.close()
+    
+    
+    npzfile = np.load(save_folder + spw_details)
+    try:
+        spws = [npzfile['spw_ipsps']]
+        types = ['all']
+        npzfile.close()     
+        
+        npzfile = np.load(save_folder + spw_groups)
+        groups = [npzfile['group']]
+        names = npzfile['names']       
+         
+    except:
+        spont = npzfile['spontaneous']
+        init = npzfile['initiated']
+        types = ['spontaneous', 'initiated']
+        spws = [spont, init]     
+        npzfile.close()
+
+        npzfile = np.load(save_folder + spw_groups)
+        group1 = npzfile['group1']
+        group2 = npzfile['group2']
+        groups = [group1, group2]
+        names = npzfile['names']
+    npzfile.close()     
+    
+    save_fold = save_folder + plot_folder
+    fold_mng.create_folder(save_fold)
+    save_base = save_fold + plot_file
+    
+    window_to_plot = [-10, 70] #win
+    #win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
+    
+    # go through every type possible
+    for typ in range(len(names)):
+        spw_group_typ = groups[typ]
+        group_nos = np.unique(spw_group_typ['group'])
+        spw_type = spws[typ]
+        
+        # go through every group detected
+        for group_no in group_nos:
+            fig = plt.figure()
+            spw_nos_used = spw_group_typ[spw_group_typ['group'] == group_no]['spw_no']
+            hist_electr_all = []
+            
+            no_bins = 150
+            electro_bins = np.zeros([np.size(data,0), no_bins])
+            # go through every spw used in this group
+            for spw_no in spw_nos_used:
+                spw_used = spw_type[spw_type['spw_no'] == spw_no]
+                spw_start = spw_used['spw_start'][0]
+                trace = spw_used['trace'][0]
+                data_used = data[:,trace,:]
+                spikes_used = spike_idx[spike_idx['trace'] == trace]
+                
+                start_trace = spw_start + window_to_plot[0]
+                end_trace = spw_start + window_to_plot[1]
+
+                
+                bins = np.linspace(start_trace, end_trace, no_bins + 1)
+                
+                # plot every trace of this spw
+                #import pdb; pdb.set_trace() 
+                for electr in range(np.size(data,0)):
+                    
+                    # find spikes in this electrode in this trace
+                    spikes_electr = spikes_used[spikes_used['electrode'] == electr]
+                    spikes_spw = spikes_electr[(spikes_electr['time']>=start_trace) & (spikes_electr['time']<=end_trace)]['time']
+                    
+                    #if len(spikes_spw) > 0:
+                    #    import pdb; pdb.set_trace() 
+                    in_bin, _ = np.histogram(spikes_spw, bins)
+                    #import pdb; pdb.set_trace() 
+                    electro_bins[electr, :] = electro_bins[electr, :] + in_bin
+
+                start_trace_pts = ispw.ms2pts(start_trace, fs).astype('i4')
+                end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
+                add_it = 150
+                
+                data_spw = data_used[:, start_trace_pts: end_trace_pts]
+                t = dat.get_timeline(data_spw[0,:], fs, 'ms')
+                # plot data trace 
+                #import pdb; pdb.set_trace() 
+                for electr in range(np.size(data, 0)):
+                    plt.plot(t, data_spw[electr,:] + add_it * electr, color = 'k', alpha = max(0.1, 1.0/len(spw_nos_used)))
+            
+            bar_lin = np.linspace(0, t[-1], no_bins + 1)
+            bar_width = bar_lin[1]-bar_lin[0]
+            # for this group plot the histogram of the spikes
+            for electr in range(np.size(data,0)):
+                plt.bar(bar_lin[:-1], (electro_bins[electr,:]/len(spw_nos_used))*50, bottom = add_it * electr, alpha = 0.8, width = bar_width)   
+            spike_distribution = np.sum(electro_bins, 0)
+            #import pdb; pdb.set_trace() 
+            plt.bar(bar_lin[:-1], (spike_distribution/len(spw_nos_used))*50, bottom = add_it * (-1), width = bar_width) #, alpha = 0.7)  
+            plt.xlabel('time (ms)')
+            plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
+            #import pdb; pdb.set_trace()
+            fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)    
+            #import pdb; pdb.set_trace() 
+            plt.show() 
+            
+    
 def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ext):
     """ similar to plot_spw_ipsps_no_groups but does not divide first group into
     origin of the first ipsp"""
@@ -548,11 +660,13 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
     try:
         spws = [npzfile['spw_ipsps']]
         types = ['all']
+        double = False
     except:
         spont = npzfile['spontaneous']
         init = npzfile['initiated']
         types = ['spontaneous', 'initiated']
-        spws = [spont, init]     
+        spws = [spont, init]    
+        double = True 
     npzfile.close()  
     
     npzfile        = np.load(save_folder + data_file)
@@ -641,8 +755,8 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
             subgroups = np.zeros(len(spw_used))            
         # add the different spws to their groups and subgroups
         #import pdb; pdb.set_trace()  
-        spw_no_temp = spw_used
-        subgroups_temp = subgroups/10. 
+        spw_no_temp = spw_used.astype('i4')
+        subgroups_temp = (subgroups).astype('f8')
         
         new_spw_groups =  np.rec.fromarrays([spw_no_temp, subgroups_temp], names='spw_no, group')
         
@@ -650,8 +764,15 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
         #import pdb; pdb.set_trace()
         all_spw = np.concatenate(all_spw)  
         all_group_spws.append(all_spw)
-          
-    np.savez(save_folder + save_file, group = all_group_spws, names = types)  
+       
+    #all_group_spws = np.concatenate(all_group_spws)
+    if double:
+        group1 = all_group_spws[0]
+        group2 = all_group_spws[1]
+        np.savez(save_folder + save_file, group1 = group1, group2 = group2, names = types)  
+        #np.savez(save_folder + save_file, group = all_spw, names = types)  
+    else:
+        np.savez(save_folder + save_file, group = all_spw, names = types)  
 
        
 
