@@ -1310,8 +1310,23 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
                 dane.append(np.array(for_imshow[idx_type][electr] - for_imshow[idx_type][electr]))
         
         plot_imshow_origin(np.array(dane), window,save_name, title, electrs) 
-        
-    #plt.show()
+
+    # plot bar by substracting not normalized data  
+    plt.figure()
+    column_used = np.where(bins <= 0)[0][-1]
+    difference_between = all_dists_hist[0]-all_dists_hist[1]
+    spont_part = difference_between.copy()
+    spont_part[spont_part < 0] = 0
+    induc_part = difference_between.copy()
+    induc_part[induc_part > 0] = 0    
+    
+    rects1 = plt.bar(left + width/2 , spont_part, width, color='r')
+    rects2 = plt.bar(left + width/2, induc_part, width, color = 'b')
+    plt.legend( (rects1[0], rects2[0]), ('Spontaneous', 'Induced'))
+    plt.title(str(p_value))
+    plt.xlim([left[0], 1 + left[-1]])
+    fig.savefig(save_fold + save_plots + types[idx_type] + '_hist_difference' + ext, dpi=600)          
+    plt.show()
     
 
 def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 600.0):
