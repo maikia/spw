@@ -538,7 +538,37 @@ def remove_with_less_ipsps(save_folder, save_file, spw_data ,min_ipsps_group):
                 new_spw.append(spw_used)
     new_spw = np.concatenate(new_spw)
     np.savez(save_folder + save_file, spw_ipsps = new_spw) 
-     
+
+def plot_dendograms(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details,
+                    spike_data , ext, win):
+    #import scipy as sc
+    #import pylab
+    import scipy.cluster.hierarchy as sch
+    #import clust.hierarchy as sch
+    #import numpy as np
+    npzfile        = np.load(save_folder + spw_groups)
+    matrix = npzfile['group1']
+    npzfile.close()  
+    D = matrix['group']
+    #import pdb; pdb.set_trace()
+    #try:
+    #    spws = [npzfile['spw_ipsps']]
+    #    types = ['all']
+    #    double = False
+    #except:
+    #    spont = npzfile['spontaneous']
+    #    init = npzfile['initiated']
+    #    types = ['spontaneous', 'initiated']
+    
+    #D = np.genfromtxt('LtoR.txt', dtype=None)
+    def llf(id):
+        return str(id)
+    fig = plt.figure(figsize=(10,10))
+    Y = sch.linkage(D, method='single')
+    Z1 = sch.dendrogram(Y,leaf_label_func=llf,leaf_rotation=90)
+    fig.show()
+    fig.savefig('dendrogram.png')
+   
 
 def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details, spike_data, ext, win):
     """ makes the plot of every given group and finds the firing rate for it"""
@@ -575,6 +605,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
         groups = [group1, group2]
         names = npzfile['names']
     npzfile.close()     
+     
     
     save_fold = save_folder + plot_folder
     fold_mng.create_folder(save_fold)
@@ -651,7 +682,10 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             #import pdb; pdb.set_trace() 
             plt.show() 
             
-    
+
+
+
+   
 def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ext):
     """ similar to plot_spw_ipsps_no_groups but does not divide first group into
     origin of the first ipsp"""
@@ -1003,7 +1037,8 @@ def display_group_data(spws, spw_to_use, data, fs, tit, window):
             else:
                 ax.plot(t, data_to_plot[electr, :] + add_it * electr, color = colors[idx])
             #data_used
-        
+        #import pdb; pdb.set_trace()    
+   
     #class Update_Plot():
     # initiate all the variable used throughout the class
     #global answer
@@ -1018,7 +1053,7 @@ def display_group_data(spws, spw_to_use, data, fs, tit, window):
         plt.close()
         global answer 
         answer = False 
-           
+    plt.hlines(-add_it, t[window_pts0 - win_pts0], t[window_pts1 - win_pts0], 'r') #, width = 2.0)       
     plt.title('Group: ' + tit)
     axnext = plt.axes([0.75, 0.05, 0.15, 0.075])    
     bnext = Button(axnext, 'Update')
@@ -1026,6 +1061,7 @@ def display_group_data(spws, spw_to_use, data, fs, tit, window):
     axprev = plt.axes([0.6, 0.05, 0.15, 0.075])  
     bprev = Button(axprev, 'Keep')
     bprev.on_clicked(yes_button)
+    
     plt.show()
     
     return np.vstack(ampls_used), new_starts_pts, traces, answer
@@ -1187,9 +1223,10 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     npzfile.close()           
     types = ['spontaneous', 'initiated']
     
-    n_bins = 3
+    n_bins = 5
     all_p_dist = []
-    window = [-.5, 1.]
+    #window = [-.5, 1.]
+    window = [-5, 5.]
     all_dists_hist = []
     for_imshow = []
     bins = np.linspace(window[0], window[1], n_bins + 1)
