@@ -1366,8 +1366,15 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     plt.title(str(p_value))
     plt.xlim([left[0], 1 + left[-1]])
     fig.savefig(save_fold + save_plots + types[idx_type] + '_hist_difference' + ext, dpi=600)          
+    #import pdb; pdb.set_trace()
     
-
+    electr_spont_diff = np.argmax(spont_part) + 1
+    electr_init_diff = np.argmin(induc_part) + 1
+    electr_spont =  np.argmax(all_dists_hist[0]) + 1
+    electr_init = np.argmax(all_dists_hist[1]) + 1
+    
+    
+    np.savez(save_folder + 'max_electr_origin.npz', spont_diff = electr_spont_diff, init_diff = electr_init_diff, spont = electr_spont, init = electr_init)
     # plot imshow - difference between the two
     #for idx_type, typ in enumerate([spontaneous, initiated]):  
     title = 'found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes)
