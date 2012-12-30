@@ -1223,10 +1223,10 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     npzfile.close()           
     types = ['spontaneous', 'initiated']
     
-    n_bins = 5
+    n_bins = 6
     all_p_dist = []
     #window = [-.5, 1.]
-    window = [-5, 5.]
+    window = [-1, 5.]
     all_dists_hist = []
     for_imshow = []
     bins = np.linspace(window[0], window[1], n_bins + 1)
@@ -1385,6 +1385,8 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     difference = [for_imshow[0][electr] - for_imshow[1][electr] for electr in range(len(for_imshow[0]))]
     max_value = max(abs(difference_between))
     plot_imshow_origin(difference, window,save_name, title, electrs, vrange = [-max_value, max_value])   
+    plt.close('all')
+    #import pdb; pdb.set_trace()
     #plt.show()
 
 def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 600.0):

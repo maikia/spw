@@ -535,7 +535,7 @@ def update_filtered(data, fs, save_folder, freq, data_file):
             plt.figure()
             plt.plot(data[(data['electrode'] == electr) & (data['trace'] == trace)]['time'], 'b')    
             plt.plot(data_filtered[(data_filtered['electrode'] == electr) & (data_filtered['trace'] == trace)]['time'], 'r')
-            plt.show()
+            #plt.show()
     
          
     np.savez(save_folder + data_file, data = data_filtered, freq = freq, fs = fs)  
@@ -687,7 +687,7 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
                 plt.plot(t[spw_pts], data_used[spw_pts] + add_it * electr, '*r')
                 #print len(spw_pts)
                 
-    plt.show()
+    #plt.show()
               
                 
                 
@@ -1811,7 +1811,7 @@ def update_spws_beg_backup(load_datafile, load_spwsipsp, load_spwsspike, save_fo
                 plt.plot(t[spikes_to_plot], data_used[spikes_to_plot] + plot_add, 'kx', ms=7)
                 plt.axvline(t[spw_start_pt])
 
-            plt.show()
+            #plt.show()
             tit = 'spw: ' + str(spw_no)
             plt.title(tit)
             fig.savefig(save_folder + save_fig + str(spw_no) + ext,dpi=600)
