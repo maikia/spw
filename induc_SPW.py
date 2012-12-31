@@ -1593,16 +1593,26 @@ def corect_ipsps(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save
     #import pdb; pdb.set_trace()
     np.savez(save_folder + save_file, spw_ipsps = spw_ipsps_all)    
 
-def divide_to_groups(data, fs, spw_ipsps_spw_no, save_folder, shift_ipsp = 2.5):
+def divide_to_groups(data, fs, spw_ipsps_spw_no, save_folder, save_file):
     """ divides ipsps to groups """
     #import pdb; pdb.set_trace()
+    
+    shift_ipsp = 2.5 # ms
+    all_traces= np.unique(spw_ipsps['trace'])
+    all_spws = []
+
+    spw_ipsps_spw_no = spw_ipsps_trace[spw_ipsps_trace['spw_no'] == spw_no]
+    
     if len(spw_ipsps_spw_no) > 0:
         group_ids = group_ipsps(spw_ipsps_spw_no, shift_ipsp).astype('i4')
     else:
         group_ids = np.array([]).astype('i4')
     
     spw_ipsps_spw_no = add_rec_field(spw_ipsps_spw_no, [group_ids],['group'])
-
+            #all_spws.append(spw_ipsps_spw_no)
+   
+    #all_ipsps = np.concatenate(all_spws)
+    #p.savez(save_folder + save_file, spw_ipsps = spw_ipsps_spw_no)
     return spw_ipsps_spw_no
 
 def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext, win = [-20, 80]):
@@ -1625,7 +1635,6 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     distanse_from_point = 5 # ms - length of IPSP
     shift_ipsp = 2.5 # ms
     min_electr_first = 3 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    
     #min_electr_all = 2
     expected_min_ipsp_ampl = 30 # microV
     #shift_spike= 1 #ms
@@ -1677,9 +1686,8 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
             else:
                 group_ids = np.array([]).astype('i4')
             #import pdb; pdb.set_trace()
-            spw_ipsps_first = divide_to_groups(data, fs, spw_ipsps_spw_no, save_folder, shift_ipsp = 2.5)
-            #spw_ipsps_first = add_rec_field(spw_ipsps_first, [ipsp_amplitudes, group_ids],
-            #                             ['amplitude', 'group'])
+            spw_ipsps_first = add_rec_field(spw_ipsps_first, [ipsp_amplitudes, group_ids],
+                                         ['amplitude', 'group'])
             
             spw_ipsps_first = spw_ipsps_first[spw_ipsps_first['spw_start'] <= spw_ipsps_first['ipsp_start']]
             
@@ -1696,6 +1704,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
                 spw_ipsps_new['spw_start'] = np.ones(len(spw_ipsps_spw_no['spw_start'])) * proper_start
                 spw_ipsps_new['spw_no'] = np.ones(len(spw_ipsps_spw_no['spw_no'])) * new_spw_no
                 #spw_ipsps_new = spw_ipsps_new[spw_ipsps_new['spw_start'] <= spw_ipsps_new['ipsp_start'] + 0.01]
+                
                 
                 # remove ipsps which belong to SPW but which are before beginning of SPW
                 #shift spw to first ipsp
