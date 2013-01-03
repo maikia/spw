@@ -121,7 +121,7 @@ def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spike
     npzfile        = np.load(save_folder + load_spw_ipsps)
     ipsps = npzfile['spw_ipsps']
     npzfile.close()
-    
+    #print np.unique(ipsps['electrode'])
     #import pdb; pdb.set_trace()
     npzfile        = np.load(save_folder + load_spikefile)
     #import pdb; pdb.set_trace()

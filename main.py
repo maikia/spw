@@ -74,7 +74,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         updater.up_highWaves_numb(save_folder, save_file = SPWs_potential_numb, load_spwsfile = SPWs_potential, reanalize = reanalize)
     
     SPWs_ipsps      = 'spws_params.npz' #'spws_ipsps.npz'
-    if run_all_functions:
+    if not run_all_functions:
         # it finds the preliminary IPSPs for each of the detected waves
         updater.up_SPW_ipsp(save_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_waves = SPWs_potential_numb, load_spikes = spikes_largest, reanalize = reanalize)
     
@@ -83,7 +83,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 #        # uses previously selected largest spikes
 #        updater.up_spikes_in_spw(save_folder, save_file =spikes_inWaves, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps, reanalize = reanalize, win = win)
     ipsps_corrected = 'ipsps_corrected.npz'
-    if run_all_functions:
+    if not run_all_functions:
         # correct the IPSPs (no matter if used for SPW start or for later
         updater.up_correct_ipsps(save_folder, save_fig = 'spw_ipsp', save_file = ipsps_corrected, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     
@@ -105,7 +105,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     #display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
     
     SPWs_ipsps_corrected = 'SPWs_ipsps_corrected.npz'
-    if run_all_functions:
+    if not run_all_functions:
         updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
     
 #    spikes_inSPWs = 'spikes_inSpw.npz'
@@ -133,17 +133,16 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         intra_spikes = 'intra_spikes.npz'
         if run_all_functions:
             updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
-#        
+#       #SPWs_ipsps_corrected = SPWs_all_IPSPs 
         if not run_all_functions:
             # it makes the plot to exactly analyse each SPW
-            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_all_IPSPs, #SPWs_ipsps_corrected, 
+            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_corrected, 
                                            load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
                                            load_ipspsOld = SPWs_ipsps, spw_base = SPWs_potential_numb,
                                            load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
 #    
-#        
         dist_spw_inspikes = 'spw_dist2first.npz'
-        if  run_all_functions:
+        if  not run_all_functions:
             updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_corrected, spikes = 'first', reanalize = reanalize)
         
 #        dist_spw_inspikes2all = 'spw_dist2all.npz'
@@ -152,11 +151,11 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         induc_spont_spw = 'induc_spont_spw.npz'
         max_dist = 10 # ms
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_induc_spont_spw(save_folder, save_file = induc_spont_spw, load_distances = dist_spw_inspikes, load_spwfile = SPWs_ipsps_corrected, max_init_dist = max_dist, reanalize = reanalize, ext = ext)
 #    
         induc_spont_equal = 'induc_spont_equal.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.equalize_number_spws(save_folder, save_file = induc_spont_equal, induc_spont = induc_spont_spw, load_distances = dist_spw_inspikes, reanalize = reanalize)
 #            
 #    ##### - analyser - #####
@@ -282,7 +281,6 @@ if __name__=='__main__':
            (6, 1, 0), (6, 1, 1), (7, 1, 0), (8, 1, 1), (9, 1, 1), (10, 1, 1), 
            (11, 1, 1))
     
-    dict = {'Alice': '2341', 'Beth': '9102', 'Cecil': '3258'}
     electr_placement = {'1': (5, 6), '3': (2, 3), '4': (2, 3),
                         '5': (5, 6), '6': (5, 6), '7': (5, 6),
                         '8': (3, 4), '9': (2, 3), '10': (2, 3),
@@ -356,7 +354,7 @@ if __name__=='__main__':
         #for nex in range(12, len(all)):
         #for nex in [5]: #range(12, len(all)):
         #for nex in [11]:
-        for nex in range(15):
+        for nex in range(5):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
             analyse_all(filename, save_folder, intra)
         
