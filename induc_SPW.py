@@ -1314,12 +1314,22 @@ def define_spikes_closest2IPSP_starts(spikes, ipsps):
     
     closest_events = []
     for t in ipsps_sorted:
-        #import pdb; pdb.set_trace()
-        i = np.argsort(np.abs(t['ipsp_start']-spikes['time']))
-        i = i[(spikes['electrode']==t['electrode'])]
-        #&             (spikes['spw_no']==t['spw_no'])]
-        closest = i[0] if len(i)>0 else np.nan
+        #if t['ipsp_start'] == 424.25:
+        #    import pdb; pdb.set_trace()
+            
+        electr_index = np.arange(0,len(spikes))
+        min_idx = spikes['electrode']==t['electrode']
+        possible_electr = electr_index[min_idx]
+        if len(possible_electr) > 0:
+            i = np.argsort(np.abs(t['ipsp_start']-spikes[possible_electr]['time']))
+            i = possible_electr[i]
+        
+            #&             (spikes['spw_no']==t['spw_no'])]
+            closest = i[0] if len(i)>0 else np.nan
+        else:
+            closest = np.nan
         closest_events.append(closest)
+        
     closest_events = np.array(closest_events)
     #s = take_element_or_nan(ipsps_sorted, np.array(closest_events))
     #spikes_sorted[closest_events]
@@ -1433,28 +1443,32 @@ def calc_distance_between(spw_points, min_dist, amplitudes):
     index = np.argsort(spw_points, order=['electrode', 'ipsp_start'])
     points_ordered = spw_points[index]    
     
-    dist_electr = -1*np.ones(len(points_ordered))
+    #dist_electr = -1*np.ones(len(points_ordered))
+    dist_electr = []
     last_idx = 0
     for electr in np.unique(points_ordered['electrode']):
         #import pdb; pdb.set_trace()
-        dist = np.diff(points_ordered[points_ordered['electrode'] == electr]
-                       ['ipsp_start'])
-        
+        dist = np.diff(points_ordered[points_ordered['electrode'] == electr]['ipsp_start']).tolist()
+        #import pdb; pdb.set_trace()
+        dist_electr = dist_electr + dist + [100]
+        #dist_electr.append(100)
         #dist_electr[last_idx] = 100
         #dist_electr[last_idx+1:last_idx + len(dist)+1] = dist
-        dist_electr[last_idx:last_idx + len(dist)] = dist
-        dist_electr[last_idx + len(dist)] = 100
-        last_idx = last_idx + len(dist) + 1
+        #dist_electr[last_idx:last_idx + len(dist)] = dist
+        #dist_electr[last_idx + len(dist)] = 100
+        #last_idx = last_idx + len(dist) + 1
     #dist_electr[last_idx] = 100
-    
+    #import pdb; pdb.set_trace()
+    #np.concatenate(dist_electrode)
+    dist_electr = np.array(dist_electr)
     distances_alright = dist_electr > min_dist
+    #import pdb; pdb.set_trace()
+    #left_ampl = amplitudes[~distances_alright]
+    #right_ampl = amplitudes[1:][~distances_alright[:-1]]
     
-    left_ampl = amplitudes[~distances_alright]
-    right_ampl = amplitudes[1:][~distances_alright[:-1]]
-    
-    correct = left_ampl - right_ampl
-    distances_alright[correct < 0] = False
-    distances_alright[1:][correct >= 0] = False
+    #correct = left_ampl - right_ampl
+    #distances_alright[correct < 0] = False
+    #distances_alright[1:][correct >= 0] = False
 
     #assert (dist_electr>=0).all()
     index_reversed = np.argsort(index)
@@ -1539,7 +1553,7 @@ def corect_ipsps(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save
     #min_electr_first = 3 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
     #min_electr_all = 2
     #expected_min_ipsp_ampl = 30 # microV
-    plot_it = False
+    plot_it = True
     
     shift_spike= 1 #ms - if there is spike close by, beginning of IPSP will be shifted to it
     min_length_ipsp = 2 # ipsp cannot be shorter than this
@@ -1550,11 +1564,12 @@ def corect_ipsps(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save
     # treat all the IPSPS
     for trace in all_traces:
         spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
-        spikes_trace = spw_spike[spw_spike['trace']==trace]
+        spikes_trace = spw_spike[spw_spike['trace']==trace] # spikes are found properly
         
         # check which spikes are the closest to each ipsp
         closest_spike_idx = define_spikes_closest2IPSP_starts(spikes_trace, 
                                                       spw_ipsps_trace) 
+        
         
         #import pdb; pdb.set_trace()
         closest_spike_times = take_element_or_nan(spikes_trace['time'], closest_spike_idx)
@@ -1564,55 +1579,68 @@ def corect_ipsps(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save
         # remove IPSPs which are too short (leave the second IPSP from the two (remove the one which has smaller amplitude)
         ipsp_amplitudes = calculate_amplitude_of_IPSP(spw_ipsps_trace, 
                                                   data[:, trace, :], fs)
+        #import pdb; pdb.set_trace()
         distance_between = calc_distance_between(spw_ipsps_trace[['electrode','ipsp_start']], min_length_ipsp, ipsp_amplitudes)
-
         spw_ipsps_trace = spw_ipsps_trace[distance_between]
+
+
         spw_ipsps_all.append(spw_ipsps_trace)
+        #spw_ipsps_all.append(spw_ipsps[spw_ipsps['trace']==trace])
+        
     spw_ipsps_all = np.concatenate(spw_ipsps_all)
     
     # for testing purposes it is possible to plot the chosen trace of the data
     if plot_it:
         plt.figure()
-        data_used = data[:,2,:]
+        trace = 2
+        data_used = data[:,trace,:]
         add_it = 150
         t = dat.get_timeline(data_used[0,:], fs, 'ms')
         for electr in range(len(data_used)):
             #import pdb; pdb.set_trace()
-            ipsp_new = spw_ipsps_all[(spw_ipsps_all['electrode'] == electr) & (spw_ipsps_all['trace'] == trace)]['ipsp_start']
+            ipsp_new_temp = spw_ipsps_all[(spw_ipsps_all['electrode'] == electr) & (spw_ipsps_all['trace'] == trace)]
+            ipsp_new = ipsp_new_temp['ipsp_start']
             ipsp_new_pts = ms2pts(ipsp_new, fs).astype('i4')
             
             ipsp_old = spw_ipsps[(spw_ipsps['electrode'] == electr) & (spw_ipsps['trace'] == trace)]['ipsp_start']
             ipsp_old_pts = ms2pts(ipsp_old, fs).astype('i4')
+            
             plt.plot(t, data_used[electr, :] + electr * add_it)
             #import pdb; pdb.set_trace()
             
-            plt.plot(t[ipsp_new_pts], data_used[electr, ipsp_new_pts]+ electr * add_it, 'go', alpha = 0.6)
-            plt.plot(t[ipsp_old_pts], data_used[electr, ipsp_old_pts]+ electr * add_it, 'ro', alpha = 0.6)
+            plt.plot(t[ipsp_new_pts], data_used[electr, ipsp_new_pts]+ electr * add_it, 'go', alpha = 0.6, markersize=8)
+            plt.plot(t[ipsp_old_pts], data_used[electr, ipsp_old_pts]+ electr * add_it, 'r<', alpha = 0.6)
+            
+            spikes_trace = spw_spike[spw_spike['trace']==trace]
+            spike_times = spikes_trace[(spikes_trace['electrode'] == electr)]['time']# >= ipsp_new_temp['spw_start'][0]) &
+                                       #((spikes_trace['time'] <= ipsp_new_temp['spw_end'][0]))]['time']
+            spike_pts = ms2pts(spike_times, fs).astype('i4')
+            plt.plot(t[spike_pts], data_used[electr, spike_pts]+ electr * add_it, 'y*') #, alpha = 0.6)
     plt.show()     
     #import pdb; pdb.set_trace()
     np.savez(save_folder + save_file, spw_ipsps = spw_ipsps_all)    
 
-def divide_to_groups(data, fs, spw_ipsps_spw_no, save_folder, save_file):
-    """ divides ipsps to groups """
-    #import pdb; pdb.set_trace()
-    
-    shift_ipsp = 2.5 # ms
-    all_traces= np.unique(spw_ipsps['trace'])
-    all_spws = []
-
-    spw_ipsps_spw_no = spw_ipsps_trace[spw_ipsps_trace['spw_no'] == spw_no]
-    
-    if len(spw_ipsps_spw_no) > 0:
-        group_ids = group_ipsps(spw_ipsps_spw_no, shift_ipsp).astype('i4')
-    else:
-        group_ids = np.array([]).astype('i4')
-    
-    spw_ipsps_spw_no = add_rec_field(spw_ipsps_spw_no, [group_ids],['group'])
-            #all_spws.append(spw_ipsps_spw_no)
-   
-    #all_ipsps = np.concatenate(all_spws)
-    #p.savez(save_folder + save_file, spw_ipsps = spw_ipsps_spw_no)
-    return spw_ipsps_spw_no
+#def divide_to_groups(data, fs, spw_ipsps_spw_no, save_folder, save_file):
+#    """ divides ipsps to groups """
+#    #import pdb; pdb.set_trace()
+#    
+#    shift_ipsp = 2.5 # ms
+#    all_traces= np.unique(spw_ipsps['trace'])
+#    all_spws = []
+#
+#    spw_ipsps_spw_no = spw_ipsps_trace[spw_ipsps_trace['spw_no'] == spw_no]
+#    
+#    if len(spw_ipsps_spw_no) > 0:
+#        group_ids = group_ipsps(spw_ipsps_spw_no, shift_ipsp).astype('i4')
+#    else:
+#        group_ids = np.array([]).astype('i4')
+#    
+#    spw_ipsps_spw_no = add_rec_field(spw_ipsps_spw_no, [group_ids],['group'])
+#            #all_spws.append(spw_ipsps_spw_no)
+#   
+#    #all_ipsps = np.concatenate(all_spws)
+#    #p.savez(save_folder + save_file, spw_ipsps = spw_ipsps_spw_no)
+#    return spw_ipsps_spw_no
 
 def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext, win = [-20, 80]):
     """ checks all the ipsps and corrects them for each spw"""

@@ -74,7 +74,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         updater.up_highWaves_numb(save_folder, save_file = SPWs_potential_numb, load_spwsfile = SPWs_potential, reanalize = reanalize)
     
     SPWs_ipsps      = 'spws_params.npz' #'spws_ipsps.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # it finds the preliminary IPSPs for each of the detected waves
         updater.up_SPW_ipsp(save_folder, filter_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_waves = SPWs_potential_numb, load_spikes = spikes_largest, reanalize = reanalize)
     
