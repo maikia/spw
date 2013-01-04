@@ -289,7 +289,7 @@ def up_dist_SpwfromSpike(save_folder, save_file = 'spw_dist.npz', load_intrafile
     gc.collect()    
     
     
-def up_SPW_ipsp(save_folder, save_file = 'spws_params.npz', load_datafile = "data_movavg.npz", load_waves = 'spws.npz', load_spikes = 'spws_potential', induced_dist = 7, reanalize = False):
+def up_SPW_ipsp(save_folder, filter_folder, save_file = 'spws_params.npz', load_datafile = "data_movavg.npz", load_waves = 'spws.npz', load_spikes = 'spws_potential', induced_dist = 7, reanalize = False):
     """ it finds the characteristics of each spw"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -298,7 +298,7 @@ def up_SPW_ipsp(save_folder, save_file = 'spws_params.npz', load_datafile = "dat
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
         # load the data        
-        ispw.update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_file)
+        ispw.update_SPW_ipsp(load_datafile, filter_folder, load_waves, load_spikes, save_folder, save_file)
     else:
         print 'spws were already analysed'    
     gc.collect()

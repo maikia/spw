@@ -351,7 +351,9 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
         # not? create it!
         if np.size(freq) == 1:
             data_filt = filt.highPass(freq, fs, data, N)
-        else: 
+        elif freq[0] == -1:
+            data_filt = filt.lowPass(freq[1], fs, data, N)
+        else:
             data_filt = filt.bandPass(freq, fs, data, N) 
         # save it
         
@@ -1637,7 +1639,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     shift_spike= 1 #ms
     #min_length_spw = 3
     #min_distance_between_spw = 30 #ms
-    plot_it = True
+    plot_it = False
     #spw_ipsps_list = []
     #all_traces= np.unique(spw_ipsps['trace'])
     #min_ipsp_groups = 3
@@ -2123,7 +2125,7 @@ def update_spws_beg_backup(load_datafile, load_spwsipsp, load_spwsspike, save_fo
     del spw_ipsps, data, all_ipsps
 
 
-def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_file, spw_length = 80):
+def update_SPW_ipsp(load_datafile, filter_folder, load_waves, load_spikes, save_folder, save_file, spw_length = 80, save_filter = 'ipsp_filt_'):
     # it looks for the ipsps within detected spws - separate for each electrode
     # it take very long to analyse so be patient!
     npzfile         = np.load(save_folder + load_datafile)
@@ -2141,11 +2143,16 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
     npzfile.close()
     #import pdb; pdb.set_trace()
     
+    folder_name = save_folder + filter_folder
+    
     print
     print "analyzing SPW no:",
     plot_it = False
     add_it = 100
     window = 1.0 #0.5 # ms for calculating moving average
+    
+    freq_fast = 300
+    freq_slow = 100
     #min_length = 2 # ms
     #min_amplitude = 10 # microV
     window = ms2pts(window, fs)
@@ -2191,34 +2198,48 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
         for electr in range(np.size(data,0)):
                 
             data_used = data[electr, trace, min_start_pts:spw_end_pts]
-            data_trace = data[:,trace,:]          
-#            # calculate moving average  
-#            temp, moved_avg = filt.remove_baseloc(data_used, window)  
-#            rest_win = len(data_used) - np.floor(len(data_used)%window)
-#            
-#            prepare4mean = np.reshape(moved_avg[0:rest_win], [rest_win/window, window])
-#            meanEach = np.mean(prepare4mean.T, 0)
-#             
-#            err_allowed = 1 #mV
-#            mean_temp   = meanEach[0]
-#            switch      = 1 # looking for start of rise
-#            maxs, mins  = [], []
-#            
-#            # find ipsps - where the bins start changing their amplitude
-#            for idx, m in enumerate(meanEach):
-#                if m * switch > (mean_temp + err_allowed)*switch:
-#                    # found it (rise or fall)
-#                    detected = np.argmin(data_used[(idx-1)*window : (idx+1)*window] * switch)
-#                    if switch >0:
-#                        maxs.append(detected + (idx-1)*window)
-#                    else:
-#                        mins.append(detected + (idx-1)*window)
-#                    switch = switch * -1 # looking for start of fall
-#                
-#                mean_temp = m
+            data_trace = data[:,trace,:]        
+            
+            
+            """---- """  
+            # calculate moving average  
+            temp, moved_avg = filt.remove_baseloc(data_used, window)  
+            rest_win = len(data_used) - np.floor(len(data_used)%window)
+            
+            prepare4mean = np.reshape(moved_avg[0:rest_win], [rest_win/window, window])
+            meanEach = np.mean(prepare4mean.T, 0)
+             
+            err_allowed = 1 #mV
+            mean_temp   = meanEach[0]
+            switch      = 1 # looking for start of rise
+            maxs, mins  = [], []
+            
+            # find ipsps - where the bins start changing their amplitude
+            for idx, m in enumerate(meanEach):
+                if m * switch > (mean_temp + err_allowed)*switch:
+                    # found it (rise or fall)
+                    detected = np.argmin(data_used[(idx-1)*window : (idx+1)*window] * switch)
+                    if switch >0:
+                        mins.append(detected + (idx-1)*window) # <- normally maxs
+                    else:
+                        pass
+                        #mins.append(detected + (idx-1)*window)
+                    switch = switch * -1 # looking for start of fall
+                
+                mean_temp = m
+            """ --- """
+            
+            """ +++ """
+            #import pdb; pdb.set_trace()
 
-            data_trace_filt = filt.lowPass(300, fs, data_trace[electr,:])
-            data_trace_filt = filt.highPass(100, fs, data_trace_filt)
+            
+            filename_fast = save_filter +str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
+            filename_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace)
+            
+            data_trace_filt, fs = load_create(folder_name, filename_fast, freq_fast, fs, data_trace[electr,:])
+            data_trace_filt, fs = load_create(folder_name, filename_slow, [-1, freq_slow], fs, data_trace[electr,:])
+            #data_trace_filt = filt.lowPass(300, fs, data_trace[electr,:])
+            #data_trace_filt = filt.highPass(100, fs, data_trace_filt)
             data_used_filt = data_trace_filt[min_start_pts: spw_end_pts]
             #plt.plot(t, data_used_filt+ electr * add_it)
             #import pdb; pdb.set_trace()
@@ -2234,22 +2255,24 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
             #peaks_idx, = np.where(peaks2nd == -1)
             #max_idx, = np.where(peaks2nd == 1)
             peaks_idx = peaks_init + min_start_pts
-            maxs, mins = [], []
+            #maxs, mins = [], []
             for star in range(len(peaks_idx) -1):
                 ipsp_start = np.argmin(data_trace[electr, peaks_idx[star]:peaks_idx[star+1]]) + peaks_init[star]
-                mins.append(ipsp_start)
+                #mins.append(ipsp_start)
                 #mins.append()
                 ipsp_max = np.argmax(data_trace[electr, peaks_idx[star]:peaks_idx[star+1]]) + peaks_init[star]
                 maxs.append(ipsp_start)
             #import pdb; pdb.set_trace()
             #plt.vlines(t[peaks_idx], (electr-1)*add_it, electr * add_it)
-                            
-                
+            """ +++ """                            
+            #import pdb; pdb.set_trace()
+            
+            maxs = np.unique(maxs+mins).astype('i4') # join both functions together
             if plot_it:
                 t = dat.get_timeline(data_used, fs, 'ms') + min_start #spw_used['spw_start'][0]
                 plt.plot(t, data_used + add_it*electr)   
-                plt.plot(t[maxs], data_used[maxs] + add_it*electr, 'r<')
-                plt.plot(t[mins], data_used[mins] + add_it*electr, 'b<')
+                plt.plot(t[maxs], data_used[maxs] + add_it*electr, 'r>', alpha = 0.6)
+                #plt.plot(t[mins], data_used[mins] + add_it*electr, 'b<', alpha = 0.6)
                 
             #typ = 'f8'
             mini = pts2ms(maxs,fs) + min_start #spw_electr_used['spw_start'][0]
@@ -2266,7 +2289,7 @@ def update_SPW_ipsp(load_datafile, load_waves, load_spikes, save_folder, save_fi
             #import pdb; pdb.set_trace()  
             spw_ipsps.append(np.rec.fromarrays([electrodes, traces, spw_num, spw_start, spw_end,
                                                     ipsp_no, ipsp_start], 
-                                                names='electrode,trace,spw_no,spw_start,spw_end, ipsp_no,ipsp_start'))
+                                                names='electrode, trace, spw_no, spw_start,spw_end, ipsp_no, ipsp_start'))
             
             
             #if plot_it: 
