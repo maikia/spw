@@ -1864,8 +1864,9 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
 # use for all other IPSPs
     print 'improving beginning of IPSP in trace: '
     folder_name = save_folder + filter_folder
-    freq_slow = 400
-    for trace in [0, 1, 2, 3]: #all_traces:
+    freq_slow = 500
+    base_window = 100
+    for trace in all_traces:
         spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
         print (str(trace) + ', '),
         # calculate the amplitude for each IPSP (from start to distanse_from_point after)
@@ -1874,10 +1875,17 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
         for electr in range(len(data_trace)):
             filename_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace)
             data_trace_filt[electr,:], fs = load_create(folder_name, filename_slow, [-1, freq_slow], fs, data_trace[electr,:])
+            #import pdb; pdb.set_trace() 
+            data_trace_filt[electr,:], temp = filt.remove_baseloc(data_trace_filt[electr,:], base_window)  
+            
+            #filename_fast = save_filter +str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
+            
+            #data_trace_filt[electr,:], fs = load_create(folder_name, filename_fast, freq_fast, fs, data_trace_filt[electr,:])
         #import pdb; pdb.set_trace() 
 
         # check which IPSPs are of too low amplitude (on filtered data so that amplitude is not checked on spikes
         max_ampls = calculate_max_in_given_patch(data_trace_filt, spw_ipsps_trace[['electrode','ipsp_start']], distanse_from_point, fs)
+        #import pdb; pdb.set_trace()
         spw_ipsps_trace = spw_ipsps_trace[max_ampls >= expected_min_ipsp_ampl]
         #import pdb; pdb.set_trace()
         spw_selected_temp = spw_ipsps_trace
@@ -1951,7 +1959,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
         
         #     go through all the spws
         for spw_no in np.unique(all_ipsps['spw_no']):
-            
+            #import pdb; pdb.set_trace()
             fig = plt.figure()   
             #spw_min_start = 9000000000
             #spw_max_end = -1
@@ -1960,7 +1968,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
             #ipsps_old = spw_ipsps[spw_ipsps['trace']==trace]
               
             ipsps_old = spw_ipsps[spw_ipsps['spw_no'] == spw_no]
-            
+            #import pdb; pdb.set_trace()
             trace = spw_used['trace'][0]
 #            spikes_used = all_spikes[all_spikes['trace'] == trace]
 
@@ -1988,6 +1996,9 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
                 #import pdb; pdb.set_trace()
                 filename_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace)
                 data_filt, fs = load_create(folder_name, filename_slow, [-1, freq_slow], fs, data[electr,trace, :])
+                data_filt, temp = filt.remove_baseloc(data_filt, base_window)  
+                #filename_fast = save_filter +str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
+                #data_filt, fs = load_create(folder_name, filename_fast, freq_fast, fs, data_filt)
 
                 data_filt = data_filt[plot_start: plot_end]
 
