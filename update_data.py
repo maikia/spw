@@ -192,7 +192,7 @@ def up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', l
     gc.collect()
         
         
-def up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf'):       
+def up_spws_ipsp_beg(save_folder, filter_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf'):       
     """analyse the ipsps in each SPWs - finds the beginnings, and removes those which are not correct"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -203,7 +203,7 @@ def up_spws_ipsp_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.np
         fig_fold_name = 'SPW_IPSPs/'
         fold_mng.create_folder(save_folder + fig_fold_name)
         # load the data   
-        ispw.update_SPW_ipsp_correct(load_datafile, load_spwsipsp, load_spwsspike, save_folder, fig_fold_name + save_fig, save_file, ext)  
+        ispw.update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_spwsspike, save_folder, fig_fold_name + save_fig, save_file, ext)  
     gc.collect()
             
 #def up_spws_ipsp_ampl(save_folder, save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', reanalize = False):       
