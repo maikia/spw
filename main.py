@@ -83,7 +83,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 #        # uses previously selected largest spikes
 #        updater.up_spikes_in_spw(save_folder, save_file =spikes_inWaves, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps, reanalize = reanalize, win = win)
     ipsps_corrected = 'ipsps_corrected.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # correct the IPSPs (no matter if used for SPW start or for later
         updater.up_correct_ipsps(save_folder, save_fig = 'spw_ipsp', save_file = ipsps_corrected, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     

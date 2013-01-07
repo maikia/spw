@@ -1788,32 +1788,34 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
                             #data_trace_filt2 = filt.bandPass([3, 300], fs, data_trace[electr,:])
                             #data_used_filt2 = data_trace_filt2[max(0,starts_pts + win_pts[0]): min(starts_pts + win_pts[1], np.size(data_trace, 1))]
                             #plt.plot(t, data_used_filt2+ electr * add_it)
-                            
-#                            data_trace_filt = filt.lowPass(300, fs, data_trace[electr,:])
-#                            data_trace_filt = filt.highPass(100, fs, data_trace_filt)
-#                            data_used_filt = data_trace_filt[max(0,starts_pts + win_pts[0]): min(starts_pts + win_pts[1], np.size(data_trace, 1))]
-#                            plt.plot(t, data_used_filt+ electr * add_it)
-#                            #import pdb; pdb.set_trace()
-#                            first_deriv = np.diff(data_used_filt)
-#                            second_deriv = np.diff(first_deriv)
-#                            second_deriv[second_deriv > 0] = 1
-#                            second_deriv[second_deriv < 0] = 0
-#                            second_deriv2 = np.hstack((second_deriv[1:], second_deriv[-1]))
-#                            peaks = second_deriv - second_deriv2
-#                            #peaks[peaks == -1] = 1
-#                            peaks2nd = np.hstack((peaks, [0, 0]))
-#                            peaks_idx = np.where(peaks2nd == -1)
-#                            plt.vlines(t[peaks_idx], (electr-1)*add_it, electr * add_it)
 #                            
                         except:
                             import pdb; pdb.set_trace()
-                        spw_used = spw_ipsps_first[spw_ipsps_first['electrode'] == electr]
+                        spw_used = ipsps_selected[ipsps_selected['electrode'] == electr]
+                        ipsps_all = ipsps_selected[ipsps_selected['electrode'] == electr]
+                        ipsp_old = spw_ipsps_trace[spw_ipsps_trace['spw_no'] == spw_no]
+                        ipsp_old = ipsp_old[ipsp_old['electrode'] == electr]
+                        #spw_old = spw_ipsps[]
                         if len(spw_used) > 0:
-                            start_used = ms2pts(spw_used['ipsp_start'], fs).astype('i4')
+                            start_used_all = ms2pts(spw_used['spw_start'], fs).astype('i4')
+                            start_used = ms2pts(ipsps_all['ipsp_start'], fs).astype('i4')
+                            start_old = ms2pts(ipsp_old['ipsp_start'], fs).astype('i4')
                             #import pdb; pdb.set_trace()
                             try:
+                                # plot all the old IPSPs
+                                
+                                all_old = (start_old - win_pts[0] - starts_pts).astype('i4')
+                                plt.plot(t[all_old], data_used[electr, all_old] + electr * add_it, 'mx', markersize = 8)
+                                
+                                # plot all the new IPSPs
+                                all_used = (start_used_all - win_pts[0] - starts_pts).astype('i4')
+                                plt.plot(t[all_used], data_used[electr, all_used] + electr * add_it, 'go', markersize = 8)
+                                                                
+                                # plot all the possible starts of SPWs selected
                                 used = (start_used - win_pts[0] - starts_pts).astype('i4')
                                 plt.plot(t[used], data_used[electr, used] + electr * add_it, 'ro')
+                                
+  
                             except:
                                 import pdb; pdb.set_trace()
                     plt.show()    
