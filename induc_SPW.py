@@ -2000,8 +2000,11 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
         if len(ipsps_trace) > 0:
             # separate all the groups of ipsps which are further apart than max_length_ipsp_pts 
             ipsps_trace, init_spw_no = separate_groups(ipsps_trace, max_length_ipsp, init_spw_no)
-            
-            
+        
+        if len(ipsps_trace) > 0:
+            # remove IPSPs which are too close from each other
+            distance_between = calc_distance_between(ipsps_trace[['electrode','ipsp_start']], min_length_ipsp, max_ampls)    
+            ipsps_trace = ipsps_trace[distance_between]
             # does not work well! if you want to use - correct first!!!!!!
             #ipsps_trace = shift_ipsp_start(ipsps_trace, spikes_trace, shift_spike)
         
