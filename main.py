@@ -231,7 +231,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             
         used_spw_data = induc_spont_equal
         group_per_isps_all = 'group_per_isps_all.npz'
-        if not run_all_functions:
+        if run_all_functions:
             analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_baselined, 
                                               spw_data = used_spw_data, ext = ext)#
                                               #spw_data = spw_more_ipsps, ext = ext)
@@ -246,7 +246,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         
         groups_w_firing_rate = 'groups_w_firing_rate'
-        if not run_all_functions:
+        if run_all_functions:
             analyser.plot_groups_w_fr(save_folder, plot_folder = solutions_folder + final_results + '/', 
                                       plot_file = groups_w_firing_rate, data_file = raw_baselined, 
                                       spw_groups = group_per_isps_all, spw_details = used_spw_data,
