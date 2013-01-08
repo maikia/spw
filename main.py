@@ -136,7 +136,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 #       #SPWs_ipsps_corrected = SPWs_all_IPSPs 
         if not run_all_functions:
             # it makes the plot to exactly analyse each SPW
-            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_corrected, 
+            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_all_IPSPs, 
                                            load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
                                            load_ipspsOld = ipsps_corrected, spw_base = SPWs_potential_numb,
                                            load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
@@ -295,7 +295,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [14]: #range(16, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in [18]: #range(16, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):

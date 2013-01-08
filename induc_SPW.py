@@ -1232,6 +1232,8 @@ def group_ipsps(spw_ipsps_trace, shift_ipsp):
 def count_coincident_ipsps(spw_ipsps_trace, shift_ipsp):
     """counts number of IPSPs in different electrodes seperated by not more
     than shift_ipsp"""
+    #if spw_ipsps_trace['spw_start'][0] == 149.3:
+    #    import pdb; pdb.set_trace()
     i = np.argsort(spw_ipsps_trace['ipsp_start'])
     spw_ipsps_sorted = spw_ipsps_trace[i]
         
@@ -1842,20 +1844,22 @@ def move_closest_group_to_spw_start(ipsps):
     
     return ipsps
 
-def remove_alone_ipsps(ipsps_trace, min_electr):
+def remove_alone_ipsps(ipsps_trace, min_electr, shift_ipsp):
     """ calculates how many ipsps are there in any group and
     returns true if it should be removed, false if it shouldn't
     (saves always the first ipsp in spw"""
-    n_electrodes_per_ipsp = count_coincident_ipsps(ipsps_trace, min_electr)
+    n_electrodes_per_ipsp = count_coincident_ipsps(ipsps_trace, shift_ipsp)
     # find group which is the closest to start
     to_save = []
+    #if ipsps_trace['spw_start'][0] == 149.3:
+    #    import pdb; pdb.set_trace()
+    
     for idx, spw  in enumerate(ipsps_trace):
         #import pdb; pdb.set_trace()
         if (spw['spw_start'] == spw['ipsp_start']) or n_electrodes_per_ipsp[idx] >= min_electr:
             to_save.append(True)
         else:
-            to_save.append(False)
-        
+            to_save.append(False) 
     return np.array(to_save)    
 
 def separate_groups(ipsps, max_length_ipsp_pts, init_spw_no = 0):
@@ -1923,7 +1927,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
     spw_spike      = npzfile['spike_idx']  
     npzfile.close()     
     
-    plot_it = False
+    plot_it = True
     distanse_from_point = 5 # ms
     #import pdb; pdb.set_trace()
     shift_ipsp = 1 # ms
@@ -1931,7 +1935,6 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
     expected_min_ipsp_ampl = 8 # microV
     shift_spike= 1 #ms
     min_length_ipsp = 3
-    
     max_length_ipsp = 15
     #max_length_ipsp_pts = ms2pts(max_length_ipsp, fs)
     min_distance_between_spw = 10 #ms
@@ -1986,25 +1989,27 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
                                      ['amplitude', 'group'])
 
         #import pdb; pdb.set_trace()
-        
+        if len(ipsps_trace) > 0:
+            # remove IPSPs which are too close from each other
+            distance_between = calc_distance_between(ipsps_trace[['electrode','ipsp_start']], min_length_ipsp, max_ampls)    
+            ipsps_trace = ipsps_trace[distance_between]
+            
         # if there are no groups don't do anything
         if len(ipsps_trace) > 0:
             # assigns time of closest group as spw beginning
             ipsps_trace = move_closest_group_to_spw_start(ipsps_trace)
             
-            # remove the group which has no enough IPSPs
+            # remove the group which has not enough IPSPs
             # (save the group which is the first from the correction even if it has too few IPSPs)
-            to_save = remove_alone_ipsps(ipsps_trace, min_electr)
+            to_save = remove_alone_ipsps(ipsps_trace, min_electr, shift_ipsp)
+
             ipsps_trace = ipsps_trace[to_save]
             
         if len(ipsps_trace) > 0:
             # separate all the groups of ipsps which are further apart than max_length_ipsp_pts 
             ipsps_trace, init_spw_no = separate_groups(ipsps_trace, max_length_ipsp, init_spw_no)
         
-        if len(ipsps_trace) > 0:
-            # remove IPSPs which are too close from each other
-            distance_between = calc_distance_between(ipsps_trace[['electrode','ipsp_start']], min_length_ipsp, max_ampls)    
-            ipsps_trace = ipsps_trace[distance_between]
+
             # does not work well! if you want to use - correct first!!!!!!
             #ipsps_trace = shift_ipsp_start(ipsps_trace, spikes_trace, shift_spike)
         
@@ -2058,7 +2063,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
         after = ms2pts(win[1], fs).astype('i4')
         
         #     go through all the spws
-        for spw_no in np.unique(all_ipsps['spw_no']):
+        for spw_no in range(9, 12): #np.unique(all_ipsps['spw_no']):
             #import pdb; pdb.set_trace()
             fig = plt.figure()   
             #spw_min_start = 9000000000
@@ -2067,11 +2072,12 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
             spw_used = all_ipsps[all_ipsps['spw_no'] == spw_no]
             #ipsps_old = spw_ipsps[spw_ipsps['trace']==trace]
               
-            ipsps_old = spw_ipsps[spw_ipsps['spw_no'] == spw_no]
+            
             #import pdb; pdb.set_trace()
             trace = spw_used['trace'][0]
             spikes_used = all_spikes[all_spikes['trace'] == trace]
-
+            
+            ipsps_old = spw_ipsps[spw_ipsps['trace'] == trace]
             
             
             spw_start = spw_used['spw_start'][0]
@@ -2097,6 +2103,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
                 filename_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace)
                 data_filt, fs = load_create(folder_name, filename_slow, [-1, freq_slow], fs, data[electr,trace, :])
                 data_filt, temp = filt.remove_baseloc(data_filt, base_window)  
+
                 #filename_fast = save_filter +str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
                 #data_filt, fs = load_create(folder_name, filename_fast, freq_fast, fs, data_filt)
 
@@ -2114,11 +2121,11 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
                 
                 # plot old ipsps
                 #ipsps_old = spw_ipsps[spw_ipsps['trace']==trace]
-                ipsps_old_used = ipsps_old[ipsps_old['electrode'] == electr]
+                ipsps_old_used = ipsps_old[(ipsps_old['electrode'] == electr) & (ipsps_old['ipsp_start'] >= pts2ms(plot_start, fs)) & (ipsps_old['ipsp_start'] <= pts2ms(plot_end, fs))]
                 ipsps_old_pts = ms2pts(ipsps_old_used['ipsp_start'], fs).astype('i4')
                 
                 ipsps_to_old = ipsps_old_pts - plot_start
-
+                #import pdb; pdb.set_trace()
                 plt.plot(t[ipsps_to_old], data_used[ipsps_to_old] + plot_add, 'ko', mfc='none', ms=8)
                 
                 # plot spikes
@@ -2128,6 +2135,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
                 plt.axvline(t[spw_start_pt])
 
             plt.show()
+            #import pdb; pdb.set_trace()
             tit = 'spw: ' + str(spw_no)
             plt.title(tit)
             fig.savefig(save_folder + save_fig + str(spw_no) + ext,dpi=600)
