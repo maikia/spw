@@ -1900,7 +1900,7 @@ def separate_groups(ipsps, max_length_ipsp_pts, init_spw_no = 0):
         # change spw_start
         for spw_no in np.unique(spw_used['spw_no']):
             new_spw_start = min(spw_used[spw_used['spw_no'] == spw_no]['ipsp_start'])
-            spw_used['spw_start'][spw_used['spw_no'] == spw_no] = np.ones(len(spw_used)) * new_spw_start
+            spw_used['spw_start'][spw_used['spw_no'] == spw_no] = np.ones(len(spw_used[spw_used['spw_no'] == spw_no])) * new_spw_start
         
         #print group_nos
         #if len(np.unique(group_nos)) > 1:
@@ -1910,6 +1910,40 @@ def separate_groups(ipsps, max_length_ipsp_pts, init_spw_no = 0):
     #import pdb; pdb.set_trace()
     return new_ipsps, init_spw_no
 
+def separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise, init_spw_no):
+    """ it checks each first IPSP in the given spws, if it's not giving any increase to the next
+    IPSP, the SPW is separated"""
+    new_ipsps = []
+    for spw_no in np.unique(ipsps_trace['spw_no']):
+        spw_used = ipsps_trace[ipsps_trace['spw_no'] == spw_no]
+        
+        min_group = spw_used[spw_used['ipsp_start'] == min(spw_used['ipsp_start'])]['group'][0]
+        rise_used = ipsp_rise[ipsps_trace['spw_no'] == spw_no]
+        rise_used_group = rise_used[spw_used['group'] == min_group]
+        # check if there is more than one IPSP group in this SPW
+        if (len(np.unique(spw_used['group'])) > 1) and max(rise_used_group) < expected_min_ipsp_rise:
+            # check if at least one rise in the first group is > expected_min_ipsp_rise
+            # rise is too low, need of separation
+            # set new spw_no
+            spw_used['spw_no'][spw_used['group'] == min_group] = (np.ones(len(spw_used[spw_used['group'] == min_group])) * init_spw_no).astype('i4')            
+            
+            spw_used['spw_no'][spw_used['group'] != min_group]= (np.ones(len(spw_used[spw_used['group'] != min_group])) * init_spw_no + 1).astype('i4')
+            
+            new_spw_start = min(spw_used[spw_used['spw_no'] == init_spw_no + 1]['ipsp_start'])
+            spw_used['spw_start'][spw_used['spw_no'] ==  init_spw_no + 1] = np.ones(len(spw_used[spw_used['spw_no'] ==  init_spw_no + 1])) * new_spw_start
+
+        else:
+            # everything alright; rise is fine; only update the spw_no
+            spw_used['spw_no'] = (np.ones(len(spw_used)) * init_spw_no).astype('i4')
+            
+        add_init = len(np.unique(spw_used['spw_no']))
+        #if add_init > 1:
+        #    import pdb; pdb.set_trace()
+        init_spw_no = init_spw_no + add_init
+        new_ipsps.append(spw_used)
+    new_ipsps = np.concatenate(new_ipsps)    
+    return new_ipsps, init_spw_no
+    
 def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext, win = [-20, 80], save_filter = 'ipsp_filt_'):
     """ checks all the ipsps and corrects them for each spw"""
 
@@ -1927,19 +1961,19 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
     spw_spike      = npzfile['spike_idx']  
     npzfile.close()     
     
-    plot_it = True
+    plot_it = False
     distanse_from_point = 5 # ms
     #import pdb; pdb.set_trace()
     shift_ipsp = 1 # ms
     min_electr = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
     expected_min_ipsp_ampl = 8 # microV
-    shift_spike= 1 #ms
+    #shift_spike= 1 #ms
     min_length_ipsp = 3
     max_length_ipsp = 15
     #max_length_ipsp_pts = ms2pts(max_length_ipsp, fs)
-    min_distance_between_spw = 10 #ms
-    expected_min_ipsp_rise = 5
-    spw_ipsps_list = []
+    #min_distance_between_spw = 10 #ms
+    expected_min_ipsp_rise = 3
+    #spw_ipsps_list = []
     all_traces= np.unique(spw_ipsps['trace'])
 
 # treat all the IPSPS
@@ -2007,8 +2041,13 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
             
         if len(ipsps_trace) > 0:
             # separate all the groups of ipsps which are further apart than max_length_ipsp_pts 
-            ipsps_trace, init_spw_no = separate_groups(ipsps_trace, max_length_ipsp, init_spw_no)
-        
+            ipsps_trace, temp = separate_groups(ipsps_trace, max_length_ipsp, init_spw_no)
+            # calculate the rise between the beginning of IPSP and next IPSP
+            
+            ipsp_rise = calculate_ipsp_rise(ipsps_trace, data_trace, fs)
+
+            ipsps_trace, init_spw_no = separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise, init_spw_no)
+            
 
             # does not work well! if you want to use - correct first!!!!!!
             #ipsps_trace = shift_ipsp_start(ipsps_trace, spikes_trace, shift_spike)
@@ -2063,7 +2102,8 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
         after = ms2pts(win[1], fs).astype('i4')
         
         #     go through all the spws
-        for spw_no in range(9, 12): #np.unique(all_ipsps['spw_no']):
+        for spw_no in range(8,20): #np.unique(all_ipsps['spw_no']):
+            print spw_no
             #import pdb; pdb.set_trace()
             fig = plt.figure()   
             #spw_min_start = 9000000000
