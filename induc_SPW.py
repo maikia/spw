@@ -1875,9 +1875,10 @@ def separate_groups(ipsps, max_length_ipsp_pts, init_spw_no = 0):
 
         idx_sort = np.argsort(all_min_groups)
         differences = np.hstack([max_length_ipsp_pts + 1, np.diff(all_min_groups[idx_sort])])
+        #import pdb; pdb.set_trace()
         differences = differences > max_length_ipsp_pts
         #if len(differences) > 1:
-        #    import pdb; pdb.set_trace()
+        
         separate_spws = np.cumsum(differences) - 1
         idx_reverse = np.argsort(idx_sort)
         separate_spws = separate_spws[idx_reverse]
@@ -1886,13 +1887,20 @@ def separate_groups(ipsps, max_length_ipsp_pts, init_spw_no = 0):
         init_spw_no = max(group_nos) + 1
         #import pdb; pdb.set_trace()
         
-        # set new spw_no
         for idx, group in enumerate(np.unique(spw_used['group'])):
             use_spw_no = group_nos[idx]
-            spw_used['spw_no'] = np.ones(len(spw_used)) * use_spw_no
+            # change spw no
+            spw_used['spw_no'][spw_used['group'] == group] = (np.ones(len(spw_used[spw_used['group'] == group])) * use_spw_no).astype('i4')
+
+            
+        # change spw_start
+        for spw_no in np.unique(spw_used['spw_no']):
+            new_spw_start = min(spw_used[spw_used['spw_no'] == spw_no]['ipsp_start'])
+            spw_used['spw_start'][spw_used['spw_no'] == spw_no] = np.ones(len(spw_used)) * new_spw_start
         
-        if len(np.unique(group_nos)) > 1:
-            import pdb; pdb.set_trace()
+        #print group_nos
+        #if len(np.unique(group_nos)) > 1:
+        #    import pdb; pdb.set_trace()
         new_ipsps.append(spw_used)
     new_ipsps = np.concatenate(new_ipsps)
     #import pdb; pdb.set_trace()
@@ -1925,7 +1933,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
     min_length_ipsp = 3
     
     max_length_ipsp = 15
-    max_length_ipsp_pts = ms2pts(max_length_ipsp, fs)
+    #max_length_ipsp_pts = ms2pts(max_length_ipsp, fs)
     min_distance_between_spw = 10 #ms
     expected_min_ipsp_rise = 5
     spw_ipsps_list = []
@@ -1991,7 +1999,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
             
         if len(ipsps_trace) > 0:
             # separate all the groups of ipsps which are further apart than max_length_ipsp_pts 
-            ipsps_trace, init_spw_no = separate_groups(ipsps_trace, max_length_ipsp_pts, init_spw_no)
+            ipsps_trace, init_spw_no = separate_groups(ipsps_trace, max_length_ipsp, init_spw_no)
             
             
             # does not work well! if you want to use - correct first!!!!!!
