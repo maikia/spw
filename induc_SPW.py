@@ -1862,21 +1862,41 @@ def separate_groups(ipsps, max_length_ipsp_pts, init_spw_no = 0):
     """ checks how far are ipsps from each other, if further than max_length_ipsp_pts
     it separates them to two SPWs"""
     spw_no = init_spw_no
+    new_ipsps = []
     for spw_no in np.unique(ipsps['spw_no']):
         spw_used = ipsps[ipsps['spw_no'] == spw_no]
         all_min_groups = np.zeros(len(np.unique(spw_used['group'])))
+        
+        #group_no = []
+        # take the minimum IPSP in each group
         for idx, group in enumerate(np.unique(spw_used['group'])):
             all_min_groups[idx] = min(spw_used[spw_used['group'] == group]['ipsp_start'])
-        import pdb; pdb.set_trace()
+            #group_no.append(group) # remember which group it belongs to
+
         idx_sort = np.argsort(all_min_groups)
         differences = np.hstack([max_length_ipsp_pts + 1, np.diff(all_min_groups[idx_sort])])
-        differences = (differences > max_length_ipsp_pts)*1
-        np.hs
-        #for ipsp_group in np.unique(spw_used['group']):
-        here nieed to check which ipsps are too far!!
-        np. <--- which function ??
-        import pdb; pdb.set_trace()
+        differences = differences > max_length_ipsp_pts
+        #if len(differences) > 1:
+        #    import pdb; pdb.set_trace()
+        separate_spws = np.cumsum(differences) - 1
+        idx_reverse = np.argsort(idx_sort)
+        separate_spws = separate_spws[idx_reverse]
         
+        group_nos = separate_spws + init_spw_no
+        init_spw_no = max(group_nos) + 1
+        #import pdb; pdb.set_trace()
+        
+        # set new spw_no
+        for idx, group in enumerate(np.unique(spw_used['group'])):
+            use_spw_no = group_nos[idx]
+            spw_used['spw_no'] = np.ones(len(spw_used)) * use_spw_no
+        
+        if len(np.unique(group_nos)) > 1:
+            import pdb; pdb.set_trace()
+        new_ipsps.append(spw_used)
+    new_ipsps = np.concatenate(new_ipsps)
+    #import pdb; pdb.set_trace()
+    return new_ipsps, init_spw_no
 
 def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext, win = [-20, 80], save_filter = 'ipsp_filt_'):
     """ checks all the ipsps and corrects them for each spw"""
@@ -1895,7 +1915,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
     spw_spike      = npzfile['spike_idx']  
     npzfile.close()     
     
-    plot_it = True
+    plot_it = False
     distanse_from_point = 5 # ms
     #import pdb; pdb.set_trace()
     shift_ipsp = 1 # ms
@@ -1903,6 +1923,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
     expected_min_ipsp_ampl = 8 # microV
     shift_spike= 1 #ms
     min_length_ipsp = 3
+    
     max_length_ipsp = 15
     max_length_ipsp_pts = ms2pts(max_length_ipsp, fs)
     min_distance_between_spw = 10 #ms
@@ -1921,7 +1942,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
     base_window = ms2pts(base_window, fs)
     all_ipsps = []
     all_spikes = []
-    
+    init_spw_no = 0
     for trace in all_traces:
         spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
         print str(trace) + ' / ' + str(max(all_traces))
@@ -1970,7 +1991,8 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
             
         if len(ipsps_trace) > 0:
             # separate all the groups of ipsps which are further apart than max_length_ipsp_pts 
-            separate_groups(ipsps_trace, max_length_ipsp_pts)
+            ipsps_trace, init_spw_no = separate_groups(ipsps_trace, max_length_ipsp_pts, init_spw_no)
+            
             
             # does not work well! if you want to use - correct first!!!!!!
             #ipsps_trace = shift_ipsp_start(ipsps_trace, spikes_trace, shift_spike)
@@ -2025,7 +2047,7 @@ def update_SPW_ipsp_correct(load_datafile, filter_folder, load_spwsipsp, load_sp
         after = ms2pts(win[1], fs).astype('i4')
         
         #     go through all the spws
-        for spw_no in range(6,9): #np.unique(all_ipsps['spw_no']):
+        for spw_no in np.unique(all_ipsps['spw_no']):
             #import pdb; pdb.set_trace()
             fig = plt.figure()   
             #spw_min_start = 9000000000
