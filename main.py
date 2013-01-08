@@ -95,7 +95,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         #updater.up_divide_to_groups(load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_beg, save_folder = save_folder, save_file = SPWs_ipsps_beg, reanalize = reanalize)
         
     SPWs_all_IPSPs = 'SPWs_all_ipsps.npz'
-    if not run_all_functions:
+    if run_all_functions:
         updater.up_spws_ipsp_beg(save_folder, filter_folder, save_fig = 'spw_ipsp', save_file = SPWs_all_IPSPs, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_beg, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     
 #    SPWs_ipsps_first_max = 'SPWs_ipsps_first_max.npz'
@@ -108,10 +108,19 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     if not run_all_functions:
         updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
     
+    # not done yet!
+#    if not run_all_functions:
+#        updater.up_add_missing_ipsps(save_folder, SPWs_ipsps_corrected, SPWs_ipsps_corrected, data_file = raw_baselined, reanalize = reanalize)
 #    spikes_inSPWs = 'spikes_inSpw.npz'
 #    if run_all_functions:
 #        # uses previously selected largest spikes
 #        updater.up_spikes_in_spw(save_folder, save_file =spikes_inSPWs, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps_beg, reanalize = reanalize, win = win)
+
+    SPWs_ipsps_final = 'SPWs_ipsps_final.npz'
+    min_no_ipsps = 3
+    if not run_all_functions:
+        updater.up_remove_with_to_few_ipsps(save_folder, SPWs_ipsps_final, SPWs_ipsps_corrected, to_remove = min_no_ipsps, reanalize = reanalize)
+    
     
     #print intr_electrode
     if intr_electrode == 1:
@@ -133,10 +142,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         intra_spikes = 'intra_spikes.npz'
         if run_all_functions:
             updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
-#       #SPWs_ipsps_corrected = SPWs_all_IPSPs 
-        if not run_all_functions:
+        SPWs_ipsps_corrected = SPWs_ipsps_final 
+        if run_all_functions:
             # it makes the plot to exactly analyse each SPW
-            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_all_IPSPs, 
+            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_final, 
                                            load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
                                            load_ipspsOld = ipsps_corrected, spw_base = SPWs_potential_numb,
                                            load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
@@ -222,7 +231,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             
         used_spw_data = induc_spont_equal
         group_per_isps_all = 'group_per_isps_all.npz'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_baselined, 
                                               spw_data = used_spw_data, ext = ext)#
                                               #spw_data = spw_more_ipsps, ext = ext)
@@ -237,7 +246,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         
         groups_w_firing_rate = 'groups_w_firing_rate'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_groups_w_fr(save_folder, plot_folder = solutions_folder + final_results + '/', 
                                       plot_file = groups_w_firing_rate, data_file = raw_baselined, 
                                       spw_groups = group_per_isps_all, spw_details = used_spw_data,
@@ -295,7 +304,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [14]: #range(16, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in [18]: #range(16, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):
