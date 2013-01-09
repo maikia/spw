@@ -243,6 +243,19 @@ def equalize_number_spws(save_folder, save_file, induc_spont, load_distances, re
         print 'Initiated SPWs were already saved'    
     gc.collect()      
 
+def up_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_file, reanalize = False):
+    fold_mng.create_folder(save_folder)
+    
+    # check if this file already exists
+    exists = fold_mng.file_exists(save_folder, save_file)
+
+    if reanalize or not exists:
+        # load the data        
+        ispw.update_add_missing_electrodes_SPW(save_folder = save_folder, save_file = save_file, spw_file = spw_file, data_file = data_file)
+    else:
+        print 'Initiated SPWs were already saved'    
+    gc.collect()      
+
 def up_remove_with_to_few_ipsps(save_folder, save_file, spw_file, to_remove, reanalize = False):
     fold_mng.create_folder(save_folder)
     
