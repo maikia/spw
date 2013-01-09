@@ -1024,8 +1024,20 @@ def update_fill_gap_between_ipsp_groups(save_folder, save_file, spw_file, data_f
                                                         spw_nos, spw_starts, spw_ends,
                                                         ipsps_nos, ipsp_starts, temp_ampls, groups],
                                                            names='electrode,trace, spw_no, spw_start, spw_end, ipsp_no, ipsp_start, amplitude, group'))   
-                #import pdb; pdb.set_trace()
-    new_ipsps.append(spws)
+                
+                
+ 
+    new_dtype = np.dtype([('electrode', '<i4'), 
+                          ('trace', '<i4'),
+                          ('spw_no', '<i4'), 
+                          ('spw_start', '<f8'),
+                          ('spw_end', '<f8'), 
+                          ('ipsp_no', '<i4'), 
+                          ('ipsp_start', '<f8'),
+                          ('amplitude', '<f8'),
+                          ('group', '<i4')])
+   
+    new_ipsps.append(spws.astype(new_dtype))
     all_ipsps = np.concatenate(new_ipsps)
     #import pdb; pdb.set_trace()
     for trace in range(np.size(data,1)):
