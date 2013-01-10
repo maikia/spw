@@ -139,22 +139,22 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     if intr_electrode == 1:
         
         data_intra = 'data_intra.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.up_intrafile(filename, save_folder, save_file = data_intra, int_electrodes = [0], reanalize = reanalize)
         
         data_intra_base = 'data_baseintra.npz'
-        if not run_all_functions:
+        if run_all_functions:
             # removes the baseline
             updater.up_databas(save_folder, save_file = data_intra_base, load_file = data_intra, reanalize = reanalize)
             
         plot_folder = 'full_data/'
         save_plots = 'data_intra'
-        if not run_all_functions:
+        if run_all_functions:
             # plots part of the data given (in part)
             analyser.display_data(save_folder, plot_folder, save_plots, data_intra_base, trace = 0, part = [0, 100000], ext = ext)
         
         intra_spikes = 'intra_spikes.npz'
-        if not run_all_functions:
+        if run_all_functions:
             # detects intracellular spikes
             updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
         
@@ -167,19 +167,19 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                                            load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
 #    
         dist_spw_inspikes = 'spw_dist2first.npz'
-        if run_all_functions:
+        if not run_all_functions:
             # finds the closest distance spw to the proceeding intracellular spike
             updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_corrected, spikes = 'first', reanalize = reanalize)
         
         induc_spont_spw = 'induc_spont_spw.npz'
         max_dist = [-0.5, 7] # ms
-        if run_all_functions:
+        if not run_all_functions:
             # checks which SPWs are induced and which are spontaneous (if it's further than max_dist[1] it is spontaneous)
             # if any error is being allowed it should be given in max_idst[0], e.g. -0.5 (half milisecond before intra spike
             updater.up_induc_spont_spw(save_folder, save_file = induc_spont_spw, load_distances = dist_spw_inspikes, load_spwfile = SPWs_ipsps_corrected, max_init_dist = max_dist, reanalize = reanalize, ext = ext)
 #    
         induc_spont_equal = 'induc_spont_equal.npz'
-        if run_all_functions:
+        if not run_all_functions:
             # counts spontaneous and initiated SPWs and it randomly choses set of SPWs from the bigger set so that there is equal number in both sets
             updater.equalize_number_spws(save_folder, save_file = induc_spont_equal, induc_spont = induc_spont_spw, load_distances = dist_spw_inspikes, reanalize = reanalize)
 
@@ -320,7 +320,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in [14]: #range(1, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):

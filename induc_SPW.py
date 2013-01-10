@@ -987,6 +987,8 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
     ipsp_size_pts = ms2pts(ipsp_len, fs).astype('i4')
     win = [-20, 100]
     ipsp_allowed_error = 0.5
+    min_len_ipsp = 1
+    min_len_ipsp_pts = ms2pts(min_len_ipsp, fs).astype('i4')
     ipsp_ae_pts = ms2pts(ipsp_allowed_error, fs).astype('i4')
     plot_it = False
     all_new_ipsps = []
@@ -1054,20 +1056,26 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                 #import pdb; pdb.set_trace() 
                 group_pts = group_pts_all-ipsp_ae_pts + pot_ipsp
                 
-                if ipsp_prev == -1:
+                if (ipsp_prev == -1) or (ipsp_start_pts - group_pts >= -min_len_ipsp_pts):
                     before_ok = 0
                     ipsp_start_pts = group_pts
                 else:
                     data_prev_ipsp = data_trace[electr,ipsp_start_pts:group_pts]
-                    check_if_ipsp(data_prev_ipsp, min_ampl)
-                
-                if ipsp_next == -1:
+                    try:
+                        check_if_ipsp(data_prev_ipsp, min_ampl)
+                    except:
+                        import pdb; pdb.set_trace() 
+                if (ipsp_next == -1) or (ipsp_end_pts - group_pts <= min_len_ipsp_pts):
                     after_ok = 0
                     ipsp_end_pts = ms2pts(ipsp_prev, fs).astype('i4')
                     data_next_ipsps = data_trace[electr,group_pts:group_pts+ipsp_size_pts]
                 else:
-                    data_next_ipsps = data_trace[electr,group_pts:ipsp_end_pts]
-                    after_ok = check_if_ipsp(data_next_ipsps, min_ampl)
+                    try:
+                        data_next_ipsps = data_trace[electr,group_pts:ipsp_end_pts]
+                        after_ok = check_if_ipsp(data_next_ipsps, min_ampl)
+                    except:
+                        import pdb; pdb.set_trace() 
+                   
 
                 # check what happens between this and the next ipsps
                 # unless it's the last one
