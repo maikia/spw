@@ -1062,9 +1062,10 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                 else:
                     data_prev_ipsp = data_trace[electr,ipsp_start_pts:group_pts]
                     try:
-                        check_if_ipsp(data_prev_ipsp, min_ampl)
+                        before_ok = check_if_ipsp(data_prev_ipsp, min_ampl)
                     except:
                         import pdb; pdb.set_trace() 
+                        
                 if (ipsp_next == -1) or (ipsp_end_pts - group_pts <= min_len_ipsp_pts):
                     after_ok = 0
                     ipsp_end_pts = ms2pts(ipsp_prev, fs).astype('i4')
