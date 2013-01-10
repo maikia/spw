@@ -87,6 +87,11 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         # correct the IPSPs (no matter if used for SPW start or for later
         updater.up_correct_ipsps(save_folder, save_fig = 'spw_ipsp', save_file = ipsps_corrected, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     
+    spws_large_enough = 'spw_large_enough.npz'
+    min_amplitude_of_spw = 40 #microV SPW in any point, in any electrode has to be at least this amplitude
+    if run_all_functions:
+        updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
+    
     SPWs_ipsps_beg  = 'SPWs_ipsps_beg.npz'
     if not run_all_functions:
         # finding properly each of the IPSP

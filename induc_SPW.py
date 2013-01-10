@@ -1765,7 +1765,71 @@ def update_spws_first_max(save_folder, spws, datafile, save_file, window = [-3, 
         print spws['spw_start'][spws['spw_no'] == spw_no]
     np.savez(save_folder + save_file, spw_ipsps = spws) 
 
+def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_folder, save_file, ext):
+    """ checks which SPWs in it's highest point are smaller than min_ampl and removes those"""
+    # load all the necessary data
+    npzfile         = np.load(save_folder + load_datafile)
+    data            = npzfile['data'] # data
+    fs              = npzfile['fs'] # sampling frequency
+    npzfile.close()      
 
+    npzfile         = np.load(save_folder + load_spwsipsp)
+    spws       = npzfile['spw_ipsps'] # detected so far spws and IPSPs
+    npzfile.close()  
+    
+    ipsp_length = 10 # ms
+    spw_no_all = np.unique(spws['spw_no'])
+    
+    plot_it = False
+    
+    print "Removing SPWs of amplitude smaller than: " + str(min_ampl) + "; working on SPW number: "
+    new_spw_no = 0
+    new_spws = []
+    for spw_no in spw_no_all:
+        print spw_no
+        # get parameters for this spw
+        spw_used = spws[spws['spw_no'] == spw_no]
+        trace = spw_used['trace'][0]
+        spw_start = spw_used['spw_start'][0]
+        spw_end = max(spw_used['ipsp_start']) + ipsp_length
+        
+        spw_start_pts = ms2pts(spw_start, fs).astype('i4')
+        spw_end_pts = ms2pts(spw_end, fs).astype('i4')
+        
+        data_trace = data[:, trace, spw_start_pts: spw_end_pts]
+        
+        max_spw = np.max(data_trace,1)
+        max_arg = np.argmax(data_trace,1)
+        max_idx= np.argmax(max_spw)
+        max_spw = max_spw[max_idx]
+        max_arg = [max_idx, max_arg[max_idx]]
+        #import pdb; pdb.set_trace()
+        
+        if max_spw >= min_ampl:
+            # save this spw and assign new spw_no to it
+            spw_used['spw_no'] = np.ones(len(spw_used['spw_no'])) * new_spw_no
+            new_spws.append(spw_used)
+            
+            new_spw_no = new_spw_no + 1
+            
+        if plot_it and max_spw >= min_ampl:
+            plt.figure()
+            add_it = 150
+            t = dat.get_timeline(data_trace[0, :], fs, 'ms')
+            for electr in range(len(data_trace)):
+                plt.plot(t, data_trace[electr, :] + electr * add_it)
+                
+                if electr == max_arg[0]:
+                    #import pdb; pdb.set_trace()
+                    plt.plot(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, 'ro', ms = 8)
+                    plt.text(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, str(max_spw))
+                
+            plt.show()
+    new_spws = np.concatenate(new_spws)
+    np.savez(save_folder + save_file, spw_ipsps = new_spws)    
+    
+        
+    
 
 def corect_ipsps(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext):
     """ checks all the chosen preliminary ipsps and chooses the ones to use """
@@ -1784,12 +1848,7 @@ def corect_ipsps(load_datafile, load_spwsipsp, load_spwsspike, save_folder, save
     spw_spike      = npzfile['spike_idx']  # detected spikes
     npzfile.close()     
     
-    #distanse_from_point = 5 # ms
-    #shift_ipsp = 3 # ms
-    #min_electr_first = 3 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    #min_electr_all = 2
-    #expected_min_ipsp_ampl = 30 # microV
-    plot_it = False
+    plot_it = True
     
     shift_spike= 1 #ms - if there is spike close by, beginning of IPSP will be shifted to it
     min_length_ipsp = 2 # ipsp cannot be shorter than this
