@@ -352,6 +352,7 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
         if np.size(freq) == 1:
             data_filt = filt.highPass(freq, fs, data, N)
         elif freq[0] == -1:
+            print 'lowpassing'
             data_filt = filt.lowPass(freq[1], fs, data, N)
         else:
             data_filt = filt.bandPass(freq, fs, data, N) 
@@ -2259,8 +2260,6 @@ def separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise,
         all_group_times = all_group_times[time_order]
         all_groups = all_groups[time_order]
         
-         
-        
         # go through every possible group
         for idx, group in enumerate(all_groups):
             #import pdb; pdb.set_trace() 
@@ -2269,6 +2268,7 @@ def separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise,
             if idx < len(all_groups)-1:
                 # check which electrode are used by next IPSP
                 next_electrodes = spw_used[spw_used['group'] == all_groups[idx + 1]]['electrode']
+                
                 range_next = np.arange(min(next_electrodes), max(next_electrodes)+1)
                 current_electrodes = spw_used[spw_used['group'] == group]['electrode']
                 range_current = np.arange(min(current_electrodes), max(current_electrodes)+1)
@@ -2279,8 +2279,6 @@ def separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise,
                 group_used = (spw_used['group'] == group) #& np.in1d(spw_used['electrode'], used_electr)
                 rise_used_group = rise_used[group_used]
                 ampl_used_group = ampl_used[group_used]
-
-
                     
                 if len(rise_used_group) == 0 or (max(rise_used_group) < expected_min_ipsp_rise) and max(ampl_used_group) < min_ipsp_ampl: 
                     #import pdb; pdb.set_trace()
@@ -2292,14 +2290,14 @@ def separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise,
                     update_spw_no = init_spw_no
             else:
                 update_spw_no = init_spw_no
-                update_new_start = spw_used[spw_used['group'] == group]['spw_start']
+                update_new_start = init_spw_start #spw_used[spw_used['group'] == group]['spw_start']
             #else:
             #    # if it is last one just update the spw no, spw_start etc
             #    pass
             #import pdb; pdb.set_trace() 
             new_ipsp = spw_used[spw_used['group'] == group]
             new_ipsp['spw_no'] = (np.ones(len(new_ipsp)) * init_spw_no).astype('i4') 
-            new_ipsp['spw_start'] = (np.ones(len(new_ipsp)) * init_spw_start).astype('i4') 
+            new_ipsp['spw_start'] = (np.ones(len(new_ipsp)) * init_spw_start).astype('f8') 
             all_new_ipsps.append(new_ipsp)
             #spw_used['spw_no'][spw_used['group'] == min_group] = (np.ones(len(spw_used[spw_used['group'] == min_group])) * init_spw_no).astype('i4')            
             
@@ -2311,37 +2309,13 @@ def separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise,
             # update new values of start and ipsp
             init_spw_no = update_spw_no
             init_spw_start = update_new_start
-        
-    
-#        # assign new numbers to ipsps
-#        min_group = spw_used[spw_used['ipsp_start'] == min(spw_used['ipsp_start'])]['group'][0]
-#        rise_used = ipsp_rise[ipsps_trace['spw_no'] == spw_no]
-#        rise_used_group = rise_used[spw_used['group'] == min_group]
-#        # check if there is more than one IPSP group in this SPW
-#        if (len(np.unique(spw_used['group'])) > 1) and max(rise_used_group) < expected_min_ipsp_rise:
-#            # check if at least one rise in the first group is > expected_min_ipsp_rise
-#            # rise is too low, need of separation
-#            # set new spw_no
-#            spw_used['spw_no'][spw_used['group'] == min_group] = (np.ones(len(spw_used[spw_used['group'] == min_group])) * init_spw_no).astype('i4')            
-#            
-#            spw_used['spw_no'][spw_used['group'] != min_group]= (np.ones(len(spw_used[spw_used['group'] != min_group])) * init_spw_no + 1).astype('i4')
-#            
-#            new_spw_start = min(spw_used[spw_used['spw_no'] == init_spw_no + 1]['ipsp_start'])
-#            spw_used['spw_start'][spw_used['spw_no'] ==  init_spw_no + 1] = np.ones(len(spw_used[spw_used['spw_no'] ==  init_spw_no + 1])) * new_spw_start
-#
-#        else:
-#            # everything alright; rise is fine; only update the spw_no
-#            spw_used['spw_no'] = (np.ones(len(spw_used)) * init_spw_no).astype('i4')
-#            
-#        add_init = len(np.unique(spw_used['spw_no']))
-#        #if add_init > 1:
-#        #    import pdb; pdb.set_trace()
-#        init_spw_no = init_spw_no + add_init
-#        new_ipsps.append(spw_used)
-#    new_ipsps = np.concatenate(new_ipsps)  
+            
+
     all_new_ipsps = np.concatenate(all_new_ipsps)  
+    #if len(np.unique(all_new_ipsps['spw_no'])) != len(np.unique(all_new_ipsps['spw_start'])):
+    #    import pdb; pdb.set_trace()
     #import pdb; pdb.set_trace()
-    return all_new_ipsps, init_spw_no
+    return all_new_ipsps, init_spw_no + 1
 
 
 def separate_if_increase_too_low_only_first(ipsps_trace, ipsp_rise, expected_min_ipsp_rise, init_spw_no):
@@ -2453,7 +2427,9 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
     #import pdb; pdb.set_trace() 
     base_window = 5
     min_ipsp_ampl = 5 # micro V hight of each first IPSP
+    #base_window2 = 100
     base_window = ms2pts(base_window, fs)
+    #base_window2 = ms2pts(base_window2, fs)
     all_ipsps = []
     #all_spikes = []
     init_spw_no = 0
@@ -2470,6 +2446,7 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
             filename_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace)
             data_trace_filt[electr,:], fs = load_create(folder_name, filename_slow, [-1, freq_slow], fs, data_trace[electr,:])
             data_trace_base[electr,:], temp = filt.remove_baseloc(data_trace_filt[electr,:], base_window)  
+            #data_trace_filt[electr,:], temp = filt.remove_baseloc(data_trace_filt[electr,:], base_window2)  
         #import pdb; pdb.set_trace()
         
         # check which IPSPs are of too low amplitude (on filtered data so that amplitude is not checked on spikes
@@ -2512,6 +2489,9 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
             #ipsps_trace, init_spw_no = separate_if_increase_too_low_only_first(ipsps_trace, ipsp_rise, expected_min_ipsp_rise, init_spw_no)
             #ipsp_rise = calculate_ipsp_rise(spw_ipsps_trace, data[:, trace, :], fs)
             
+            if len(np.unique(ipsps_trace[['spw_no']])) != len(np.unique(ipsps_trace[['spw_start','trace']])):
+                import pdb; pdb.set_trace()
+            
         all_ipsps.append(ipsps_trace)
     all_ipsps = np.concatenate(all_ipsps)
     #all_spikes = np.concatenate(all_spikes)
@@ -2524,7 +2504,7 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
         after = ms2pts(win[1], fs).astype('i4')
         
         #     go through all the spws
-        for spw_no in range(8,20): #np.unique(all_ipsps['spw_no']):
+        for spw_no in range(10,20): #np.unique(all_ipsps['spw_no']):
             print spw_no
             #import pdb; pdb.set_trace()
             fig = plt.figure()   
@@ -2555,6 +2535,8 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
                 plot_add = add_it * electr
                 
                 ipsps_used = spw_used[spw_used['electrode'] == electr]
+                
+                
                 ipsps_used_pts = ms2pts(ipsps_used['ipsp_start'], fs).astype('i4')
                 
 #                sp_used = spikes_used[spikes_used['electrode'] == electr]
