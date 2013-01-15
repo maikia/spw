@@ -296,7 +296,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if run_all_functions:
             analyser.plot_amplitude_vs_synchrony(save_folder, plot_folder = solutions_folder + final_results + '/', 
                                                  plot_file = plot_ampl_synch, data_file = raw_baselined,
-                                                 spw_groups = group_per_isps_all,spw_details = used_spw_data, ext = ext) 
+                                                 spw_groups = group_per_isps_all,spw_details = SPWs_ipsps_final, ext = ext) 
         
 
     
