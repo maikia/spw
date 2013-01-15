@@ -83,33 +83,33 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 #        # uses previously selected largest spikes
 #        updater.up_spikes_in_spw(save_folder, save_file =spikes_inWaves, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps, reanalize = reanalize, win = win)
     ipsps_corrected = 'ipsps_corrected.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # correct the IPSPs (no matter if used for SPW start or for later
         updater.up_correct_ipsps(save_folder, save_fig = 'spw_ipsp', save_file = ipsps_corrected, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     
     spws_large_enough = 'spw_large_enough.npz'
     min_amplitude_of_spw = 40 #microV SPW in any point, in any electrode has to be at least this amplitude
-    if not run_all_functions:
+    if run_all_functions:
         updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
     
     SPWs_ipsps_beg  = 'SPWs_ipsps_beg.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # finding properly each of the IPSP
         # it combines information on Waves/Ipsps and spikes to find the beginning of the SPW 
         updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
         #updater.up_divide_to_groups(load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_beg, save_folder = save_folder, save_file = SPWs_ipsps_beg, reanalize = reanalize)
     
     ipsps_groups = 'ipsps_grouped.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # put IPSPs to groups
         updater.up_group_ipsps(save_folder, ipsps_groups, SPWs_ipsps_beg, raw_baselined, save_file = ipsps_groups, reanalize = reanalize)    
 
     SPWs_ipsps_corrected = 'SPWs_ipsps_corrected.npz'
-    if not run_all_functions:
+    if run_all_functions:
         updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, ipsps_groups, data_file = raw_baselined, reanalize = reanalize)    
     
     SPWs_all_IPSPs = 'SPWs_all_ipsps.npz'
-    if not run_all_functions:
+    if run_all_functions:
         updater.up_spws_ipsp_beg(save_folder, filter_folder, save_fig = 'spw_ipsp', save_file = SPWs_all_IPSPs, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     
 #    SPWs_ipsps_first_max = 'SPWs_ipsps_first_max.npz'
@@ -131,49 +131,46 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 
 
 
-    # ----> check if the group does not exist on other electrodes
-    SPWs_missing_link = 'SPWs_missing_link.npz'
-    if not run_all_functions:
-        updater.up_add_missing_electrodes_SPW(save_folder, SPWs_missing_link, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
-#
-#    SPWs_ipsps_corrected2 = 'SPWs_ipsps_corrected.npz'
+#    # ----> check if the group does not exist on other electrodes
+#    SPWs_missing_link = 'SPWs_missing_link.npz'
 #    if not run_all_functions:
-#        updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, SPWs_missing_link, data_file = raw_baselined, reanalize = reanalize)
-        
-    #if run_all_functions:
-    #    updater.separate
-    spws_large_enough2 = 'spw_large_enough2.npz'
-    min_amplitude_of_spw = 40 #microV SPW in any point, in any electrode has to be at least this amplitude
-    if not run_all_functions:
-        updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough2, load_datafile = raw_baselined, load_spwsipsp = SPWs_missing_link, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
+#        updater.up_add_missing_electrodes_SPW(save_folder, SPWs_missing_link, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
+##
+##    SPWs_ipsps_corrected2 = 'SPWs_ipsps_corrected.npz'
+##    if not run_all_functions:
+##        updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, SPWs_missing_link, data_file = raw_baselined, reanalize = reanalize)
+#        
+#    #if run_all_functions:
+#    #    updater.separate
+#    spws_large_enough2 = 'spw_large_enough2.npz'
+#    min_amplitude_of_spw = 40 #microV SPW in any point, in any electrode has to be at least this amplitude
+#    if not run_all_functions:
+#        updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough2, load_datafile = raw_baselined, load_spwsipsp = SPWs_missing_link, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
 
     SPWs_ipsps_final = 'SPWs_ipsps_final.npz'
     min_no_ipsps = 2
-    if not run_all_functions:
-        updater.up_remove_with_to_few_ipsps(save_folder, SPWs_ipsps_final, spws_large_enough2, to_remove = min_no_ipsps, reanalize = reanalize)
-      
+    if run_all_functions:
+        updater.up_remove_with_to_few_ipsps(save_folder, SPWs_ipsps_final, SPWs_all_IPSPs, to_remove = min_no_ipsps, reanalize = reanalize)
 
-    
     #print intr_electrode
     if intr_electrode == 1:
-        
         data_intra = 'data_intra.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.up_intrafile(filename, save_folder, save_file = data_intra, int_electrodes = [0], reanalize = reanalize)
         
         data_intra_base = 'data_baseintra.npz'
-        if not run_all_functions:
+        if run_all_functions:
             # removes the baseline
             updater.up_databas(save_folder, save_file = data_intra_base, load_file = data_intra, reanalize = reanalize)
             
         plot_folder = 'full_data/'
         save_plots = 'data_intra'
-        if not run_all_functions:
+        if run_all_functions:
             # plots part of the data given (in part)
             analyser.display_data(save_folder, plot_folder, save_plots, data_intra_base, trace = 0, part = [0, 100000], ext = ext)
         
         intra_spikes = 'intra_spikes.npz'
-        if not run_all_functions:
+        if run_all_functions:
             # detects intracellular spikes
             updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
         
@@ -186,19 +183,20 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                                            load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
 #    
         dist_spw_inspikes = 'spw_dist2first.npz'
-        if not run_all_functions:
+        if run_all_functions:
             # finds the closest distance spw to the proceeding intracellular spike
             updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_corrected, spikes = 'first', reanalize = reanalize)
         
         induc_spont_spw = 'induc_spont_spw.npz'
         max_dist = [-0.5, 7] # ms
-        if not run_all_functions:
+        
+        if run_all_functions:
             # checks which SPWs are induced and which are spontaneous (if it's further than max_dist[1] it is spontaneous)
             # if any error is being allowed it should be given in max_idst[0], e.g. -0.5 (half milisecond before intra spike
             updater.up_induc_spont_spw(save_folder, save_file = induc_spont_spw, load_distances = dist_spw_inspikes, load_spwfile = SPWs_ipsps_final, max_init_dist = max_dist, reanalize = reanalize, ext = ext)
 #    
         induc_spont_equal = 'induc_spont_equal.npz'
-        if not run_all_functions:
+        if run_all_functions:
             # counts spontaneous and initiated SPWs and it randomly choses set of SPWs from the bigger set so that there is equal number in both sets
             updater.equalize_number_spws(save_folder, save_file = induc_spont_equal, induc_spont = induc_spont_spw, load_distances = dist_spw_inspikes, reanalize = reanalize)
 
@@ -268,6 +266,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if not run_all_functions:
             analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_baselined, 
                                               spw_data = used_spw_data, ext = ext)#
+
                                               #spw_data = spw_more_ipsps, ext = ext)
         
         final_results = 'final_results'
@@ -286,14 +285,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                                       spw_groups = group_per_isps_all, spw_details = used_spw_data,
                                       spike_data = spikes_raw , ext = ext, win = win)
                                     # spikes_largest
-        
-        if not run_all_functions:
-            """ plots the two groups: induced and spontaneous SPWs as two groups and compare their variability
-            along their time"""
-            analyser.plot_variabiliby_induc_spont()    
+         
         
         plot_ampl_synch = 'ampl_synchrony'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_amplitude_vs_synchrony(save_folder, plot_folder = solutions_folder + final_results + '/', 
                                                  plot_file = plot_ampl_synch, data_file = raw_baselined,
                                                  spw_groups = group_per_isps_all,spw_details = SPWs_ipsps_final, ext = ext) 
@@ -322,7 +317,7 @@ def analyse_all(filename, save_folder, intra = 1):
         #analyser.group_mean(save_folder, ext, read_clust = 'clust_electrSPW.npz', read_idx = 'corr_electr_spws.npz')
         #analyser.plot_data_spikes_spws(save_folder, ext)
     #analyser.plot_extra_params(save_folder, ext)
-    
+
     if intra == 1:
 
         analyser.spw_spike_plotter(save_folder, save_name = 'main_spw', save_ext = ext)
@@ -332,7 +327,7 @@ def analyse_all(filename, save_folder, intra = 1):
 if __name__=='__main__':
     all = ((1, 1, 0), (1, 1, 1), (1, 2, 1), (3, 1, 0), (3, 1, 1), (4, 1, 1),
            (5, 1, 0), (5, 2, 0), (5, 3, 0), (5, 4, 0), (5, 5, 0), (5, 1, 1),
-           (6, 1, 0), (6, 1, 1), (7, 1, 0), (8, 1, 1), (9, 1, 1), (10, 1, 1), 
+           (6, 1, 0), (6, 1, 1), (7, 1, 1), (8, 1, 1), (9, 1, 1), (10, 1, 1), 
            (11, 1, 1))
     
     electr_placement = {'1': (5, 6), '3': (2, 3), '4': (2, 3),
@@ -349,7 +344,7 @@ if __name__=='__main__':
     
     if update == 1:
         #for nex in [15]:
-        for nex in range(18, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in [1, 2, 4, 5, 11, 15, 16, 17, 18, 13, 14]: #range(18, len(all)): #range(len(all) - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):

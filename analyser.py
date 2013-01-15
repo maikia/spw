@@ -654,7 +654,7 @@ def plot_amplitude_vs_synchrony(save_folder, plot_folder,plot_file, data_file, s
             if spw_group_typ != 0:
                 spw_nos_used = spw_group_typ[spw_group_typ['group'] == group_no]['spw_no']
             else:
-                spw_nos_used = spws['spw_no']
+                spw_nos_used = np.unique(spws['spw_no'])
             hist_electr_all = []
             all_spws = np.zeros([len(spw_nos_used), np.size(data,0), size_win_pts])
             
