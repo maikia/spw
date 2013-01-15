@@ -339,7 +339,7 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
     # checks if the given folder/file exists and if not calculates the data
     if not os.path.exists(folder_save):
         os.makedirs(folder_save)
-    
+
     try:
         # check if high pass data file already exists for this electrode
         npzfile = np.load(folder_save + filename_save + '.npz')
@@ -351,7 +351,7 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
     except IOError as e:
         # not? create it!
         pass
-    
+
     if np.size(freq) == 1:
         data_filt = filt.highPass(freq, fs, data, N)
     elif freq[0] == -1:
@@ -2404,7 +2404,7 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
     spw_spike      = npzfile['spike_idx']  
     npzfile.close()     
     
-    plot_it = True
+    plot_it = False
     distanse_from_point = 5 # ms
     #import pdb; pdb.set_trace()
     shift_ipsp = 1.2
@@ -2452,8 +2452,9 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
             filename_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace)
             data_trace_filt[electr,:], temp = load_create(folder_name, filename_slow, [-1, freq_slow], fs, data_trace[electr,:])
             data_trace_filt[electr,:], temp = filt.remove_baseloc(data_trace_filt[electr,:], base_window)  
-            #data_trace_filt[electr,:], temp = filt.remove_baseloc(data_trace_filt[electr,:], base_window2)  
-            data_trace_down_filt[electr,:], temp = load_create(folder_name, filename_slow, [-1, freq_slow], new_fs, data_downsampled_trace[electr,:])
+            #datimport pdb; pdb.set_trace() a_trace_filt[electr,:], temp = filt.remove_baseloc(data_trace_filt[electr,:], base_window2)  
+            filename_down_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace) + "_down"        
+            data_trace_down_filt[electr,:], temp = load_create(folder_name, filename_down_slow, [-1, freq_slow], new_fs, data_downsampled_trace[electr,:], N = 1024)
 
 
         
@@ -2480,25 +2481,17 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
             # remove the group which has not enough IPSPs
             # (save the group which is the first from the correction even if it has too few IPSPs)
             to_save = remove_alone_ipsps(ipsps_trace, min_electr, shift_ipsp)
-
             ipsps_trace = ipsps_trace[to_save]
             
         if len(ipsps_trace) > 0:
             # separate all the groups of ipsps which are further apart than max_length_ipsp_pts 
-            ipsps_trace, temp = separate_groups(ipsps_trace, max_length_ipsp, init_spw_no)
+            ipsps_trace, init_spw_no = separate_groups(ipsps_trace, max_length_ipsp, init_spw_no)
             # calculate the rise between the beginning of IPSP and next IPSP
             
             #import pdb; pdb.set_trace()
-            ipsp_rise = calculate_ipsp_rise(ipsps_trace, data_trace_filt, fs)
+            ipsp_rise = calculate_ipsp_rise(ipsps_trace, data_trace_down_filt, new_fs)
             ipsp_amplitude = calculate_ipsp_amplitude(ipsps_trace, data_trace_down_filt, new_fs)
-            
             ipsps_trace, init_spw_no = separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise, ipsp_amplitude, min_ipsp_ampl, init_spw_no)
-            #spw_ipsps_trace_rised = spw_ipsps_trace[(np.abs(ipsp_rise) > expected_min_ipsp_ampl)]  
-            #ipsps_trace, init_spw_no = separate_if_increase_too_low_only_first(ipsps_trace, ipsp_rise, expected_min_ipsp_rise, init_spw_no)
-            #ipsp_rise = calculate_ipsp_rise(spw_ipsps_trace, data[:, trace, :], fs)
-            
-            if len(np.unique(ipsps_trace[['spw_no']])) != len(np.unique(ipsps_trace[['spw_start','trace']])):
-                import pdb; pdb.set_trace()
             
         all_ipsps.append(ipsps_trace)
     all_ipsps = np.concatenate(all_ipsps)
@@ -2516,7 +2509,7 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
 
 
         #     go through all the spws
-        for spw_no in range(1, 20): #np.unique(all_ipsps['spw_no']):
+        for spw_no in range(10, 20): #np.unique(all_ipsps['spw_no']):
             print spw_no
             #import pdb; pdb.set_trace()
             fig = plt.figure()   
@@ -2561,8 +2554,10 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
                
                 data_used = data[electr,trace, plot_start: plot_end]
                 #import pdb; pdb.set_trace()
-                filename_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_1" + str(trace)
-                data_filt, temp = load_create(folder_name, filename_slow, [-1, freq_slow], new_fs, data_downsampled[electr,trace, :], N = 1024)
+                filename_down_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace) + "_down"  
+                data_filt, temp = load_create(folder_name, filename_down_slow, [-1, freq_slow], new_fs, data_downsampled[electr,trace, :], N = 1024)
+                
+
                 #data_filt, temp = filt.remove_baseloc(data_filt, base_window)  
 
                 #filename_fast = save_filter +str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
