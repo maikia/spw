@@ -148,7 +148,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough2, load_datafile = raw_baselined, load_spwsipsp = SPWs_missing_link, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
 
     SPWs_ipsps_final = 'SPWs_ipsps_final.npz'
-    min_no_ipsps = 1
+    min_no_ipsps = 2
     if not run_all_functions:
         updater.up_remove_with_to_few_ipsps(save_folder, SPWs_ipsps_final, spws_large_enough2, to_remove = min_no_ipsps, reanalize = reanalize)
       
@@ -186,19 +186,19 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                                            load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
 #    
         dist_spw_inspikes = 'spw_dist2first.npz'
-        if run_all_functions:
+        if not run_all_functions:
             # finds the closest distance spw to the proceeding intracellular spike
             updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_corrected, spikes = 'first', reanalize = reanalize)
         
         induc_spont_spw = 'induc_spont_spw.npz'
         max_dist = [-0.5, 7] # ms
-        if run_all_functions:
+        if not run_all_functions:
             # checks which SPWs are induced and which are spontaneous (if it's further than max_dist[1] it is spontaneous)
             # if any error is being allowed it should be given in max_idst[0], e.g. -0.5 (half milisecond before intra spike
-            updater.up_induc_spont_spw(save_folder, save_file = induc_spont_spw, load_distances = dist_spw_inspikes, load_spwfile = SPWs_ipsps_corrected, max_init_dist = max_dist, reanalize = reanalize, ext = ext)
+            updater.up_induc_spont_spw(save_folder, save_file = induc_spont_spw, load_distances = dist_spw_inspikes, load_spwfile = SPWs_ipsps_final, max_init_dist = max_dist, reanalize = reanalize, ext = ext)
 #    
         induc_spont_equal = 'induc_spont_equal.npz'
-        if run_all_functions:
+        if not run_all_functions:
             # counts spontaneous and initiated SPWs and it randomly choses set of SPWs from the bigger set so that there is equal number in both sets
             updater.equalize_number_spws(save_folder, save_file = induc_spont_equal, induc_spont = induc_spont_spw, load_distances = dist_spw_inspikes, reanalize = reanalize)
 
@@ -206,7 +206,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         solutions_folder = 'plots/'
         
         numIpsp2distance = 'numIPSP_distance'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_noIpsps2distance(save_folder, solutions_folder+numIpsp2distance + '/', save_plots = numIpsp2distance, spw_file = SPWs_ipsps_corrected, dist_file = dist_spw_inspikes, ext = ext)
         
         dist_spw2psike = 'dist_spw2spike'
@@ -233,7 +233,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         spikePerElectrode = 'spike_per_electrode'
         hist_spike_bins = 'all_dists_hist.npz'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_spike(save_folder, solutions_folder + spikePerElectrode + '/', save_plots = spikePerElectrode, 
                             save_file = hist_spike_bins, spike_data = spikes_largest, spw_data = induc_spont_equal, 
                             ext = ext, win = win)
@@ -271,12 +271,12 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                                               #spw_data = spw_more_ipsps, ext = ext)
         
         final_results = 'final_results'
-        dendogram = 'dendogram'
-        if not run_all_functions:
-            analyser.plot_dendograms(save_folder, plot_folder = solutions_folder + final_results + '/', 
-                                      plot_file = dendogram, data_file = raw_baselined, 
-                                      spw_groups = group_per_isps_all, spw_details = used_spw_data,
-                                      spike_data = spikes_raw , ext = ext, win = win)
+#        dendogram = 'dendogram'
+#        if not run_all_functions:
+#            analyser.plot_dendograms(save_folder, plot_folder = solutions_folder + final_results + '/', 
+#                                      plot_file = dendogram, data_file = raw_baselined, 
+#                                      spw_groups = group_per_isps_all, spw_details = used_spw_data,
+#                                      spike_data = spikes_raw , ext = ext, win = win)
         
         
         groups_w_firing_rate = 'groups_w_firing_rate'
@@ -287,6 +287,16 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                                       spike_data = spikes_raw , ext = ext, win = win)
                                     # spikes_largest
         
+        if not run_all_functions:
+            """ plots the two groups: induced and spontaneous SPWs as two groups and compare their variability
+            along their time"""
+            analyser.plot_variabiliby_induc_spont()    
+        
+        plot_ampl_synch = 'ampl_synchrony'
+        if run_all_functions:
+            analyser.plot_amplitude_vs_synchrony(save_folder, plot_folder = solutions_folder + final_results + '/', 
+                                                 plot_file = plot_ampl_synch, data_file = raw_baselined,
+                                                 spw_groups = group_per_isps_all,spw_details = used_spw_data, ext = ext) 
         
 
     

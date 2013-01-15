@@ -461,14 +461,20 @@ def PCA(data,ncomps=2, start_comp=0):
     score = score/np.sqrt(evals[:ncomps, np.newaxis])
     return evals,evecs,score
 
-def calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, ncomps, window):
+def calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, ncomps, window, window_base):
     # give new beginning of SPWs and data
  
-    
+    remove_baseline = True
     pc = []
+    s_p_temp1 = ispw.ms2pts(window_base[0], fs).astype('i4') + new_starts_pts 
+    s_p_temp2 = ispw.ms2pts(window_base[1], fs).astype('i4') + new_starts_pts
+    window_pts = [s_p_temp1, s_p_temp2]
+    
     for electr in electr_to_use:
         #import pdb; pdb.set_trace() 
-        data_used = get_spws(data, traces, electr, window, fs, new_starts_pts)
+        data_used = get_spws(data, traces, electr, window, fs, new_starts_pts, remove_baseline, window_pts)
+        #import pdb; pdb.set_trace() 
+
         a1, b1, principal_components = PCA(data_used,ncomps=ncomps)
         
         #plt.figure()
@@ -478,21 +484,41 @@ def calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, ncomps, windo
         pc.append(principal_components)
     return np.vstack(pc).T
 
-def get_spws(data, traces, electr, window, fs, start_pts):
+def get_spws(data, traces, electr, window, fs, start_pts, remove_baseline = False, window_pts = [0, 0]):
     data_used = []
     win_pts = [ispw.ms2pts(window[0], fs), ispw.ms2pts(window[1], fs)]
     for spw in range(len(traces)):
         t = start_pts[spw]
-        data_used.append(data[electr, traces[spw], t + win_pts[0]:t + win_pts[1]])
-    return np.transpose(np.array(data_used))
+        
+        data_temp = data[electr, traces[spw], t + win_pts[0]:t + win_pts[1]]
 
-def compare_spws(data, traces, electrodes, window, fs, start_pts, labels): 
+        data_used.append(data_temp)
+    data_used = np.transpose(np.array(data_used))   
+    
+    if remove_baseline:
+        baselines = np.zeros(len(start_pts))
+        for idx, trace in enumerate(traces):
+            #import pdb; pdb.set_trace() 
+            baseline = data[electr, trace, window_pts[0][idx] : window_pts[1][idx]]
+            baseline = np.mean(baseline)
+            baselines[idx] = baseline
+        
+        #import pdb; pdb.set_trace() 
+        data_used = data_used - baselines
+    return data_used
+
+def compare_spws(data, traces, electrodes, window, fs, start_pts, labels, window_base = [0,0]): 
     plt.figure()    
     n_electr = len(electrodes)
     colors = ['r','b','g']
+    s_p_temp1 = ispw.ms2pts(window_base[0], fs).astype('i4') + start_pts 
+    s_p_temp2 = ispw.ms2pts(window_base[1], fs).astype('i4') + start_pts
+    window_pts = [s_p_temp1, s_p_temp2]
+    
+    remove_baseline = True
     for i,el in enumerate(electrodes):
         plt.subplot(n_electr,1,i+1)
-        spw_traces = get_spws(data, traces, el, window, fs, start_pts)
+        spw_traces = get_spws(data, traces, el, window, fs, start_pts, remove_baseline, window_pts)
         for l in np.unique(labels):
             plt.plot(spw_traces[:, labels==l], colors[l],  alpha=0.2)
 
@@ -570,6 +596,146 @@ def plot_dendograms(save_folder, plot_folder, plot_file, data_file, spw_groups, 
     fig.savefig('dendrogram.png')
    
 
+def plot_amplitude_vs_synchrony(save_folder, plot_folder,plot_file, data_file, spw_groups,spw_details, ext):
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close() 
+
+    npzfile = np.load(save_folder + spw_details)
+    try:
+        spws = [npzfile['spw_ipsps']]
+        types = ['all']
+        npzfile.close()     
+        
+        npzfile = np.load(save_folder + spw_groups)
+        groups = [npzfile['group']]
+        names = npzfile['names']       
+         
+    except:
+        spont = npzfile['spontaneous']
+        init = npzfile['initiated']
+        types = ['spontaneous', 'initiated']
+        spws = [spont, init]     
+        npzfile.close()
+
+        npzfile = np.load(save_folder + spw_groups)
+        group1 = npzfile['group1']
+        group2 = npzfile['group2']
+        groups = [group1, group2]
+        names = npzfile['names']
+    npzfile.close()       
+    # go through every type possible
+    remove_baseline = True
+    win_base = [-10, -5]
+    win_base_pts = [ispw.ms2pts(win_base[0], fs),ispw.ms2pts(win_base[1], fs)]
+    save_fold = save_folder + plot_folder
+    fold_mng.create_folder(save_fold)
+    save_base = save_fold + plot_file
+    
+    window_to_plot = [0, 5] #win
+    win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
+    size_win_pts = win_pts[1] - win_pts[0] + 1
+        
+    #import pdb; pdb.set_trace() 
+    for typ in range(len(names)):
+        spw_group_typ = groups[typ]
+        group_nos = np.unique(spw_group_typ['group'])
+        spw_type = spws[typ]
+        
+        # go through every group detected
+        for group_no in group_nos:    
+            fig = plt.figure()
+            
+            spw_nos_used = spw_group_typ[spw_group_typ['group'] == group_no]['spw_no']
+            hist_electr_all = []
+            all_spws = np.zeros([len(spw_nos_used), np.size(data,0), size_win_pts])
+            
+            no_bins = 150
+            electro_bins = np.zeros([np.size(data,0), no_bins])
+            
+            # go through every spw used in this group
+            for idx, spw_no in enumerate(spw_nos_used):
+                spw_used = spw_type[spw_type['spw_no'] == spw_no]
+                spw_start = spw_used['spw_start'][0]
+                last_ipsp = np.max(spw_used['ipsp_start'])
+                trace = spw_used['trace'][0]
+                data_used = data[:,trace,:]
+
+                
+                start_trace = spw_start + window_to_plot[0]
+                end_trace = last_ipsp + window_to_plot[1]
+
+                 
+
+                start_trace_pts = ispw.ms2pts(start_trace, fs).astype('i4')
+                end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
+                add_it = 150
+
+                data_spw = data_used[:, start_trace_pts: end_trace_pts]
+                #import pdb; pdb.set_trace() 
+                if remove_baseline:
+                    base = data_used[:, start_trace_pts + win_base_pts[0]: start_trace_pts + win_base_pts[1]]
+                    base = np.mean(base, axis = 1)
+                    data_spw = np.transpose(data_spw) - base
+                    data_spw = np.transpose(data_spw)
+                    
+                import pdb; pdb.set_trace()
+                # calculate amplitude
+                ampls = max(np.max(data_spw, 1))
+                
+                # calculate synchrony
+                # (no_ipsps all together)/(no_of_electrodes * no_group_ipsp)
+                
+                
+                t = dat.get_timeline(data_spw[0,:], fs, 'ms')
+                # plot data trace 
+                #import pdb; pdb.set_trace() 
+                for electr in range(np.size(data, 0)):
+                    plt.plot(t, data_spw[electr,:] + add_it * electr, color = 'k', alpha = max(0.1, 1.0/len(spw_nos_used)))
+                
+
+                all_spws[idx, :, 0:np.size(data_spw,1)] = data_spw
+                
+            mean_spw = np.mean(all_spws, 0)
+            t = dat.get_timeline(mean_spw[0,:], fs, 'ms')
+            for electr in range(np.size(data, 0)):
+                #import pdb; pdb.set_trace() 
+                plt.plot(t, mean_spw[electr,:] + add_it * electr, color = 'r')
+                #plt.hold(True) 
+                #for mils in [10]: #, 20, 30, 40, 50, 60, 70]:
+                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)] + add_it * electr for mils in [10,20]]
+                plt.boxplot(vs)
+                    #plt.boxplot(all_spws[:,electr,ispw.ms2pts(mils, fs)], positions=[mils])
+                #import pdb; pdb.set_trace() 
+                
+            #import pdb; pdb.set_trace() 
+            #plt.plot(t, np.mean(data_spw[electr,:]) + add_it * electr, color = 'r')
+            
+            bar_lin = np.linspace(0, t[-1], no_bins + 1)
+            bar_width = bar_lin[1]-bar_lin[0]
+            # for this group plot the histogram of the spikes
+            for electr in range(np.size(data,0)):
+                plt.bar(bar_lin[:-1], (electro_bins[electr,:]/len(spw_nos_used))*50, bottom = add_it * electr, alpha = 0.8, width = bar_width)  
+                
+
+
+                
+                
+                 
+            spike_distribution = np.sum(electro_bins, 0)
+            #import pdb; pdb.set_trace() 
+            plt.bar(bar_lin[:-1], (spike_distribution/len(spw_nos_used))*50, bottom = add_it * (-1), width = bar_width) #, alpha = 0.7)  
+            plt.xlabel('time (ms)')
+            plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
+            #import pdb; pdb.set_trace()
+            fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)    
+            #import pdb; pdb.set_trace() 
+            plt.show() 
+    
+    
+
+
 def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details, spike_data, ext, win):
     """ makes the plot of every given group and finds the firing rate for it"""
     npzfile        = np.load(save_folder + data_file)
@@ -606,13 +772,16 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
         names = npzfile['names']
     npzfile.close()     
      
-    
+    remove_baseline = True
+    win_base = [-10, -5]
+    win_base_pts = [ispw.ms2pts(win_base[0], fs),ispw.ms2pts(win_base[1], fs)]
     save_fold = save_folder + plot_folder
     fold_mng.create_folder(save_fold)
     save_base = save_fold + plot_file
     
     window_to_plot = [-10, 70] #win
-    #win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
+    win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
+    size_win_pts = win_pts[1] - win_pts[0] + 1
     
     # go through every type possible
     for typ in range(len(names)):
@@ -622,14 +791,16 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
         
         # go through every group detected
         for group_no in group_nos:
+            
             fig = plt.figure()
             spw_nos_used = spw_group_typ[spw_group_typ['group'] == group_no]['spw_no']
             hist_electr_all = []
+            all_spws = np.zeros([len(spw_nos_used), np.size(data,0), size_win_pts])
             
             no_bins = 150
             electro_bins = np.zeros([np.size(data,0), no_bins])
             # go through every spw used in this group
-            for spw_no in spw_nos_used:
+            for idx, spw_no in enumerate(spw_nos_used):
                 spw_used = spw_type[spw_type['spw_no'] == spw_no]
                 spw_start = spw_used['spw_start'][0]
                 trace = spw_used['trace'][0]
@@ -658,20 +829,53 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
 
                 start_trace_pts = ispw.ms2pts(start_trace, fs).astype('i4')
                 end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
-                add_it = 150
+                add_it = 300
                 
+
                 data_spw = data_used[:, start_trace_pts: end_trace_pts]
+                #import pdb; pdb.set_trace() 
+                if remove_baseline:
+                    base = data_used[:, start_trace_pts + win_base_pts[0]: start_trace_pts + win_base_pts[1]]
+                    base = np.mean(base, axis = 1)
+                    data_spw = np.transpose(data_spw) - base
+                    data_spw = np.transpose(data_spw)
+                    
                 t = dat.get_timeline(data_spw[0,:], fs, 'ms')
                 # plot data trace 
                 #import pdb; pdb.set_trace() 
                 for electr in range(np.size(data, 0)):
                     plt.plot(t, data_spw[electr,:] + add_it * electr, color = 'k', alpha = max(0.1, 1.0/len(spw_nos_used)))
+                
+
+                all_spws[idx, :, 0:np.size(data_spw,1)] = data_spw
+                
+            mean_spw = np.mean(all_spws, 0)
+            t = dat.get_timeline(mean_spw[0,:], fs, 'ms')
+            for electr in range(np.size(data, 0)):
+                #import pdb; pdb.set_trace() 
+                plt.plot(t, mean_spw[electr,:] + add_it * electr, color = 'r')
+                #plt.hold(True) 
+                #for mils in [10]: #, 20, 30, 40, 50, 60, 70]:
+                box_pos = [10,20,30, 40, 50, 60, 70]
+                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)]+add_it*electr for mils in box_pos]
+                plt.boxplot(vs, positions=box_pos)
+                    #plt.boxplot(all_spws[:,electr,ispw.ms2pts(mils, fs)], positions=[mils])
+                #import pdb; pdb.set_trace() 
+                
+            #import pdb; pdb.set_trace() 
+            #plt.plot(t, np.mean(data_spw[electr,:]) + add_it * electr, color = 'r')
             
             bar_lin = np.linspace(0, t[-1], no_bins + 1)
             bar_width = bar_lin[1]-bar_lin[0]
             # for this group plot the histogram of the spikes
             for electr in range(np.size(data,0)):
-                plt.bar(bar_lin[:-1], (electro_bins[electr,:]/len(spw_nos_used))*50, bottom = add_it * electr, alpha = 0.8, width = bar_width)   
+                plt.bar(bar_lin[:-1], (electro_bins[electr,:]/len(spw_nos_used))*50, bottom = add_it * electr, alpha = 0.8, width = bar_width)  
+                
+
+
+                
+                
+                 
             spike_distribution = np.sum(electro_bins, 0)
             #import pdb; pdb.set_trace() 
             plt.bar(bar_lin[:-1], (spike_distribution/len(spw_nos_used))*50, bottom = add_it * (-1), width = bar_width) #, alpha = 0.7)  
@@ -679,6 +883,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
             #import pdb; pdb.set_trace()
             fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)    
+            plt.xlim([t[0], t[-1]])
             #import pdb; pdb.set_trace() 
             plt.show() 
             
@@ -708,7 +913,7 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
     fs = npzfile['fs']
     npzfile.close()      
     all_group_spws = []
-    
+    window_base = [-10, -5]
     for typ in range(len(spws)):
         # if there spws are divided into spontaneous and initiated, it will
         # analyze both groups separately, otherwise it will do everything as the whole
@@ -740,13 +945,13 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
             sub = 0
             already_clustered = subgroups > 0
             while not answer:
-                window = [2.5, 7.5]
+                window = [-0.5, 1]
                 print 'analysing subgroup: ' + str(sub)
                 print subgroups
                 group_name = str(0) + '.' +  str(sub) + ' ' + types[typ]
                 #import pdb; pdb.set_trace() 
-                ampls_used, new_starts_pts, traces, output = display_group_data(type, spw_used[subgroups == sub], data, fs, tit = group_name, window = window)
-                
+                ampls_used, new_starts_pts, traces, output = display_group_data(type, spw_used[subgroups == sub], data, fs, tit = group_name, window = window, window_base = window_base)
+                #import pdb; pdb.set_trace() 
                 #import pdb; pdb.set_trace()
                 if output ==True:
                     # group is alright
@@ -757,16 +962,16 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                     # group has to be further divided
                     
                     # variables set for pca calculations
-                    electr_to_use = [2, 4, 6]
+                    electr_to_use = [1 ,3,  4, 5]
                     n_comps = 3
-                    pcs = calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, n_comps, window = window)
+                    pcs = calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, n_comps, window = window, window_base = window_base)
                     
                     #characteristics = np.concatenate([pcs, ampls_used[:,[1, 4, 7]]], axis = 1)
                     _, actual_clusters = cluster.vq.kmeans2(pcs, 2,minit='points')
                     
                     names = ["E%d:P%d" % (e, p) for e in electr_to_use for p in range(n_comps) ]
                     compare_clusters(pcs.T, actual_clusters, names)
-                    compare_spws(data, traces, electr_to_use, window, fs, new_starts_pts, actual_clusters)
+                    compare_spws(data, traces, electr_to_use, window, fs, new_starts_pts, actual_clusters, window_base = window_base)
 
                     #import pdb; pdb.set_trace()
                     assert len(actual_clusters)==len(traces),  "Cluster analysis failed-wrong feature dimensions"
@@ -938,7 +1143,7 @@ def plot_spw_ipsps_no_groups(save_folder, save_file, data_file, spw_data, ext):
 
 
 
-def display_group_data(spws, spw_to_use, data, fs, tit, window):    
+def display_group_data(spws, spw_to_use, data, fs, tit, window, window_base = [-10, -5]):    
    
     
     version = 1 # version 1 - keep original amplitudes and original data for plotting
@@ -953,7 +1158,7 @@ def display_group_data(spws, spw_to_use, data, fs, tit, window):
     #window = [-5, 5]
     window_pts0 = ispw.ms2pts(window[0], fs)   
     window_pts1 = ispw.ms2pts(window[1], fs) 
-    add_it = 300
+    add_it = 150
     
     #win0 = ispw.ms2pts(window[0], fs)
     window_plot = [-5, 30]
@@ -984,8 +1189,8 @@ def display_group_data(spws, spw_to_use, data, fs, tit, window):
         trace = spw_used['trace'][0]
 
         if remove_baseline:
-            s_p_temp1 = ispw.ms2pts(spw_used['spw_start'][0]-10, fs).astype('i4') 
-            s_p_temp2 = ispw.ms2pts(spw_used['spw_start'][0] -5, fs).astype('i4')
+            s_p_temp1 = ispw.ms2pts(spw_used['spw_start'][0]+window_base[0], fs).astype('i4') 
+            s_p_temp2 = ispw.ms2pts(spw_used['spw_start'][0]+window_base[1], fs).astype('i4')
             baseline = data[:, trace, s_p_temp1 : s_p_temp2]
             baseline = np.mean(baseline, axis = 1)
             #import pdb; pdb.set_trace()
@@ -1033,9 +1238,11 @@ def display_group_data(spws, spw_to_use, data, fs, tit, window):
                 data_to_plot[electr,:] = data_to_plot[electr,:] - baseline
 
             if align_on_max:
-                ax.plot(t, data_to_plot[electr, :] - maxs[electr] + add_it * electr, color = colors[idx])
+                ax.plot(t, data_to_plot[electr, :] - maxs[electr] + add_it * electr, color = colors[idx], alpha = 0.2)
+
+                
             else:
-                ax.plot(t, data_to_plot[electr, :] + add_it * electr, color = colors[idx])
+                ax.plot(t, data_to_plot[electr, :] + add_it * electr, color = colors[idx], alpha = 0.2)
             #data_used
         #import pdb; pdb.set_trace()    
    
@@ -1078,6 +1285,7 @@ def plot_spw_amplitude(save_folder, plot_folder, save_plots, data_file, spw_data
     fs = npzfile['fs']
     npzfile.close()           
     
+    print 'plotting spw amplitude'
     types = ['spontaneous', 'initiated']
     all_ampls = []
     type = spontaneous[np.unique(spontaneous['group']) > 2]
