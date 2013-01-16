@@ -1,13 +1,19 @@
+#save_path = '/home/maja/phdProject/data/'
+#save_data = '/home/maja/phdProject/analysis/swp/'
+save_path = '/home/maja/PhDProject/SPWs/data/induced/'
+save_data = '/home/maja/PhDProject/SPWs/SPWs/saved_data/'
+
+
+def get_save_folder():
+    return save_data
+
 def find_folders(cell_no = 1, part = 1, oscil = 0):
     """ assigns appropriate folders and filenames for different data number given
     possible combinations:
     1. (1, 1, 0), (1, 1, 1), (1, 2, 1)
     """
     
-    #save_path = '/home/maja/phdProject/data/'
-    #save_data = '/home/maja/phdProject/analysis/swp/'
-    save_path = '/home/maja/PhDProject/SPWs/data/induced/'
-    save_data = '/home/maja/PhDProject/SPWs/SPWs/saved_data/'
+
     
     if cell_no == 1:
         f_dir = 'Cell 1/'
@@ -101,3 +107,5 @@ def find_folders(cell_no = 1, part = 1, oscil = 0):
     read_name = save_path + f_dir + f_name
     save_folder = save_data + save_folder
     return read_name, save_folder, intra  
+
+

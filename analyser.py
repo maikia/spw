@@ -13,6 +13,7 @@ from matplotlib.transforms import Bbox
 from matplotlib.path import Path
 import logging 
 import scipy.cluster as cluster
+import gc #garbage collector
 
 def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     """ plots the histogram of the distribution of spws from the spike"""
@@ -594,14 +595,61 @@ def plot_dendograms(save_folder, plot_folder, plot_file, data_file, spw_groups, 
     Z1 = sch.dendrogram(Y,leaf_label_func=llf,leaf_rotation=90)
     fig.show()
     fig.savefig('dendrogram.png')
-   
+ 
+ 
+def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells, 
+                                                 amplitudes, synchronise, 
+                                                 ext = '.pdf'):
+    all_cells = np.unique(cells)
+    cell_no = len(all_cells)
+    cols = define_colors(no_colors = cell_no)
+    cells = np.array(cells)
+    plot_it = True
+    amplitudes = np.array(amplitudes)
+    sunchronise = np.array(synchronise)
+    spw_nos_used = 0
+    linestyl = '.'
+    fig = plt.figure()
+    for idx, cell in enumerate(cells):
+        ampl_used = amplitudes[idx]
+        sync_used = synchronise[idx]
+        idx_cell, = np.where(all_cells == cell)
+        
+        #import pdb; pdb.set_trace() 
+        plt.plot(ampl_used, sync_used, linestyl, alpha = 0.4, color = cols[idx_cell[0]])
+        
+        
+        spw_nos_used = spw_nos_used + len(ampl_used)
+        
+    plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
+    plt.xlabel('amplitude [micro V]')
+    plt.title('Group: ' + ',no of SPWs: ' + str(spw_nos_used))
+#    import pdb; pdb.set_trace() 
+#    lines = []
+#    for idx in range(len(np.unique(cells))):
+#        lines.append(plt.Line2D(range(10), range(10), linestyle=linestyl, marker='o'))
+#    line = plt.Line2D(range(10), range(10), linestyle=linestyl, marker='o')
+#    label = 
+#    legend((line,), (label,))
+            
+    fig.savefig(plot_folder +plot_file + ext, dpi=600)   
+    if plot_it: 
+        plt.show() 
+    plt.clf()
+    gc.collect()    
+    
+    
+        
 
-def plot_amplitude_vs_synchrony(save_folder, plot_folder,plot_file, data_file, spw_groups,spw_details, ext):
+def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, data_file, spw_groups,spw_details, ext):
+    
     npzfile        = np.load(save_folder + data_file)
     data = npzfile['data']
     fs = npzfile['fs']
     npzfile.close() 
-
+    
+    plot_it = False
+    
     npzfile = np.load(save_folder + spw_details)
     try:
         
@@ -638,6 +686,9 @@ def plot_amplitude_vs_synchrony(save_folder, plot_folder,plot_file, data_file, s
     size_win_pts = win_pts[1] - win_pts[0] + 1
         
     #import pdb; pdb.set_trace() 
+    all_ampls = []
+    all_syncs = []
+    
     for typ in range(len(names)):
         spw_group_typ = groups[typ]
         #import pdb; pdb.set_trace() 
@@ -647,7 +698,8 @@ def plot_amplitude_vs_synchrony(save_folder, plot_folder,plot_file, data_file, s
         else:
             group_nos = [0]
             spw_type = spws
-        
+        temp_ampls = []
+        temp_syncs = []
         # go through every group detected
         for group_no in group_nos:    
             fig = plt.figure()
@@ -705,55 +757,24 @@ def plot_amplitude_vs_synchrony(save_folder, plot_folder,plot_file, data_file, s
                 
                 all_ampl.append(ampls)
                 all_sync.append(sync)
-  
+
             plt.plot(all_ampl, all_sync, '.', alpha = 0.4)
             plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
             plt.xlabel('amplitude [micro V]')
             plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
-            #import pdb; pdb.set_trace()
-#                t = dat.get_timeline(data_spw[0,:], fs, 'ms')
-#                # plot data trace 
-#                #import pdb; pdb.set_trace() 
-#                for electr in range(np.size(data, 0)):
-#                    plt.plot(t, data_spw[electr,:] + add_it * electr, color = 'k', alpha = max(0.1, 1.0/len(spw_nos_used)))
-#                
-#
-#                all_spws[idx, :, 0:np.size(data_spw,1)] = data_spw
-#                
-#            mean_spw = np.mean(all_spws, 0)
-#            t = dat.get_timeline(mean_spw[0,:], fs, 'ms')
-#            for electr in range(np.size(data, 0)):
-#                #import pdb; pdb.set_trace() 
-#                plt.plot(t, mean_spw[electr,:] + add_it * electr, color = 'r')
-#                #plt.hold(True) 
-#                #for mils in [10]: #, 20, 30, 40, 50, 60, 70]:
-#                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)] + add_it * electr for mils in [10,20]]
-#                plt.boxplot(vs)
-#                    #plt.boxplot(all_spws[:,electr,ispw.ms2pts(mils, fs)], positions=[mils])
-#                #import pdb; pdb.set_trace() 
-#                
-#            #import pdb; pdb.set_trace() 
-#            #plt.plot(t, np.mean(data_spw[electr,:]) + add_it * electr, color = 'r')
-#            
-#            bar_lin = np.linspace(0, t[-1], no_bins + 1)
-#            bar_width = bar_lin[1]-bar_lin[0]
-#            # for this group plot the histogram of the spikes
-#            for electr in range(np.size(data,0)):
-#                plt.bar(bar_lin[:-1], (electro_bins[electr,:]/len(spw_nos_used))*50, bottom = add_it * electr, alpha = 0.8, width = bar_width)  
-#                
-#
-#
-#                
-#                
-#                 
-#            spike_distribution = np.sum(electro_bins, 0)
-#            #import pdb; pdb.set_trace() 
-#            plt.bar(bar_lin[:-1], (spike_distribution/len(spw_nos_used))*50, bottom = add_it * (-1), width = bar_width) #, alpha = 0.7)  
-#            plt.xlabel('time (ms)')
-#            plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
-#            #import pdb; pdb.set_trace()
-    fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)    
-    plt.show() 
+            
+            temp_ampls.append(all_ampl)
+            temp_syncs.append(all_sync)
+        #import pdb; pdb.set_trace() 
+        all_syncs.append(np.concatenate(np.array(temp_syncs)))
+        all_ampls.append(np.concatenate(np.array(temp_ampls)))
+            
+    fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)   
+    if plot_it: 
+        plt.show() 
+    plt.clf()
+    np.savez(save_folder + save_file, group = group_nos, all_ampls = all_ampl, all_syncs = all_sync) 
+    gc.collect()    
     
     
 
@@ -878,9 +899,8 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
                 plt.plot(t, mean_spw[electr,:] + add_it * electr, color = 'r')
                 #plt.hold(True) 
                 #for mils in [10]: #, 20, 30, 40, 50, 60, 70]:
-                box_pos = [10,20,30, 40, 50, 60, 70]
-                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)]+add_it*electr for mils in box_pos]
-                plt.boxplot(vs, positions=box_pos)
+
+
                     #plt.boxplot(all_spws[:,electr,ispw.ms2pts(mils, fs)], positions=[mils])
                 #import pdb; pdb.set_trace() 
                 
@@ -892,8 +912,13 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             # for this group plot the histogram of the spikes
             for electr in range(np.size(data,0)):
                 plt.bar(bar_lin[:-1], (electro_bins[electr,:]/len(spw_nos_used))*50, bottom = add_it * electr, alpha = 0.8, width = bar_width)  
-                
-
+             
+            plt.figure()
+            for electr in range(np.size(data,0)):   
+                plt.figure()
+                box_pos = [10,20,30, 40, 50, 60, 70]
+                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)]+add_it*electr for mils in box_pos]
+                plt.boxplot(vs, positions=box_pos)
 
                 
                 
