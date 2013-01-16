@@ -1275,7 +1275,7 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
         chosen_ones = take_random_elements(np.unique(to_correct['spw_no']), no_elements)
         chosen_ones = np.sort(chosen_ones)
         selected_ones = []
-        
+        #import pdb; pdb.set_trace()
         for spw_no in chosen_ones:
             selected_ones.append(to_correct[to_correct['spw_no'] == spw_no])
             
@@ -2243,17 +2243,22 @@ def separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise,
     if it does it totally removes the previous IPSP"""
     all_new_ipsps = []
     
-
+    
     init_spw_no = init_spw_no - 1
+    init_spw_start = -1
     for spw_no in np.unique(ipsps_trace['spw_no']):
-        init_spw_no = init_spw_no + 1 # new spw no for next spw
         
+        init_spw_no = init_spw_no + 1 # new spw no for next spw
+        #print 'nowy'
         spw_used = ipsps_trace[ipsps_trace['spw_no'] == spw_no]
         rise_used = ipsp_rise[ipsps_trace['spw_no'] == spw_no]
         ampl_used = ipsp_amplitude[ipsps_trace['spw_no'] == spw_no]
         
         all_groups = np.unique(spw_used['group'])
+        if init_spw_start == spw_used['spw_start'][0]:
+            init_spw_no = init_spw_no -1
         init_spw_start = spw_used['spw_start'][0]
+        
         #print init_spw_start
         all_group_times = np.zeros(len(all_groups))
         
@@ -2292,33 +2297,31 @@ def separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise,
                 if len(rise_used_group) == 0 or (max(rise_used_group) < expected_min_ipsp_rise) and max(ampl_used_group) < min_ipsp_ampl: 
                     #import pdb; pdb.set_trace()
                     # the rise is not large enough - new spw must be formed!
+                    if init_spw_start == min(spw_used[spw_used['group'] == all_groups[idx+1]]['ipsp_start']):
+                        update_new_start = init_spw_start
+                        update_spw_no = init_spw_no                        
+                    else:
+                        update_spw_no = init_spw_no + 1
+                        update_new_start = min(spw_used[spw_used['group'] == all_groups[idx+1]]['ipsp_start']) 
 
-                    update_spw_no = init_spw_no + 1
-                    update_new_start = min(spw_used[spw_used['group'] == all_groups[idx+1]]['ipsp_start']) 
-                    
-                    if init_spw_no == 19:
-                        import pdb; pdb.set_trace()
-                    print 1
+                
                 else:
                     update_new_start = init_spw_start
                     update_spw_no = init_spw_no
-                    print 2
 
             else:
                 update_spw_no = init_spw_no
                 update_new_start = init_spw_start #spw_used[spw_used['group'] == group]['spw_start']
-                print 3
 
+#            print update_new_start
+#            print update_spw_no
+#            print
             #else:
             #    # if it is last one just update the spw no, spw_start etc
             #    pass
             #import pdb; pdb.set_trace() 
             new_ipsp = spw_used[spw_used['group'] == group]
             
-            
-            print init_spw_no
-            print init_spw_start
-            print 
             
             new_ipsp['spw_no'] = (np.ones(len(new_ipsp)) * init_spw_no).astype('i4') 
             new_ipsp['spw_start'] = (np.ones(len(new_ipsp)) * init_spw_start).astype('f8') 
@@ -2329,7 +2332,7 @@ def separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise,
             
 
     all_new_ipsps = np.concatenate(all_new_ipsps)  
-    if len(np.unique(all_new_ipsps['spw_no'])) != len(np.unique(all_new_ipsps['spw_start'])):
+    if len(np.unique(all_new_ipsps['spw_no'])) != len(np.unique(all_new_ipsps[['spw_start', 'trace']])):
         import pdb; pdb.set_trace()
 
     return all_new_ipsps, init_spw_no + 1
@@ -2400,6 +2403,7 @@ def update_ipsps_groups(save_folder, ipsps_groups, load_spwsipsp, load_datafile,
         #group_ids = group_ids + last_id
         ipsps_trace = add_rec_field(ipsps_trace, [ipsp_amplitudes, group_ids],
                                      ['amplitude', 'group'])    
+        #import pdb; pdb.set_trace()
         #last_id = max(group_ids)
         
         new_ipsps.append(ipsps_trace)
@@ -2464,7 +2468,7 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
     #import pdb; pdb.set_trace()
     assert len(np.unique(spw_ipsps[['trace','spw_start']])) == len(np.unique(spw_ipsps['spw_no']))    
 
-    for trace in [299]: #all_traces:
+    for trace in all_traces:
         spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
         
         print str(trace) + ' / ' + str(max(all_traces))
@@ -2521,17 +2525,16 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
             
         if len(ipsps_trace) > 0:
             # separate all the groups of ipsps which are further apart than max_length_ipsp_pts 
-            import pdb; pdb.set_trace()
+
             ipsps_trace, temp = separate_groups(ipsps_trace, max_length_ipsp, init_spw_no)
-            import pdb; pdb.set_trace()
+
             # calculate the rise between the beginning of IPSP and next IPSP
             
             #import pdb; pdb.set_trace()
             ipsp_rise = calculate_ipsp_rise(ipsps_trace, data_trace_down_filt, new_fs)
             ipsp_amplitude = calculate_ipsp_amplitude(ipsps_trace, data_trace_down_filt, new_fs)
-            import pdb; pdb.set_trace()
+
             ipsps_trace, init_spw_no = separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise, ipsp_amplitude, min_ipsp_ampl, init_spw_no)
-            import pdb; pdb.set_trace()
             #if len(np.unique(ipsps_trace[['trace','spw_start']])) == len(np.unique(ipsps_trace['spw_no'])):
             #    import pdb; pdb.set_trace()
         

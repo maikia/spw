@@ -347,7 +347,8 @@ if __name__=='__main__':
     if update == 1:
 
         #for nex in [15]:
-        for nex in [1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        #[1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18]
+        for nex in [2, 4, 5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):
