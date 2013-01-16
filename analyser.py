@@ -838,7 +838,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             fig = plt.figure()
             spw_nos_used = spw_group_typ[spw_group_typ['group'] == group_no]['spw_no']
             hist_electr_all = []
-            all_spws = np.zeros([len(spw_nos_used), np.size(data,0), size_win_pts])
+            all_spws = np.zeros([len(spw_nos_used), np.size(data,0), size_win_pts]) * 0.01
             
             no_bins = 150
             electro_bins = np.zeros([np.size(data,0), no_bins])
@@ -891,8 +891,11 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
                 
 
                 all_spws[idx, :, 0:np.size(data_spw,1)] = data_spw
-                
+
+            #import pdb; pdb.set_trace()  
+            #all_spws[all_spws == 0] = 0.01   
             mean_spw = np.mean(all_spws, 0)
+            #import pdb; pdb.set_trace()  
             t = dat.get_timeline(mean_spw[0,:], fs, 'ms')
             for electr in range(np.size(data, 0)):
                 #import pdb; pdb.set_trace() 
@@ -913,12 +916,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             for electr in range(np.size(data,0)):
                 plt.bar(bar_lin[:-1], (electro_bins[electr,:]/len(spw_nos_used))*50, bottom = add_it * electr, alpha = 0.8, width = bar_width)  
              
-            plt.figure()
-            for electr in range(np.size(data,0)):   
-                plt.figure()
-                box_pos = [10,20,30, 40, 50, 60, 70]
-                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)]+add_it*electr for mils in box_pos]
-                plt.boxplot(vs, positions=box_pos)
+
 
                 
                 
@@ -932,7 +930,18 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)    
             plt.xlim([t[0], t[-1]])
             #import pdb; pdb.set_trace() 
-            plt.show() 
+            
+            add_it = 500
+            plt.figure()
+            for electr in range(np.size(data,0)):   
+                box_pos = [10,20,30, 40, 50, 60, 70]
+                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)]+add_it*electr for mils in box_pos]
+                plt.boxplot(vs, positions=box_pos)
+            plt.title(types[typ])
+            plt.xlabel('time (ms)')
+            
+                
+    plt.show() 
             
 
 
