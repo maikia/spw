@@ -75,42 +75,38 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         updater.up_highWaves_numb(save_folder, save_file = SPWs_potential_numb, load_spwsfile = SPWs_potential, reanalize = reanalize)
     
     SPWs_ipsps      = 'spws_params.npz' #'spws_ipsps.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # it finds the preliminary IPSPs for each of the detected waves
         updater.up_SPW_ipsp(save_folder, filter_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_waves = SPWs_potential_numb, load_spikes = spikes_largest, reanalize = reanalize)
     
-#    spikes_inWaves = 'spikes_inWaves.npz'
-#    if not run_all_functions:
-#        # uses previously selected largest spikes
-#        updater.up_spikes_in_spw(save_folder, save_file =spikes_inWaves, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps, reanalize = reanalize, win = win)
     ipsps_corrected = 'ipsps_corrected.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # correct the IPSPs (no matter if used for SPW start or for later
         updater.up_correct_ipsps(save_folder, save_fig = 'spw_ipsp', save_file = ipsps_corrected, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     
     spws_large_enough = 'spw_large_enough.npz'
     min_amplitude_of_spw = 40 #microV SPW in any point, in any electrode has to be at least this amplitude
-    if not run_all_functions:
+    if run_all_functions:
         updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
     
     SPWs_ipsps_beg  = 'SPWs_ipsps_beg.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # finding properly each of the IPSP
         # it combines information on Waves/Ipsps and spikes to find the beginning of the SPW 
         updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
         #updater.up_divide_to_groups(load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_beg, save_folder = save_folder, save_file = SPWs_ipsps_beg, reanalize = reanalize)
     
     ipsps_groups = 'ipsps_grouped.npz'
-    if not run_all_functions:
+    if run_all_functions:
         # put IPSPs to groups
         updater.up_group_ipsps(save_folder, ipsps_groups, SPWs_ipsps_beg, raw_baselined, save_file = ipsps_groups, reanalize = reanalize)    
 
     SPWs_ipsps_corrected = 'SPWs_ipsps_corrected.npz'
-    if not run_all_functions:
+    if run_all_functions:
         updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, ipsps_groups, data_file = raw_baselined, reanalize = reanalize)    
     
     SPWs_all_IPSPs = 'SPWs_all_ipsps.npz'
-    if  not run_all_functions:
+    if run_all_functions:
         updater.up_spws_ipsp_beg(save_folder, filter_folder, save_fig = 'spw_ipsp', save_file = SPWs_all_IPSPs, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     
 #    SPWs_ipsps_first_max = 'SPWs_ipsps_first_max.npz'
@@ -150,7 +146,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 
     SPWs_ipsps_final = 'SPWs_ipsps_final.npz'
     min_no_ipsps = 2
-    if not run_all_functions:
+    if run_all_functions:
         updater.up_remove_with_to_few_ipsps(save_folder, SPWs_ipsps_final, SPWs_all_IPSPs, to_remove = min_no_ipsps, reanalize = reanalize)
 
     #print intr_electrode
@@ -190,7 +186,6 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         induc_spont_spw = 'induc_spont_spw.npz'
         max_dist = [-0.5, 7] # ms
-        
         if run_all_functions:
             # checks which SPWs are induced and which are spontaneous (if it's further than max_dist[1] it is spontaneous)
             # if any error is being allowed it should be given in max_idst[0], e.g. -0.5 (half milisecond before intra spike
