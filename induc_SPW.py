@@ -606,7 +606,7 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
     min_length = 15
     min_length_pts = ms2pts(min_length, fs)
     print
-    print "removing averaged baseline and finding possible SPWs:",
+    print "removing averaged baseline and finding possible SPWs, electrode:",
     spws_starts = []
     spws_ends = []
     plot_it = False
@@ -680,6 +680,7 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
             #import pdb; pdb.set_trace() 
             
             if plot_it:
+                
                 add_it = 100
                 t = dat.get_timeline(data_used, fs, 'ms')
                 plt.plot(t,possible_spws* 50 + add_it * electr)
@@ -689,14 +690,10 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
                 
                 spw_pts = ms2pts(spw_starts, fs).astype('i4')
                 #import pdb; pdb.set_trace() 
-                plt.plot(t[spw_pts], data_used[spw_pts] + add_it * electr, '*r')
-                #print len(spw_pts)
-                
-    #plt.show()
-              
-                
-                
-                     
+                plt.plot(t[spw_pts], data_used[spw_pts] + add_it * electr, '*r', ms = 10)
+
+            #plt.show()
+             
     spws_starts = np.concatenate(spws_starts)    
     spws_ends = np.concatenate(spws_ends)    
     
@@ -1949,15 +1946,8 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     expected_min_ipsp_ampl = 25 # microV
     shift_spike= 1 #ms
     plot_it = False
-    
-    #min_length_spw = 3
-    #min_distance_between_spw = 30 #ms
-    #spw_ipsps_list = []
-    #all_traces= np.unique(spw_ipsps['trace'])
-    #min_ipsp_groups = 3
-    #all_traces_update = np.unique(spw_selected['trace'])
     all_ipsps = []
-    #all_spikes = []
+    
     print "correcting beginning of IPSPs"
     
     all_traces= np.unique(spw_ipsps['trace'])
@@ -2320,32 +2310,26 @@ def update_ipsps_groups(save_folder, ipsps_groups, load_spwsipsp, load_datafile,
     shift_ipsp = 1.2 # ms
     new_ipsps = []
     all_traces= np.unique(spw_ipsps['trace'])
-
-    
+    distance_from_point = 10 #ms
     assert len(np.unique(spw_ipsps[['trace','spw_start']])) == len(np.unique(spw_ipsps['spw_no']))    
-    #last_id = 0
-    for trace in all_traces:    
-        spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
-        # divide the IPSPs to groups
-        ipsps_trace = spw_ipsps_trace[spw_ipsps_trace['trace']==trace]
-        #spikes_trace = spw_spike[spw_spike['trace']==trace]
 
-#
-        ipsp_amplitudes = calculate_amplitude_of_IPSP(ipsps_trace, 
-                                                  data[:, trace, :], fs)
-#        
+    for trace in all_traces:    
+        ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
+        
+        # divide the IPSPs to groups
+        #ipsp_amplitudes = calculate_amplitude_of_IPSP(ipsps_trace, 
+        #                                          data[:, trace, :], fs)
+        
+        ipsp_amplitudes = calculate_max_in_given_patch(data[:, trace, :], ipsps_trace[['electrode','ipsp_start']], distance_from_point, fs)
+      
         group_ids = group_ipsps(ipsps_trace, shift_ipsp)
-        #group_ids = group_ids + last_id
         ipsps_trace = add_rec_field(ipsps_trace, [ipsp_amplitudes, group_ids],
                                      ['amplitude', 'group'])    
-        #import pdb; pdb.set_trace()
-        #last_id = max(group_ids)
-        
         new_ipsps.append(ipsps_trace)
     new_ipsps = np.concatenate(new_ipsps)
-    assert len(np.unique(new_ipsps[['trace','spw_start']])) == len(np.unique(new_ipsps['spw_no']))  
     #import pdb; pdb.set_trace()
-    #assert len(np.unique(new_ipsps['group'])) ==  len(np.unique(new_ipsps[['ipsp_start', 'trace']]))
+    assert len(np.unique(new_ipsps[['trace','spw_start']])) == len(np.unique(new_ipsps['spw_no']))  
+
     np.savez(save_folder + save_file, spw_ipsps = new_ipsps)     
   
 def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext, win = [-20, 80], save_filter = 'ipsp_filt_'):
@@ -2801,11 +2785,13 @@ def update_SPW_ipsp(load_datafile, filter_folder, load_waves, load_spikes, save_
     all_spw_numbers = np.unique(spw_details['spw_no'])
     
     for idx_spw, spw in enumerate(all_spw_numbers):
-        #import pdb; pdb.set_trace() 
         
         spw_used = spw_details[spw_details['spw_no'] == spw]
         trace = int(spw_used['trace'][0])
         spw_no = int(spw_used['spw_no'][0])
+        
+        #if trace == 2:
+        #    import pdb; pdb.set_trace()
 
         # always use minimum detected start for this SPW
         min_start = min(spw_used['time'])
@@ -2815,6 +2801,7 @@ def update_SPW_ipsp(load_datafile, filter_folder, load_waves, load_spikes, save_
             # there exists spw after this one
             spw_next = spw_details[spw_details['spw_no'] == all_spw_numbers[idx_spw + 1]]
             trace_next = spw_next['trace'][0]
+
             if trace_next == trace:
                 # the two SPWs are on the same trace
                 time_next = min(spw_next['time'])
@@ -2823,11 +2810,11 @@ def update_SPW_ipsp(load_datafile, filter_folder, load_waves, load_spikes, save_
                 if distance < spw_length:
                     add_length = distance
                 else:
-                    add_length = distance
+                    add_length = spw_length
             else:
-                add_length = distance
+                add_length = spw_length
         else:
-            add_length = distance
+            add_length = spw_length
         #import pdb; pdb.set_trace()
         spw_max_len = min_start + add_length
 
@@ -2936,7 +2923,7 @@ def update_SPW_ipsp(load_datafile, filter_folder, load_waves, load_spikes, save_
             
             # combine the two methods together
             maxs = np.unique(maxs+mins).astype('i4') # join both functions together
-            if plot_it:
+            if plot_it and trace == 2:
                 t = dat.get_timeline(data_used, fs, 'ms') + min_start #spw_used['spw_start'][0]
                 plt.plot(t, data_used + add_it*electr)   
                 plt.plot(t[maxs], data_used[maxs] + add_it*electr, 'r>', alpha = 0.6)
@@ -2955,7 +2942,7 @@ def update_SPW_ipsp(load_datafile, filter_folder, load_waves, load_spikes, save_
                                                     ipsp_no, ipsp_start], 
                                                 names='electrode, trace, spw_no, spw_start, ipsp_no, ipsp_start'))
         # plot it if necessary
-        if plot_it:
+        if plot_it and trace == 2:
             plt.show()
 
     spw_ipsps = np.concatenate(spw_ipsps)
@@ -3031,9 +3018,7 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
         #import pdb; pdb.set_trace() 
         print 'trace: ' + str(trace + 1) + '/' + str(no_traces)
         # get spws for each electrode and check if it's the same
-        spw_st_trace = spw_starts[(spw_starts['trace'] == trace)]
-        #spw_en_trace = spw_ends[(spw_ends['trace'] == trace)]
-                
+        spw_st_trace = spw_starts[(spw_starts['trace'] == trace)]               
         
         sort_idx = np.argsort(spw_st_trace['time'])
         spw_st_sorted = spw_st_trace[:,:,sort_idx]
@@ -3076,8 +3061,8 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
         move_to_ordered = move_to_ordered.searchsorted(spw_no)
         
         groups_ordered = move_to_ordered + last_group
-        if len(groups_ordered) == 0:
-            import pdb; pdb.set_trace()
+        assert len(groups_ordered) != 0
+
         last_group = max(groups_ordered)+1
         
         # add spw no to already existing 'electrode', 'trace', and 'time' 
@@ -3086,7 +3071,9 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
         
         
         all_spw_traces.append(new_spw_trace)
-       
+        #if trace == 2:
+
+            
     spw_details = np.concatenate(all_spw_traces)   
     
     np.savez(save_folder + data_file, spw_details = spw_details) 
