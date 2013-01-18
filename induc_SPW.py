@@ -1184,7 +1184,6 @@ def update_fill_gap_between_ipsp_groups(save_folder, save_file, spw_file, data_f
     data = npzfile['data']
     fs = npzfile['fs']
     npzfile.close()       
-    #new_ipsps = []
     all_ipsps = fill_gap_in_all_groups(spws)
 
     #import pdb; pdb.set_trace()
@@ -1194,6 +1193,9 @@ def update_fill_gap_between_ipsp_groups(save_folder, save_file, spw_file, data_f
         new_ipsps = all_ipsps[all_ipsps['trace'] == trace]
         amplitude = calculate_amplitude_of_IPSP(new_ipsps, data_trace, fs)
         all_ipsps['amplitude'] [all_ipsps['trace'] == trace]= amplitude
+        #import pdb; pdb.set_trace()
+        
+        
     assert len(np.unique(spws[['trace','spw_start']])) == len(np.unique(spws['spw_no'])) 
     np.savez(save_folder + save_file, spw_ipsps = all_ipsps)
     

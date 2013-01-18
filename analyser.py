@@ -110,6 +110,34 @@ def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, par
     #plt.show() 
     plt.close()   
 
+def display_data_no_electrode(save_folder, plot_folder, save_plots, data_file, part = [0, 10000], ext = '.pdf'):
+    """ it plots given data trace"""
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close() 
+    
+    if part == 'all':
+        part = [0, np.size(data,1)]
+    fig = plt.figure()
+    import pdb; pdb.set_trace()
+    for trace in range(len(data)):
+        plt.subplot(2,2,trace)
+        data_temp = data[trace, part[0]: part[1]]
+        t = dat.get_timeline(data_temp[:], fs, 'ms')
+    #import pdb; pdb.set_trace() 
+    
+        plt.plot(t, data_temp[:])
+        plt.ylabel('Voltage (' + micro() + 'V)')
+        plt.xlabel('Time (ms)')
+        plt.xlim([t[0], t[-1]])
+        
+    save_fold = save_folder + plot_folder
+    fold_mng.create_folder(save_fold)
+    fig.savefig(save_fold + save_plots + ext,dpi=600)       
+    plt.show() 
+    plt.close()   
+
 def plot_data_interactive(save_folder, load_datafile, load_spw_ipsps, load_spikefile, load_spikesall, load_ipspsOld, spw_base, load_dataintrafile, load_intraSpikes):
     """ Plots interactively all the data and detected SPWs, spikes and IPSPs. does not save anything"""
     

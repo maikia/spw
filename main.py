@@ -35,6 +35,15 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     if not run_all_functions:
         # reads the raw data from the file
         updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, reanalize = reanalize)
+
+# - slvaro
+#    s_f = '/home/maja/PhDProject/dokumenty/Alvaro/'
+#    s_file = 'data.npz'
+#    if not run_all_functions:
+#        # reads the raw data from the file
+#        updater.up_datafile(filename, save_folder = s_f, save_file = s_file, ext_electrodes = [3], intr_electrode = 0, reanalize = reanalize)    
+#    if run_all_functions:
+#        analyser.display_data_no_electrode(s_f, '', 'trace1', s_file, part = 'all', ext = ext)
     
     plot_folder = 'full_data/'
     save_plots = 'data'
@@ -75,28 +84,28 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         updater.up_highWaves_numb(save_folder, save_file = SPWs_potential_numb, load_spwsfile = SPWs_potential, reanalize = reanalize)
     
     SPWs_ipsps      = 'spws_params.npz' #'spws_ipsps.npz'
-    if run_all_functions:
+    if not run_all_functions:
         # it finds the preliminary IPSPs for each of the detected waves
         updater.up_SPW_ipsp(save_folder, filter_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_waves = SPWs_potential_numb, load_spikes = spikes_largest, reanalize = reanalize)
     
     ipsps_corrected = 'ipsps_corrected.npz'
-    if run_all_functions:
+    if not run_all_functions:
         # correct the IPSPs (no matter if used for SPW start or for later
         updater.up_correct_ipsps(save_folder, save_fig = 'spw_ipsp', save_file = ipsps_corrected, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
     
     spws_large_enough = 'spw_large_enough.npz'
     min_amplitude_of_spw = 40 #microV SPW in any point, in any electrode has to be at least this amplitude
-    if run_all_functions:
+    if not run_all_functions:
         updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
     
     SPWs_ipsps_beg  = 'SPWs_ipsps_beg.npz'
-    if run_all_functions:
+    if not run_all_functions:
         # finding properly each of the IPSP
         # it combines information on Waves/Ipsps and spikes to find the beginning of the SPW 
         updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
 
     ipsps_groups = 'ipsps_grouped.npz'
-    if run_all_functions:
+    if not run_all_functions:
         # put IPSPs to groups
         updater.up_group_ipsps(save_folder, ipsps_groups, SPWs_ipsps_beg, raw_baselined, save_file = ipsps_groups, reanalize = reanalize)    
 
@@ -173,9 +182,9 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         ##SPWs_ipsps_corrected2 = SPWs_ipsps_final 
         if run_all_functions:
             # it makes the plot to exactly analyse each SPW
-            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_final, 
+            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = ipsps_groups, 
                                            load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
-                                           load_ipspsOld = SPWs_ipsps, spw_base = SPWs_potential_numb,
+                                           load_ipspsOld = SPWs_ipsps_corrected , spw_base = SPWs_potential_numb,
                                            load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
 #    
         dist_spw_inspikes = 'spw_dist2first.npz'
