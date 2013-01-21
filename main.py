@@ -110,7 +110,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         updater.up_group_ipsps(save_folder, ipsps_groups, SPWs_ipsps_beg, raw_baselined, save_file = ipsps_groups, reanalize = reanalize)    
 
     SPWs_ipsps_corrected = 'SPWs_ipsps_corrected.npz'
-    if run_all_functions:
+    if not run_all_functions:
         updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, ipsps_groups, data_file = raw_baselined, reanalize = reanalize)    
     
     SPWs_all_IPSPs = 'SPWs_all_ipsps.npz'
@@ -137,9 +137,9 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 
 
 #    # ----> check if the group does not exist on other electrodes
-#    SPWs_missing_link = 'SPWs_missing_link.npz'
-#    if not run_all_functions:
-#        updater.up_add_missing_electrodes_SPW(save_folder, SPWs_missing_link, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
+    SPWs_missing_link = 'SPWs_missing_link.npz'
+    if not run_all_functions:
+        updater.up_add_missing_electrodes_SPW(save_folder, SPWs_missing_link, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
 ##
 ##    SPWs_ipsps_corrected2 = 'SPWs_ipsps_corrected.npz'
 ##    if not run_all_functions:
@@ -182,9 +182,9 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         ##SPWs_ipsps_corrected2 = SPWs_ipsps_final 
         if run_all_functions:
             # it makes the plot to exactly analyse each SPW
-            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = ipsps_groups, 
+            analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_all_IPSPs , 
                                            load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
-                                           load_ipspsOld = SPWs_ipsps_corrected , spw_base = SPWs_potential_numb,
+                                           load_ipspsOld =  SPWs_ipsps_corrected, spw_base = SPWs_potential_numb,
                                            load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
 #    
         dist_spw_inspikes = 'spw_dist2first.npz'

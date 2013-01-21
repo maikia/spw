@@ -1109,7 +1109,10 @@ def update_remove_with_to_few_ipsps(save_folder, save_file, spw_file, to_remove)
 def fill_gap_in_all_groups(spws):
     """ it takes the data given and fills all the places where 
     the groups are not in neighbouring electrodes"""
+    
+    #import pdb; pdb.set_trace()
     new_ipsps = []
+
     for spw_no in np.unique(spws['spw_no']):
         spw_used = spws[spws['spw_no'] == spw_no]
         for group in np.unique(spw_used['group']):
@@ -1153,8 +1156,7 @@ def fill_gap_in_all_groups(spws):
                                                         ipsps_nos, ipsp_starts, temp_ampls, groups],
                                                            names='electrode,trace, spw_no, spw_start, ipsp_no, ipsp_start, amplitude, group'))   
                 
-                
- 
+    # make sure that all the variables used are of the same type
     new_dtype = np.dtype([('electrode', '<i4'), 
                           ('trace', '<i4'),
                           ('spw_no', '<i4'), 
@@ -1648,7 +1650,6 @@ def calculate_max_in_given_patch(data, points, distanse_from_point, fs):
     ipsp_maxs = np.zeros(len(points_ordered))
     
     for idx, pt_idx in enumerate(points_pts):
-
         # check what is closer - next IPSP or given number of points
         electr = points_ordered['electrode'][idx]
         if idx < len(points_pts) - 1 and electr == points_ordered['electrode'][idx+1]:
@@ -1662,7 +1663,7 @@ def calculate_max_in_given_patch(data, points, distanse_from_point, fs):
         ipsp_maxs[idx] = np.max(data[electr, pt_idx:pt_idx + ipsp_end]) - data[electr, pt_idx]
         
         if ipsp_maxs[idx] < 0: #the maximum amplitude of this IPSP is smaller then 0
-            # which would gives very occured IPSP - it must be removed! (give -1)
+            # which would give very occured IPSP - it must be removed! (give -1)
             ipsp_maxs[idx] = -1
         
     index_reversed = np.argsort(index)
@@ -2333,7 +2334,25 @@ def update_ipsps_groups(save_folder, ipsps_groups, load_spwsipsp, load_datafile,
     assert len(np.unique(new_ipsps[['trace','spw_start']])) == len(np.unique(new_ipsps['spw_no']))  
 
     np.savez(save_folder + save_file, spw_ipsps = new_ipsps)     
-  
+
+def remove_not_chosen_groups(spws, shorten_spws):
+    """ removes only the groups of ipsps which were not used in the second 
+    given rec array, it leaves the ipsps. So IPSPs must follow given earlier
+    rule at least in one electrode, not necessary in all"""
+    # each group have to be separate in each spw
+    assert len(np.unique(shorten_spws['group'])) == len(np.unique(shorten_spws[['group', 'spw_no']]))
+    
+    all_groups_left = np.unique(shorten_spws['group'])
+    spws_left = []
+    for group in all_groups_left:
+        spws_left.append(spws[spws['group'] == group])
+    if len(spws_left) > 0:
+        return np.concatenate(spws_left)
+    #import pdb; pdb.set_trace()
+    else:
+        return spws_left 
+
+
 def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwsspike, save_folder, save_fig, save_file,ext, win = [-20, 80], save_filter = 'ipsp_filt_'):
     """ checks all the ipsps and corrects them for each spw"""
 
@@ -2347,127 +2366,117 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
     npzfile.close()   
     
     npzfile         = np.load(save_folder + load_spwsspike)
-    #import pdb; pdb.set_trace()
     spw_spike      = npzfile['spike_idx']  
     npzfile.close()     
     
     plot_it = False
-    distanse_from_point = 5 # ms
+    distanse_from_point = 5 # ms - used for calculating the amplitude
     #import pdb; pdb.set_trace()
-    shift_ipsp = 1.2
+    shift_ipsp = 1.2 # maximal possible shift of IPSP
     min_electr = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    expected_min_ipsp_ampl = 8 # microV
-    #shift_spike= 1 #ms
-    min_length_ipsp = 2
-    max_length_ipsp = 13
-    min_spw_length = 10
-    #max_length_ipsp_pts = ms2pts(max_length_ipsp, fs)
-    #min_distance_between_spw = 10 #ms
-    expected_min_ipsp_rise = 10
-    #spw_ipsps_list = []
+    expected_min_ipsp_ampl = 10 # microV, min allowed IPSP amplitude
+    min_length_ipsp = 2 # minimum length of iPSP
+    max_length_ipsp = 13 # maximum length of IPSP
+    expected_min_ipsp_rise = 10 # minimim rise of ipsp (compared to the height of next IPSP start
     all_traces= np.unique(spw_ipsps['trace'])
-    n= 5
+    
+    n= 5. # factor by which to downsample the data
     new_fs = fs*1./n
     data_downsampled = data[:,:,::n]
 
-# treat all the IPSPS
-# use only for the beginning of SPW (stricter rules
-# use for all other IPSPs
-
+    # treat all the IPSPS
     print 'improving beginning of IPSP in trace: '
     folder_name = save_folder + filter_folder
-    freq_slow = 300
-    #import pdb; pdb.set_trace() 
-    base_window = 5
-    min_ipsp_ampl = 5 # micro V hight of each first IPSP
-    #base_window2 = 100
+    freq_slow = 300 # frequency to use for filtering the data
+    base_window = 5 # window for moving average
     base_window = ms2pts(base_window, fs)
-    #base_window2 = ms2pts(base_window2, fs)
+    min_ipsp_ampl = 5 # micro V hight of each first IPSP - used to separate SPWs
     all_ipsps = []
-    #all_spikes = []
     init_spw_no = 0
-    
+    if np.size(data,2) < 100000:
+        N_samples = 256
+    else:
+        N_samples = 1024
+
     #import pdb; pdb.set_trace()
     assert len(np.unique(spw_ipsps[['trace','spw_start']])) == len(np.unique(spw_ipsps['spw_no']))    
 
     for trace in all_traces:
-        spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]
-        
+        spw_ipsps_trace = spw_ipsps[spw_ipsps['trace']==trace]       
         print str(trace) + ' / ' + str(max(all_traces))
-        
-        # calculate the amplitude for each IPSP (from start to distanse_from_point after of filtered and baselined data)
+        # use data only for this trace
         data_trace = data[:,trace,:]
         data_downsampled_trace =  data_downsampled[:,trace,:]
-        data_trace_filt = np.zeros([np.size(data_trace, 0),np.size(data_trace, 1)] )
-        data_trace_down_filt = np.zeros([np.size(data_downsampled_trace, 0),np.size(data_downsampled_trace, 1)] )
         
+        # use downsampled data only for this trace
+        data_trace_filt = np.zeros([np.size(data_trace, 0),np.size(data_trace, 1)] )
+        #data_trace_down_filt = np.zeros([np.size(data_downsampled_trace, 0),np.size(data_downsampled_trace, 1)] )
+        
+        # filter the data in all electrodes
         for electr in range(len(data_trace)):
             filename_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace)
-            data_trace_filt[electr,:], temp = load_create(folder_name, filename_slow, [-1, freq_slow], fs, data_trace[electr,:])
+            data_trace_filt[electr,:], temp = load_create(folder_name, filename_slow, [-1, freq_slow], fs, data_trace[electr,:], N = N_samples)
             data_trace_filt[electr,:], temp = filt.remove_baseloc(data_trace_filt[electr,:], base_window)  
-            #datimport pdb; pdb.set_trace() a_trace_filt[electr,:], temp = filt.remove_baseloc(data_trace_filt[electr,:], base_window2)  
             filename_down_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace) + "_down"        
-            data_trace_down_filt[electr,:], temp = load_create(folder_name, filename_down_slow, [-1, freq_slow], new_fs, data_downsampled_trace[electr,:], N = 1024)
-
-
-        
+            #data_trace_down_filt[electr,:], temp = load_create(folder_name, filename_down_slow, [-1, freq_slow], new_fs, data_downsampled_trace[electr,:], N = N_samples)      
+            #data_trace_down_filt[electr,:], temp = filt.remove_baseloc(data_trace_down_filt[electr,:], base_window/n)  
+            
         # check which IPSPs are of too low amplitude (on filtered data so that amplitude is not checked on spikes
-        max_ampls = calculate_max_in_given_patch(data_trace_filt, spw_ipsps_trace[['electrode','ipsp_start']], distanse_from_point, fs)
+        max_ampls = calculate_max_in_given_patch(data_trace_filt, spw_ipsps_trace[['electrode','ipsp_start']], distanse_from_point, fs)  
+        ipsps_trace_temp = spw_ipsps_trace[max_ampls >= expected_min_ipsp_ampl]
+        ipsps_trace = ipsps_trace = remove_not_chosen_groups(spw_ipsps_trace, ipsps_trace_temp)
         
-        ipsps_trace = spw_ipsps_trace[max_ampls >= expected_min_ipsp_ampl]
-
         #import pdb; pdb.set_trace()
         if len(ipsps_trace) > 0:
             # remove IPSPs which are too close from each other
             #import pdb; pdb.set_trace()
-            distance_between = calc_distance_between(ipsps_trace[['electrode','ipsp_start']], min_length_ipsp) #, max_ampls)  
-            
+            distance_between = calc_distance_between(ipsps_trace[['electrode','ipsp_start']], min_length_ipsp) #, max_ampls)      
             ipsps_trace = ipsps_trace[distance_between]
-
-            
-        # if there are no groups don't do anything
+#
+#            
+#        # if there are no groups don't do anything
         if len(ipsps_trace) > 0:
-            # assigns time of closest group as spw beginning
-            
+#            # assigns time of closest group as spw beginning
+#            
             ipsps_trace = move_closest_group_to_spw_start(ipsps_trace)
-
-            
-            # fill all the IPSP groups 
-            # import pdb; pdb.set_trace()
-            
-            ipsps_trace = fill_gap_in_all_groups(ipsps_trace)
-
-            
-            # remove the group which has not enough IPSPs
-            # (save the group which is the first from the correction even if it has too few IPSPs)
-
-            to_save = remove_alone_ipsps(ipsps_trace, min_electr, shift_ipsp)
-            ipsps_trace = ipsps_trace[to_save]
-
-            
-        if len(ipsps_trace) > 0:
-            # separate all the groups of ipsps which are further apart than max_length_ipsp_pts 
-
-            ipsps_trace, temp = separate_groups(ipsps_trace, max_length_ipsp, init_spw_no)
-
-            # calculate the rise between the beginning of IPSP and next IPSP
-            
-            #import pdb; pdb.set_trace()
-            ipsp_rise = calculate_ipsp_rise(ipsps_trace, data_trace_down_filt, new_fs)
-            ipsp_amplitude = calculate_ipsp_amplitude(ipsps_trace, data_trace_down_filt, new_fs)
-
-            ipsps_trace, init_spw_no = separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise, ipsp_amplitude, min_ipsp_ampl, init_spw_no)
-            #if len(np.unique(ipsps_trace[['trace','spw_start']])) == len(np.unique(ipsps_trace['spw_no'])):
-            #    import pdb; pdb.set_trace()
-        
+#
+#            
+#            # fill all the IPSP groups 
+#            # import pdb; pdb.set_trace()
+#            
+#            ipsps_trace = fill_gap_in_all_groups(ipsps_trace)
+#
+#            
+#            # remove the group which has not enough IPSPs
+#            # (save the group which is the first from the correction even if it has too few IPSPs)
+#
+#            to_save = remove_alone_ipsps(ipsps_trace, min_electr, shift_ipsp)
+#            ipsps_trace = ipsps_trace[to_save]
+#
+#            
+#        if len(ipsps_trace) > 0:
+#            # separate all the groups of ipsps which are further apart than max_length_ipsp_pts 
+#
+#           ipsps_trace, temp = separate_groups(ipsps_trace, max_length_ipsp, init_spw_no)
+#
+#            # calculate the rise between the beginning of IPSP and next IPSP
+#            
+#            #import pdb; pdb.set_trace()
+#            ipsp_rise = calculate_ipsp_rise(ipsps_trace, data_trace_down_filt, new_fs)
+#            ipsp_amplitude = calculate_ipsp_amplitude(ipsps_trace, data_trace_down_filt, new_fs)
+#
+#            ipsps_trace, init_spw_no = separate_if_increase_too_low(ipsps_trace, ipsp_rise, expected_min_ipsp_rise, ipsp_amplitude, min_ipsp_ampl, init_spw_no)
+#            #if len(np.unique(ipsps_trace[['trace','spw_start']])) == len(np.unique(ipsps_trace['spw_no'])):
+#            #    import pdb; pdb.set_trace()
+#        
         all_ipsps.append(ipsps_trace)
         temp = np.unique(np.concatenate(all_ipsps))
         if len(np.unique(temp[['trace','spw_start']])) != len(np.unique(temp['spw_no'])):
             import pdb; pdb.set_trace()
     all_ipsps = np.concatenate(all_ipsps)
-    #all_spikes = np.concatenate(all_spikes)
+    
     assert len(np.unique(all_ipsps[['trace','spw_start']])) == len(np.unique(all_ipsps['spw_no']))   
-    np.savez(save_folder + save_file, spw_ipsps = all_ipsps) #, spikes = all_spikes) 
+    np.savez(save_folder + save_file, spw_ipsps = all_ipsps)
     
     # -----------------------------------------------
     if plot_it:
@@ -2480,7 +2489,7 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
 
 
         #     go through all the spws
-        for spw_no in range(10, 20): #np.unique(all_ipsps['spw_no']):
+        for spw_no in range(10, 17): #np.unique(all_ipsps['spw_no']):
             print spw_no
             #import pdb; pdb.set_trace()
             fig = plt.figure()   
@@ -2526,23 +2535,22 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
                 data_used = data[electr,trace, plot_start: plot_end]
                 #import pdb; pdb.set_trace()
                 filename_down_slow = save_filter +'_' + str(freq_slow) + '_'+ str(electr) + "_" + str(trace) + "_down"  
-                data_filt, temp = load_create(folder_name, filename_down_slow, [-1, freq_slow], new_fs, data_downsampled[electr,trace, :], N = 1024)
-                
-
-                #data_filt, temp = filt.remove_baseloc(data_filt, base_window)  
+                data_filt, temp = load_create(folder_name, filename_down_slow, [-1, freq_slow], new_fs, data_downsampled[electr,trace, :], N = N_samples)
+                #data_filt, temp = filt.remove_baseloc(data_filt, base_window/n)  
 
                 #filename_fast = save_filter +str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
                 #data_filt, fs = load_create(folder_name, filename_fast, freq_fast, fs, data_filt)
 
                 data_filt = data_filt[plot_start_down: plot_end_down]
                 data_down = data_downsampled[electr,trace, plot_start_down: plot_end_down]
+                #data_filt = data_trace_down_filt[electr,trace, plot_start_down: plot_end_down]
                 #import pdb; pdb.set_trace()
                 t = dat.get_timeline(data_used, fs, 'ms')
                 t_down = dat.get_timeline(data_filt, new_fs, 'ms')
                 
-                #import pdb; pdb.set_trace()
+                import pdb; pdb.set_trace()
                 plt.plot(t, data_used + plot_add, 'b')
-                plt.plot(t_down, data_filt + plot_add, 'r')
+                plt.plot(t_down, np.correlate(data_filt,data_down) + plot_add, 'r')
                 plt.plot(t_down, data_down + plot_add, 'g')
                 ipsps_to_plot = ipsps_used_pts - plot_start
                 
