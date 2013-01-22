@@ -986,75 +986,108 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
             # check which electrode doesn't detect this group
             group_electr = spw_used[spw_used['group'] == group]['electrode']
             no_group_electr  = np.setdiff1d(all_electrodes, group_electr)
-            ipsp_time = group_times[idx]
-            
+            ipsp_time = spw_used[spw_used['group'] == group]['ipsp_start']
+            #group_times[idx]
             
             group_pts_all = ms2pts(ipsp_time, fs).astype('i4')
             
             if idx != 0: # check if not first ipsp, 
                 # find the time of the previous
                 ipsp_prev = group_times[idx - 1] 
-                ipsp_start_pts = ms2pts(ipsp_prev, fs).astype('i4')
+                ipsp_start_previous = ms2pts(ipsp_prev, fs).astype('i4')
             else: 
                 ipsp_prev = -1
+                ipsp_start_previous = -1
 
             if idx != len(groups)-1: # check if not last ipsp
                 # check the time of the next 
                 ipsp_next = group_times[idx + 1]
                 #    import pdb; pdb.set_trace() 
-                ipsp_end_pts = ms2pts(ipsp_next, fs).astype('i4')
+                ipsp_end_next = ms2pts(ipsp_next, fs).astype('i4')
             else: 
                 ipsp_next = -1 
+                ipsp_end_next = -1
                 
                               
             for electr in no_group_electr:
                 # check what happens between this and previous ipsps
                 # uneless it's the first one
                 
-                # find index of smallest argument between the two IPSPs
-                pot_ipsp = np.argmin(data_trace[electr, group_pts_all-ipsp_ae_pts: group_pts_all+ipsp_ae_pts])
+                # find index of smallest argument between the two IPSPs which also is changing it's sign on derivative
+                # check where to look for the min
+                search_start = max(ipsp_start_previous, min(group_pts_all)-ipsp_ae_pts)
+                search_end = min(ipsp_end_next, max(group_pts_all)+ipsp_ae_pts)
+                # check where first derivative is changing its sign
+                deriv = np.diff(data_trace[electr, search_start:search_end])
+                deriv[deriv < 0] = 0
+                deriv[deriv > 0] = 1
+                deriv = deriv.tolist()
+                try:
+                    deriv_1 = np.array(deriv + [deriv[-1]])
+                except:
+                    import pdb; pdb.set_trace() 
+                deriv_2 = np.array([deriv[0]] + deriv)
+                change = deriv_1 - deriv_2
+                data_temp_1 = data_trace[electr, search_start: search_end].copy()
+                data_temp_1[change < 1] = 1000000
+                pot_ipsp = np.argmin(data_temp_1) + 1
                 
-                group_pts = group_pts_all-ipsp_ae_pts + pot_ipsp
+                #if spw_no == 7 and electr == 5 and group == 8:
+                #    import pdb; pdb.set_trace() 
+                
+                group_pts = search_start - ipsp_ae_pts + pot_ipsp
                 
                 if ipsp_prev == -1:
                     # assign different start - var_ms before this one
                     ipsp_start_pts = group_pts - time_if_no_ipsp_pts
+                else:
+                    ipsp_start_pts = ipsp_start_previous
                 if ipsp_next == -1:
                     # assign different end - var_ms before this one
                     ipsp_end_pts = group_pts + time_if_no_ipsp_pts
+                else:
+                    ipsp_end_pts = ipsp_end_next
                 
-                #import pdb; pdb.set_trace()     
+                #if spw_no == 7 and electr == 5 and group == 8:
+                #    import pdb; pdb.set_trace()     
                 # find where there is maximum between new ipsp and previous Ipsp
-                x_a = np.argmax(data_trace[electr,ipsp_start_pts:group_pts]) + ipsp_start_pts
-                x_b = group_pts
-                x_c = np.argmax(data_trace[electr,group_pts:ipsp_end_pts]) + group_pts
                 
-                y_a = max(data_trace[electr,ipsp_start_pts:group_pts])
-                y_b = data_trace[electr, group_pts]
-                y_c = max(data_trace[electr,group_pts:ipsp_end_pts])
-                
-                # move so that max of first IPSP is start of coordinating system
-                y_I_c = y_c - y_a
-                y_I_b = y_b - y_a
-                y_I_a = y_a - y_a
-                
-                x_I_c = (x_c - x_a) * 1.0 # length of 'triangle'
-                x_I_b = (x_b - x_a) * 1.0
-                x_I_a = (x_a - x_a) * 1.0
-                
-                # calculate the proportion and where is c at x_I_b on the line
-                # crossing between a_I and c_I
-                y_prime_b = (x_I_b * y_I_c) / x_I_c
-                fraction = x_I_b/x_I_c 
-                # check if new x is at smaller than the 0.5 of the expected one
-                allow = False
-                if y_prime_b * 0.7 > y_I_b:
-                    # check if one of the maximums does not lay on the x
-                    if fraction > 0 and fraction < 1:
-                        # check if at least one IPSP (from right or left) is higher than
-                        # minimum IPSP height
-                        if y_I_c > min_ipsp_height:
-                            allow = True
+                if ipsp_start_pts+1 < group_pts and group_pts < ipsp_end_pts -1:
+                    try:
+                        x_a = np.argmax(data_trace[electr,ipsp_start_pts:group_pts]) + ipsp_start_pts
+                    except:
+                        import pdb; pdb.set_trace()    
+                    x_b = group_pts
+                    x_c = np.argmax(data_trace[electr,group_pts:ipsp_end_pts]) + group_pts
+                    
+                    y_a = max(data_trace[electr,ipsp_start_pts:group_pts])
+                    y_b = data_trace[electr, group_pts]
+                    y_c = max(data_trace[electr,group_pts:ipsp_end_pts])
+                    
+                    # move so that max of first IPSP is start of coordinating system
+                    y_I_c = y_c - y_a
+                    y_I_b = y_b - y_a
+                    y_I_a = y_a - y_a
+                    
+                    x_I_c = (x_c - x_a) * 1.0 # length of 'triangle'
+                    x_I_b = (x_b - x_a) * 1.0
+                    x_I_a = (x_a - x_a) * 1.0
+                    
+                    # calculate the proportion and where is c at x_I_b on the line
+                    # crossing between a_I and c_I
+                    y_prime_b = (x_I_b * y_I_c) / x_I_c
+                    fraction = x_I_b/x_I_c 
+                    # check if new x is at smaller than the 0.5 of the expected one
+                    allow = False
+                    if y_prime_b * 0.7 > y_I_b:
+                        # check if one of the maximums does not lay on the x
+                        if fraction > 0 and fraction < 1:
+                            # check if at least one IPSP (from right or left) is higher than
+                            # minimum IPSP height
+                            if y_I_c > min_ipsp_height:
+                                allow = True
+                else:
+                    allow = False
 
                 
                 #import pdb; pdb.set_trace() 
