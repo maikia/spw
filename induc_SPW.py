@@ -2374,7 +2374,7 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
     #import pdb; pdb.set_trace()
     shift_ipsp = 1.2 # maximal possible shift of IPSP
     min_electr = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    expected_min_ipsp_ampl = 10 # microV, min allowed IPSP amplitude
+    expected_min_ipsp_ampl = 30 # microV, min allowed IPSP amplitude
     expected_total_min = 3
     min_length_ipsp = 2 # minimum length of iPSP
     max_length_ipsp = 13 # maximum length of IPSP
@@ -2425,15 +2425,17 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
         
           
         # check which IPSPs are of too low amplitude (on filtered data so that amplitude is not checked on spikes
-        max_ampls = calculate_max_in_given_patch(data_trace_filt, spw_ipsps_trace[['electrode','ipsp_start']], distanse_from_point, fs)  
+        max_ampls = calculate_max_in_given_patch(data_trace, spw_ipsps_trace[['electrode','ipsp_start']], distanse_from_point, fs)  
+        #max_ampls[max_ampls >= expected_min_ipsp_ampl]
         ipsps_trace_temp = spw_ipsps_trace[max_ampls >= expected_min_ipsp_ampl]
         ipsps_trace = remove_not_chosen_groups(spw_ipsps_trace, ipsps_trace_temp)
-
+        #import pdb; pdb.set_trace()
+        
         if len(ipsps_trace) > 0:
             max_ampls = calculate_max_in_given_patch(data_trace_filt, ipsps_trace[['electrode','ipsp_start']], distanse_from_point, fs)
             ipsps_trace = ipsps_trace[max_ampls >= expected_total_min]
         
-        #import pdb; pdb.set_trace()
+        
         if len(ipsps_trace) > 0:
             # remove IPSPs which are too close from each other
             #import pdb; pdb.set_trace()
@@ -2497,7 +2499,7 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
 
 
         #     go through all the spws
-        for spw_no in range(10, 17): #np.unique(all_ipsps['spw_no']):
+        for spw_no in [0]: #range(10, 17): #np.unique(all_ipsps['spw_no']):
             print spw_no
             #import pdb; pdb.set_trace()
             fig = plt.figure()   
@@ -2556,7 +2558,7 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
                 t = dat.get_timeline(data_used, fs, 'ms')
                 t_down = dat.get_timeline(data_filt, new_fs, 'ms')
                 
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
                 plt.plot(t, data_used + plot_add, 'b')
                 plt.plot(t_down, np.correlate(data_filt,data_down) + plot_add, 'r')
                 plt.plot(t_down, data_down + plot_add, 'g')
