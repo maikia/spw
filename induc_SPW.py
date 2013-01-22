@@ -924,6 +924,124 @@ def check_if_ipsp(data_prev_ipsp, min_ampl):
         return 1
     else:
         return -1
+
+
+def merge_ipsps(spws_used, group2, group1, data, fs):
+    """ merges given ipsp groups into one"""
+    spws1 = spws_used[spws_used['group'] == group1]
+    spws2 = spws_used[spws_used['group'] == group2]
+    electr_used = np.unique(np.concatenate([spws1['electrode'],spws2['electrode']]))
+    all_spws = []
+    try:
+        trace = spws1['trace'][0]
+    except:
+        import pdb; pdb.set_trace()
+    if len(spws1) + len(spws2) == len(electr_used):
+        # if the groups are on different electrodes- just merge them to one
+        spw_temp = spws_used[spws_used['group'] == group2]
+        spw_temp['group'] = np.ones(len(spws_used[spws_used['group'] == group2])) * group1
+        spws_used[spws_used['group'] == group2] = spw_temp
+    else:    
+        # if the groups are on the same electrode choose the IPSP of the smaller amplitude
+        new_group = group1
+        new_spws = []
+        for electr in electr_used:
+            spw1_temp = spws1[spws1['electrode'] == electr]
+            spw2_temp = spws2[spws2['electrode'] == electr]
+            assign = 0
+            
+            # check if this electrode is in both SPWs
+            if len(spw1_temp) > 0 and len(spw2_temp)> 0:
+                # choose which one to add
+                
+                ipsp1_pts = ms2pts(spw1_temp['ipsp_start'], fs).astype('i4')
+                ipsp2_pts = ms2pts(spw2_temp['ipsp_start'], fs).astype('i4')
+                if data[electr, trace, ipsp1_pts][0] == data[electr, trace, ipsp2_pts][0]:
+                    assign = 1
+                else:
+                    #import pdb; pdb.set_trace()
+                    smaller = np.argmin([data[electr, trace, ipsp1_pts], data[electr, trace, ipsp2_pts]])
+                    assign = smaller + 1
+                
+            if len(spw1_temp) == 0 or assign == 2:
+                # add only second spw (changing the group)
+                spw2_temp['group'] = new_group
+                new_spws.append(spw2_temp)
+                
+            elif len(spw2_temp) == 0 or assign == 1:
+                # add only first spw
+                new_spws.append(spw1_temp)
+            
+            #all_spws.append(new_spws) 
+        #new_spws = np.concatenate(new_spws)   
+        #import pdb; pdb.set_trace()
+        spws_used = spws_used[spws_used['group'] != group1]
+        spws_used = spws_used[spws_used['group'] != group2]
+        new_spws.append(spws_used)
+        spws_used = np.concatenate(new_spws)
+        #import pdb; pdb.set_trace()
+    return spws_used
+        
+def update_merge_close_groups(save_folder, save_file, spw_file, data_file):  
+    """ it merges too close groups of IPSPs, it chooses the one which is lower if there are
+    two on the same electrode"""
+    # load necessary data
+    npzfile        = np.load(save_folder + spw_file)
+    spws = npzfile['spw_ipsps']
+    npzfile.close()   
+    
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close()  
+    
+    min_distance_allowed = 1 # ms
+    
+    all_new_spws = []
+    for spw_no in np.unique(spws['spw_no']):
+        spws_used = spws[spws['spw_no'] == spw_no]
+        sorted_spws = np.argsort(spws_used[['ipsp_start']])
+        spws_used = spws_used[sorted_spws]
+        
+        prev_group_time = [-5, -5]
+        all_groups, gr_idx = np.unique(spws_used['group'], return_index = True)
+        order_groups = np.argsort(gr_idx)
+        all_groups = all_groups[order_groups]
+        for idx, group in enumerate(all_groups):
+            
+            curr_spw = spws_used[spws_used['group'] == all_groups[idx]]
+            curr_group_time = [min(curr_spw['ipsp_start']), max(curr_spw['ipsp_start'])]
+            
+            if curr_group_time[0] - prev_group_time[1] <= min_distance_allowed:
+                #import pdb; pdb.set_trace()
+                # the two groups are too close
+                spws_used = merge_ipsps(spws_used, all_groups[idx-1], group, data, fs)
+                 
+            prev_group_time = curr_group_time
+                
+        all_new_spws.append(spws_used)
+    all_new_spws = np.concatenate(all_new_spws)
+    #import pdb; pdb.set_trace()        
+    # save all_new_spws
+    
+    np.savez(save_folder + save_file, spw_ipsps = all_new_spws)   
+               
+#            import pdb; pdb.set_trace()
+#        
+#    ipsp_len = 10
+#    ipsp_size_pts = ms2pts(ipsp_len, fs).astype('i4')
+#    win = [-20, 100]
+#    ipsp_allowed_error = 0.5
+#    min_len_ipsp = 1
+#    min_len_ipsp_pts = ms2pts(min_len_ipsp, fs).astype('i4')
+#    ipsp_ae_pts = ms2pts(ipsp_allowed_error, fs).astype('i4') # allowed error in points
+#    plot_it = False
+#    all_new_ipsps = []
+#    time_if_no_ipsp = 10 #ms
+#    time_if_no_ipsp_pts = ms2pts(time_if_no_ipsp, fs).astype('i4')
+#    min_ipsp_height = 15
+    
+            
     
     
 def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_file):
@@ -933,7 +1051,7 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
     npzfile        = np.load(save_folder + spw_file)
     spws = npzfile['spw_ipsps']
     npzfile.close()   
-    min_ampl = 20
+    #min_ampl = 20
     npzfile        = np.load(save_folder + data_file)
     data = npzfile['data']
     fs = npzfile['fs']
@@ -946,7 +1064,7 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
     min_len_ipsp = 1
     min_len_ipsp_pts = ms2pts(min_len_ipsp, fs).astype('i4')
     ipsp_ae_pts = ms2pts(ipsp_allowed_error, fs).astype('i4') # allowed error in points
-    plot_it = True
+    plot_it = False
     all_new_ipsps = []
     time_if_no_ipsp = 10 #ms
     time_if_no_ipsp_pts = ms2pts(time_if_no_ipsp, fs).astype('i4')
