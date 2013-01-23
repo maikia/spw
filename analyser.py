@@ -57,7 +57,7 @@ def plot_noIpsps2distance(save_folder, plot_folder, save_plots, spw_file, dist_f
     fig = plt.figure()
     for idx, spw_no in enumerate(all_spws):
         # count how many IPSPs are detected in each SPW
-        ipsps_used = ipsps[ipsps['spw_no'] == spw_no]['ipsp_no']
+        ipsps_used = ipsps[ipsps['spw_no'] == spw_no]['group']
         uniq = np.unique(ipsps_used)
         no_ipsps = len(uniq)
         
@@ -67,22 +67,17 @@ def plot_noIpsps2distance(save_folder, plot_folder, save_plots, spw_file, dist_f
         numb_ipsps[idx] = no_ipsps
         dists[idx] = dis
         
-    plt.plot(dists, numb_ipsps, '.')
+    plt.plot(dists, numb_ipsps, 'ro', alpha = 0.2)
     plt.title('Relation of distance and number of IPSPs in SPW')
     plt.xlabel('Distance from spike [ms]')
     plt.ylabel('Number of IPSPs')
     
     save_fold = save_folder + plot_folder
     fold_mng.create_folder(save_fold)
-    
-    fig.savefig(save_fold + save_plots + ext,dpi=600)     
-    fig.savefig(save_fold + save_plots + '.eps',dpi=600)    
+    #plt.show()
+    fig.savefig(save_fold + save_plots + ext,dpi=600)      
     plt.close()
         
-        
-    
-def plot_origin(save_folder, plot_folder, save_plots, spw_file, dist_file, ext):
-    pass
 
 def display_data(save_folder, plot_folder, save_plots, data_file, trace = 0, part = [0, 10000], ext = '.pdf'):
     """ it plots given data trace"""
