@@ -23,6 +23,10 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     spws_file = 'SPWs_ipsps_final.npz'
     distances = 'spw_dist2first.npz'
     equal_init_spont = 'induc_spont_equal.npz'
+    raw_data = "data_bas.npz"
+    intra_data = 'data_baseintra.npz'
+    spike_file = 'spikes_largest.npz'
+    intra_spike_file = 'intra_spikes.npz'
     #==============================================================
     #import pdb; pdb.set_trace()
     plots_folder = 'plots/'
@@ -41,19 +45,26 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         plot_name_ipsps_2_dist = 'numIPSP_distance'
         save_plot_in = plots_folder+plot_name_ipsps_2_dist + '/'
-        if run_all_functions:
+        
+        if not run_all_functions:
             """ plots relation between distance from the spike and number of ipsp groups in a SPW """
+            fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_noIpsps2distance(save_folder,save_plot_in , save_plots = plot_name_ipsps_2_dist, spw_file = spws_file, dist_file = distances, ext = ext)
         
-        import pdb; pdb.set_trace()
         dist_spw2psike = 'dist_spw2spike'
+        save_plot_in = plots_folder+dist_spw2psike + '/'
         if not run_all_functions:
-            analyser.plot_dist_spw2spike(save_folder, solutions_folder+dist_spw2psike + '/', save_plots = dist_spw2psike, dist_file = dist_spw_inspikes, ext = ext)
+            """ it plots histogram showing number of SPWs distant from spike"""
+            fold_mng.create_folder(save_folder + save_plot_in)
+            analyser.plot_dist_spw2spike(save_folder, save_plot_in, save_plots = dist_spw2psike, dist_file = distances, ext = ext)
         
         alignedSPWs = 'aligned_SPWs'
-        if not run_all_functions:
-
-            analyser.plot_alignedSPW(save_folder, solutions_folder+alignedSPWs + '/', save_plots = alignedSPWs, data_file = raw_baselined, intra_data_file = data_intra_base, spike_file = induc_spont_spw, intra_spikes = intra_spikes, ext = ext)
+        save_plot_in = plots_folder+ alignedSPWs + '/'
+        if run_all_functions:
+            """ plots few SPWs - not really cool function"""
+            fold_mng.create_folder(save_folder + save_plot_in)
+            analyser.plot_alignedSPW(save_folder, save_plot_in, save_plots = alignedSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = ext)
+        import pdb; pdb.set_trace()
         
 #        alignedSPWs_2all = 'aligned_SPWs2allSpikes'
 #        if run_all_functions:

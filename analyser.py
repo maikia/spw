@@ -21,7 +21,7 @@ def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     dist = npzfile['dist_spwspike']
     
     distance = dist['distance']
-    xlim = [-10, 200]
+    xlim = [-20, 100]
     no_bins = 50
     distance = distance[(distance > xlim[0]) & (distance < xlim[1])]
     #import pdb; pdb.set_trace() 
@@ -31,8 +31,7 @@ def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     plt.xlim(xlim)
     plt.ylabel('Fraction of SPWs')
     plt.xlabel('Distance from spike (ms)')
-    fig.savefig(save_folder + save_plots + ext,dpi=600)     
-    fig.savefig(save_folder + save_plots + '.eps',dpi=600)    
+    fig.savefig(save_folder + plot_folder + save_plots + ext,dpi=600)         
     #plt.show() 
     plt.close()  
     
@@ -1792,17 +1791,17 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
             plt.close()   
 
         
-def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_file, spike_file, intra_spikes, ext):
+def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_file, induc_spont, intra_spikes, ext):
     """ it divides SPWs to two groups - close and far from the spike and alignes them, and plots together"""
     
 
     win = [-20, 100] #ms
     
-    npzfile         = np.load(save_folder + spike_file)
+    npzfile         = np.load(save_folder + induc_spont)
     spontaneous      = npzfile['spontaneous'] # spikes_all
     initiated      = npzfile['initiated'] # spikes_all
     npzfile.close()    
-    
+
     npzfile        = np.load(save_folder + intra_data_file)
     data_intra = npzfile['data']
     fs = npzfile['fs']
@@ -1817,7 +1816,9 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     npzfile        = np.load(save_folder + intra_spikes)
     intra_spikes = npzfile['spikes_first']
     npzfile.close() 
-        
+      
+    win_base = [-10, -5]
+    win_base_pts = [ispw.ms2pts(win_base[0], fs),ispw.ms2pts(win_base[1], fs)]  
     
     
     before_pts = ispw.ms2pts(win[0], fs)
@@ -1843,12 +1844,20 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
         spw = np.unique(spws_used['spw_no'])
         spw_traces = np.zeros([np.size(data,0) + 1, len(spw), after_pts - before_pts])
         in_spikes = []
+        
         for spw_idx, spw_n in enumerate(spw):
             spw_start = spws_used[spws_used['spw_no'] == spw_n]['spw_start'][0]
             spw_start_pts = ispw.ms2pts(spw_start, fs).astype(int)
             trace = spws_used[spws_used['spw_no'] == spw_n]['trace'][0]
-
+            
+            base = data[:, trace, spw_start_pts + win_base_pts[0]: spw_start_pts + win_base_pts[1]]
+            base = np.mean(base, axis = 1)
+            #data_spw = np.transpose(data_spw) - base
+            #data_spw = np.transpose(data_spw)
+            
             data_temp = data[:, trace, spw_start_pts + before_pts: spw_start_pts + after_pts]
+            data_temp = np.transpose(data_temp) - base
+            data_temp = np.transpose(data_temp)
 
             spw_traces[1:, spw_idx, :] = data_temp
             data_temp_intra = data_intra[:, trace, spw_start_pts + before_pts: spw_start_pts + after_pts]
@@ -1894,16 +1903,9 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
         fig_fname = save_fold + save_plots + titles[idx] + ext
         logging.info("saving figure %s" % fig_fname)
         fig.savefig(fig_fname,dpi=600)    
-        fig_fname = save_fold + save_plots + titles[idx] + '.eps'
-        logging.info("saving figure %s" % fig_fname)
-        fig.savefig(save_fold + save_plots + titles[idx] + '.eps',dpi=600)    
-        
+        #logging.info("saving figure %s" % fig_fname)       
         plt.close() 
         
-    #import pdb; pdb.set_trace() 
-    
-    
-
     
 #---------------------------old -----------------------------
 def define_colors(no_colors = 8):
