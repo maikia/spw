@@ -1856,18 +1856,25 @@ def calculate_max_in_given_patch(data, points, distanse_from_point, fs):
     
     for idx, pt_idx in enumerate(points_pts):
         # check what is closer - next IPSP or given number of points
+        remove_ipsp = False
         electr = points_ordered['electrode'][idx]
         if idx < len(points_pts) - 1 and electr == points_ordered['electrode'][idx+1]:
             # not the last IPSP and it's the same electrode as the next one
             next_ipsp = points_pts[idx+1] - pt_idx
-            assert next_ipsp > 1 # it's the same ipsp as previously, this IPSP should be removed?
+            if next_ipsp <= 1:
+                remove_ipsp = True
+                #import pdb; pdb.set_trace()
+            #assert next_ipsp > 1 # it's the same ipsp as previously, this IPSP should be removed?
         else:
             next_ipsp = distance_pts + 1
         #import pdb; pdb.set_trace()
-        ipsp_end =  min(distance_pts, next_ipsp)
-        ipsp_maxs[idx] = np.max(data[electr, pt_idx:pt_idx + ipsp_end]) - data[electr, pt_idx]
-        
-        if ipsp_maxs[idx] < 0: #the maximum amplitude of this IPSP is smaller then 0
+        if not remove_ipsp:
+            ipsp_end =  min(distance_pts, next_ipsp)
+            
+            ipsp_maxs[idx] = np.max(data[electr, pt_idx:pt_idx + ipsp_end]) - data[electr, pt_idx]
+            
+            
+        if ipsp_maxs[idx] < 0 or remove_ipsp: #the maximum amplitude of this IPSP is smaller then 0
             # which would give very occured IPSP - it must be removed! (give -1)
             ipsp_maxs[idx] = -1
         
