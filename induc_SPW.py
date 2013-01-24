@@ -1157,12 +1157,12 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                 
                 if ipsp_prev == -1:
                     # assign different start - var_ms before this one
-                    ipsp_start_pts = group_pts - time_if_no_ipsp_pts
+                    ipsp_start_pts = max(0, group_pts - time_if_no_ipsp_pts)
                 else:
                     ipsp_start_pts = ipsp_start_previous
                 if ipsp_next == -1:
                     # assign different end - var_ms before this one
-                    ipsp_end_pts = group_pts + time_if_no_ipsp_pts
+                    ipsp_end_pts = min(group_pts + time_if_no_ipsp_pts, np.size(data_trace, 1))
                 else:
                     ipsp_end_pts = ipsp_end_next
                 
@@ -2233,8 +2233,11 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
                 #import pdb; pdb.set_trace()
                 all_ipsps.append(ipsps_selected)
                 assert proper_start > old_start # make sure that this spw is after previous one
-                assert proper_start > old_last_ipsp # make sure that this spw is after last IPSP of previous one
-                
+                try:
+                    assert proper_start > old_last_ipsp # make sure that this spw is after last IPSP of previous one
+                except:
+                    import pdb; pdb.set_trace()
+                    
                 old_last_ipsp = max(ipsps_selected['ipsp_start'])
                 old_start = proper_start
 
