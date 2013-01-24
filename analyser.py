@@ -927,7 +927,15 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
                 plt.plot(t, mean_spw[electr,:] + add_it * electr, color = 'r')
                 #plt.hold(True) 
                 #for mils in [10]: #, 20, 30, 40, 50, 60, 70]:
-
+                #import pdb; pdb.set_trace()
+                # calculate variablility - cumulative sum
+                s_mean_across = all_spws[:, electr, :] ** 2
+                sum_s_means_across = np.nansum(s_mean_across, 0)
+                sum_no_nans = np.sum(np.isnan(s_mean_across) == False, 0)
+                mean_squared = sum_s_means_across/sum_no_nans
+                root_mean_square = np.sqrt(mean_squared)
+                plt.plot(t, root_mean_square + add_it * electr, color = 'g')
+               
 
                     #plt.boxplot(all_spws[:,electr,ispw.ms2pts(mils, fs)], positions=[mils])
                 #import pdb; pdb.set_trace() 
@@ -954,10 +962,8 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             #import pdb; pdb.set_trace()
             fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)    
             plt.xlim([t[0], t[-1]])
-            #import pdb; pdb.set_trace() 
             
-            # calculate variablility - cumulative sum
-            
+                            
             # for drawing box plot
 #            add_it = 500
 #            plt.figure()
