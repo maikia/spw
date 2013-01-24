@@ -916,7 +916,10 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
 
             #import pdb; pdb.set_trace()  
             #all_spws[all_spws == 0] = 0.01   
-            mean_spw = np.mean(all_spws, 0)
+            from scipy.stats import nanmean
+            mean_spw = nanmean(all_spws, 0)
+            
+            #mean_spw = np.mean(all_spws, 0)
             #import pdb; pdb.set_trace()  
             t = dat.get_timeline(mean_spw[0,:], fs, 'ms')
             for electr in range(np.size(data, 0)):
@@ -924,7 +927,15 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
                 plt.plot(t, mean_spw[electr,:] + add_it * electr, color = 'r')
                 #plt.hold(True) 
                 #for mils in [10]: #, 20, 30, 40, 50, 60, 70]:
-
+                #import pdb; pdb.set_trace()
+                # calculate variablility - cumulative sum
+                s_mean_across = all_spws[:, electr, :] ** 2
+                sum_s_means_across = np.nansum(s_mean_across, 0)
+                sum_no_nans = np.sum(np.isnan(s_mean_across) == False, 0)
+                mean_squared = sum_s_means_across/sum_no_nans
+                root_mean_square = np.sqrt(mean_squared)
+                plt.plot(t, root_mean_square + add_it * electr, color = 'g')
+               
 
                     #plt.boxplot(all_spws[:,electr,ispw.ms2pts(mils, fs)], positions=[mils])
                 #import pdb; pdb.set_trace() 
@@ -951,23 +962,18 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             #import pdb; pdb.set_trace()
             fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)    
             plt.xlim([t[0], t[-1]])
-            #import pdb; pdb.set_trace() 
             
-            add_it = 500
-            plt.figure()
-            for electr in range(np.size(data,0)):   
-                box_pos = [10,20,30, 40, 50, 60, 70]
-                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)]+add_it*electr for mils in box_pos]
-                plt.boxplot(vs, positions=box_pos)
-            plt.title(types[typ])
-            plt.xlabel('time (ms)')
-            
-                
-    plt.show() 
-            
-
-
-
+                            
+            # for drawing box plot
+#            add_it = 500
+#            plt.figure()
+#            for electr in range(np.size(data,0)):   
+#                box_pos = [10,20,30, 40, 50, 60, 70]
+#                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)]+add_it*electr for mils in box_pos]
+#                plt.boxplot(vs, positions=box_pos)
+#            plt.title(types[typ])
+#            plt.xlabel('time (ms)')      
+    #plt.show()
    
 def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ext):
     """ similar to plot_spw_ipsps_no_groups but does not divide first group into
@@ -1023,7 +1029,7 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
             sub = 0
             already_clustered = subgroups > 0
             while not answer:
-                window = [-0.5, 1]
+                window = [-0.5, 7]
                 print 'analysing subgroup: ' + str(sub)
                 print subgroups
                 group_name = str(0) + '.' +  str(sub) + ' ' + types[typ]
@@ -1040,7 +1046,7 @@ def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ex
                     # group has to be further divided
                     
                     # variables set for pca calculations
-                    electr_to_use = [1 ,3,  4, 5]
+                    electr_to_use = [1 ,4]
                     n_comps = 3
                     pcs = calculate_PCA(new_starts_pts, traces, data, fs, electr_to_use, n_comps, window = window, window_base = window_base)
                     
@@ -1453,7 +1459,7 @@ def plot_spw_amplitude(save_folder, plot_folder, save_plots, data_file, spw_data
 
 
             
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     corr_matrix = np.array([[np.sum(x==y) for x in all_ampls] for y in all_ampls])
     #all_ampls_redistributed = np.vstack(all_ampls)
     #corr_matrix = np.dot(all_ampls_redistributed, all_ampls_redistributed.T)
@@ -1522,6 +1528,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     fold_mng.create_folder(save_fold)
     save_base = save_fold + save_plots
     
+    all_spikes = []
     # calculate all the spikes which are within given window
     for idx_type, typ in enumerate([spontaneous, initiated]):
         
@@ -1544,6 +1551,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         dist_electrode = []
         numb_spikes = 0
         
+        
         # check how many spikes are in every bin
         for electr in np.unique(typ['electrode']):
             n_all, _ = np.histogram(spikes_list[electr], bins) #, normed = True)
@@ -1556,7 +1564,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
         
         # numb_spikes - number of spikes all together
         numb_spikes = numb_spikes * 1.0
-        
+        all_spikes.append(numb_spikes)
         # for_histogram - only those dist_electrode from considered_bin
         for_histogram = np.array(for_histogram)
         
@@ -1572,7 +1580,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     
     # plot imshow - not normalized
     for idx_type, typ in enumerate([spontaneous, initiated]):  
-        title = types[idx_type] + ', found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes)
+        title = types[idx_type] + ', found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(all_spikes[idx_type])
         save_name =  save_base + types[idx_type] + ext
         electrs = np.unique(typ['electrode'])
         plot_imshow_origin(for_imshow[idx_type], window,save_name, title, electrs) 
@@ -1600,7 +1608,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     #import pdb; pdb.set_trace()
     sum_in_each = (np.sum(for_imshow,0)) * 1.0
     for idx_type, typ in enumerate([spontaneous, initiated]):  
-        title = types[idx_type] + ', norm_pixel, found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes)
+        title = types[idx_type] + ', norm_pixel, found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(all_spikes[idx_type])
         save_name =  save_base + types[idx_type]+'norm_pixel' + ext
         electrs = np.unique(typ['electrode'])
         
@@ -1624,7 +1632,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     sum_in_electr = np.sum(for_imshow,2)
     sum_between = np.sum(sum_in_electr, 0)
     for idx_type, typ in enumerate([spontaneous, initiated]):  
-        title = types[idx_type] + ', norm_electr, found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes)
+        title = types[idx_type] + ', norm_electr, found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(all_spikes[idx_type])
         save_name =  save_base + types[idx_type]+'norm_electr' + ext
         electrs = np.unique(typ['electrode'])
         
@@ -1677,8 +1685,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
 
 def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 600.0):
     """ plots every spw separately (in all electrodes)"""
-    
-    
+
     npzfile        = np.load(save_folder + data_file)
     data = npzfile['data']
     fs = npzfile['fs']
@@ -1794,8 +1801,8 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
 def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_file, induc_spont, intra_spikes, ext):
     """ it divides SPWs to two groups - close and far from the spike and alignes them, and plots together"""
     
-
-    win = [-20, 100] #ms
+    from scipy.stats import nanmean
+    win = [-5, 80] #ms
     
     npzfile         = np.load(save_folder + induc_spont)
     spontaneous      = npzfile['spontaneous'] # spikes_all
@@ -1836,15 +1843,35 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     spws_all = [initiated, spontaneous]
     all_data_traces = []
     all_in_spikes = []
+    
+    #import pdb; pdb.set_trace() 
+    add_nans = np.ones([np.size(data, 0), np.size(data,1), after_pts - before_pts]) * np.nan  
+    all_data = np.zeros([np.size(data, 0), np.size(data,1), np.size(data,2) + np.size(add_nans, 2)])
+    #all_data[:, :, 0:np.size(add_nans, 2)] = add_nans
+    all_data[:, :, 0:-np.size(add_nans, 2)] = data
+    all_data[:, :, -np.size(add_nans, 2):] = add_nans
+    temp_len = np.size(data,2)
+    data = all_data
+    del all_data
+    
+    save_fold = save_folder + plot_folder
+    fold_mng.create_folder(save_fold)
+    
+    all_data_intra = np.zeros([np.size(data_intra, 0), np.size(data_intra,1), np.size(data_intra,2) + np.size(add_nans, 2)])
+    all_data_intra[:, :, 0:-np.size(add_nans, 2)] = data_intra
+    all_data_intra[:, :, -np.size(add_nans, 2):] = add_nans[0,:,:]
+    data_intra = all_data_intra
+    del all_data_intra
     for spws in spws_all:
         # take out those spws which are too early or too late (don't fit in the data size)
-        used = ispw.ms2pts(spws['spw_start'], fs).astype(int)
-        spws_used = spws[(used > -before_pts) & (used + after_pts < np.size(data,2))]
+        #used = ispw.ms2pts(spws['spw_start'], fs).astype(int)
+        #spws_used = spws[(used > -before_pts) & (used + after_pts < np.size(data,2))]
         
+        spws_used = spws
         spw = np.unique(spws_used['spw_no'])
         spw_traces = np.zeros([np.size(data,0) + 1, len(spw), after_pts - before_pts])
         in_spikes = []
-        
+
         for spw_idx, spw_n in enumerate(spw):
             spw_start = spws_used[spws_used['spw_no'] == spw_n]['spw_start'][0]
             spw_start_pts = ispw.ms2pts(spw_start, fs).astype(int)
@@ -1852,16 +1879,24 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             
             base = data[:, trace, spw_start_pts + win_base_pts[0]: spw_start_pts + win_base_pts[1]]
             base = np.mean(base, axis = 1)
+            
             #data_spw = np.transpose(data_spw) - base
             #data_spw = np.transpose(data_spw)
+
             
             data_temp = data[:, trace, spw_start_pts + before_pts: spw_start_pts + after_pts]
+            
             data_temp = np.transpose(data_temp) - base
             data_temp = np.transpose(data_temp)
-
-            spw_traces[1:, spw_idx, :] = data_temp
+            try:
+                spw_traces[1:, spw_idx, :] = data_temp
+            except:
+                import pdb; pdb.set_trace() 
             data_temp_intra = data_intra[:, trace, spw_start_pts + before_pts: spw_start_pts + after_pts]
-            spw_traces[0, spw_idx, :] = data_temp_intra
+            try:
+                spw_traces[0, spw_idx, :] = data_temp_intra
+            except:
+                import pdb; pdb.set_trace() 
             
             spikes_detected = intra_spikes[(intra_spikes['time'] < spw_start + win[1]) & (intra_spikes['time'] > spw_start + win[0])]['time']
             
@@ -1873,8 +1908,8 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             
     titles = ['Induced', 'Spontaneous']
     #import pdb; pdb.set_trace() 
-    add_it = 150
-    t = dat.get_timeline(data_temp[0], fs, 'ms')
+    add_it = 400
+    t = dat.get_timeline(data_temp[0], fs, 'ms') + win[0]
     #in_spikes = np.concatenate(in_spikes).astype(int)
     for idx, data_spw in enumerate(all_data_traces): 
         #print 'tak'
@@ -1884,23 +1919,28 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             
             data_used = data_spw[electr,:]
             for s in range(len(data_used)):
+
                 plt.plot(t, data_used[s] + electr * add_it, 'b', alpha=0.2)
+                
                 if electr == 0:
                     print s
                     #import pdb; pdb.set_trace()
                     plt.plot(t[in_spikes[s]], data_used[s, in_spikes[s]] + electr * add_it, 'r.')
                 
                 
-            plt.plot(t, np.mean(data_used, 0) + electr * add_it, 'r')
-            
-        
+            if electr != 0:
+
+                plt.plot(t, nanmean(data_used, 0) + electr * (add_it), 'r')
+                
+            if electr == 1:
+                plt.xlim([t[0], t[-1]])
+                fig_fname = save_fold + save_plots + titles[idx] + 'electr_0' + ext
+                fig.savefig(fig_fname,dpi=600)   
         #import pdb; pdb.set_trace()
         
         plt.title(titles[idx] + ', spws: ' + str(len(data_used)))     
-        save_fold = save_folder + plot_folder
-        fold_mng.create_folder(save_fold)
-        #plt.show()
-        fig_fname = save_fold + save_plots + titles[idx] + ext
+
+        fig_fname = save_fold + save_plots + titles[idx] + str(win[0]) + '_' + str(win[1]) + ext
         logging.info("saving figure %s" % fig_fname)
         fig.savefig(fig_fname,dpi=600)    
         #logging.info("saving figure %s" % fig_fname)       

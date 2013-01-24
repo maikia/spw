@@ -13,6 +13,7 @@ from configure_path import get_save_folder
 from convert_data_bas import rec2array
 import logging
 
+#import bottleneck as bn
 
 # if new settings applied - it will rerun everything again
 # to select the settings go to induc_SPW
@@ -27,6 +28,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     intra_data = 'data_baseintra.npz'
     spike_file = 'spikes_largest.npz'
     intra_spike_file = 'intra_spikes.npz'
+    all_spikes = 'spikes.npz'
     #==============================================================
     #import pdb; pdb.set_trace()
     plots_folder = 'plots/'
@@ -60,65 +62,63 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         alignedSPWs = 'aligned_SPWs'
         save_plot_in = plots_folder+ alignedSPWs + '/'
-        if run_all_functions:
-            """ plots few SPWs - not really cool function"""
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_alignedSPW(save_folder, save_plot_in, save_plots = alignedSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = ext)
-        import pdb; pdb.set_trace()
-        
-#        alignedSPWs_2all = 'aligned_SPWs2allSpikes'
-#        if run_all_functions:
-#            analyser.plot_alignedSPW(save_folder, solutions_folder+alignedSPWs + '/', save_plots = alignedSPWs_2all, data_file = raw_baselined, intra_data_file = data_intra, spw_file = induc_spont_spw, dist_file = dist_spw_inspikes2all, ext = ext)
-        
+
 #        spikes_inSPWs_plot = 'spikes_inSPWs'
 #        if run_all_functions:
 #            analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot + '/', 
 #                                 save_plots = spikes_inSPWs_plot, data_file = raw_baselined, 
 #                                 spike_data = spikes_largest, spw_data = induc_spont_spw, 
 #                                 spikes_filter = [], ext = ext, win = win)
-        
-        
+
         
         spikePerElectrode = 'spike_per_electrode'
         hist_spike_bins = 'all_dists_hist.npz'
-        if not run_all_functions: #->
-            analyser.plot_spike(save_folder, solutions_folder + spikePerElectrode + '/', save_plots = spikePerElectrode, 
-                            save_file = hist_spike_bins, spike_data = spikes_largest, spw_data = induc_spont_equal, 
+        save_plot_in = plots_folder+ spikePerElectrode + '/'
+        if not run_all_functions: 
+            fold_mng.create_folder(save_folder + save_plot_in)
+            analyser.plot_spike(save_folder, save_plot_in, save_plots = spikePerElectrode, 
+                            save_file = hist_spike_bins, spike_data = spike_file, spw_data = equal_init_spont, 
                             ext = ext, win = win)
+                
+#        alignmend_spws = 'alignmend_spws'
+#        save_plot_in = plots_folder+ alignmend_spws + '/'
+#        if run_all_functions:
+#            fold_mng.create_folder(save_folder + save_plot_in)
+#            analyser.plot_spw_amplitude(save_folder, save_plot_in, save_plots = alignmend_spws, 
+#                            data_file = raw_data, spw_data = equal_init_spont, ext = ext)
             
-    
-        alignmend_spws = 'alignmend_spws'
-        if not run_all_functions:
-            analyser.plot_spw_amplitude(save_folder, solutions_folder + spikePerElectrode + '/', save_plots = alignmend_spws, 
-                            data_file = raw_baselined, spw_data = induc_spont_spw, ext = ext)
         
-        group_per_isps = 'group_per_isps.npz'
-        if not run_all_functions:
-            analyser.plot_spw_ipsps_no_groups(save_folder, save_file = group_per_isps, data_file = raw_baselined, 
-                                              spw_data = SPWs_ipsps_corrected, ext = ext)
-        
-        spw_more_ipsps = 'spw_more_ipsps.npz'
-        if not run_all_functions:
-            analyser.remove_with_less_ipsps(save_folder, save_file = spw_more_ipsps, 
-                                            spw_data = SPWs_ipsps_corrected,min_ipsps_group = [3])
-        
-        
-        spikes_inSPWs_plot_fig3a = 'spikes_inSPWs_fig3a'
-        if not run_all_functions:
-            analyser.plot_spikes4spw(save_folder, solutions_folder+spikes_inSPWs_plot_fig3a + '/', 
-                                 save_plots = spikes_inSPWs_plot_fig3a, data_file = raw_baselined, 
-                                 spike_data = spikes_largest, spw_data = induc_spont_spw, 
-                                 spikes_filter = filter_folder + spikes_filter, ext = ext, win = win)
+#        group_per_isps = 'group_per_isps.npz'
+#        if not run_all_functions:
+#            analyser.plot_spw_ipsps_no_groups(save_folder, save_file = group_per_isps, data_file = raw_data, 
+#                                              spw_data = spws_file, ext = ext)
             
+#        spw_more_ipsps = 'spw_more_ipsps.npz'
+#        if run_all_functions:
+#            analyser.remove_with_less_ipsps(save_folder, save_file = spw_more_ipsps, 
+#                                            spw_data = spws_file, min_ipsps_group = [3])
+#        filter_folder = 'filtered/'
+#        spikes_inSPWs_plot_fig3a = 'spikes_inSPWs_fig3a'
+#        save_plot_in = plots_folder+ spikes_inSPWs_plot_fig3a + '/'
+#        if run_all_functions:
+#            fold_mng.create_folder(save_folder + save_plot_in)
+#            analyser.plot_spikes4spw(save_folder, save_plot_in, 
+#                                 save_plots = spikes_inSPWs_plot_fig3a, data_file = raw_data, 
+#                                 spike_data = spike_file, spw_data = equal_init_spont, 
+#                                 spikes_filter = filter_folder + spike_file, ext = ext, win = win)
             
-        used_spw_data = induc_spont_equal
+        
         group_per_isps_all = 'group_per_isps_all.npz'
-        if run_all_functions:
-            analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_baselined, 
-                                              spw_data = used_spw_data, ext = ext)#
+        if not run_all_functions:
+            analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_data, 
+                                              spw_data = equal_init_spont, ext = ext)#
 
                                               #spw_data = spw_more_ipsps, ext = ext)
-        
+                                              
+
         final_results = 'final_results'
 #        dendogram = 'dendogram'
 #        if not run_all_functions:
@@ -129,13 +129,16 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         
         groups_w_firing_rate = 'groups_w_firing_rate'
+        save_plot_in = plots_folder+ groups_w_firing_rate + '/'
+        
         if run_all_functions:
-            analyser.plot_groups_w_fr(save_folder, plot_folder = solutions_folder + final_results + '/', 
-                                      plot_file = groups_w_firing_rate, data_file = raw_baselined, 
-                                      spw_groups = group_per_isps_all, spw_details = used_spw_data,
-                                      spike_data = spikes_raw , ext = ext, win = win)
-                                    # spikes_largest
-         
+            fold_mng.create_folder(save_folder + save_plot_in)
+            analyser.plot_groups_w_fr(save_folder, plot_folder = save_plot_in, 
+                                      plot_file = groups_w_firing_rate, data_file = raw_data, 
+                                      spw_groups = group_per_isps_all, spw_details = equal_init_spont,
+                                      spike_data = all_spikes , ext = ext, win = win)
+                                    # spikes_largest           
+        import pdb; pdb.set_trace() 
         
         plot_ampl_synch = 'ampl_synchrony'
         save_file = 'ampl_sync_dat'

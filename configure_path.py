@@ -1,7 +1,7 @@
-save_path = '/home/maja/phdProject/data/'
-save_data = '/home/maja/phdProject/analysis/swp/'
-#save_path = '/home/maja/PhDProject/SPWs/data/induced/'
-#save_data = '/home/maja/PhDProject/SPWs/SPWs/saved_data/'
+#save_path = '/home/maja/phdProject/data/'
+#save_data = '/home/maja/phdProject/analysis/swp/'
+save_path = '/home/maja/PhDProject/SPWs/data/induced/'
+save_data = '/home/maja/PhDProject/SPWs/SPWs/saved_data/'
 
 
 def get_save_folder():
