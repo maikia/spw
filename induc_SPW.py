@@ -2555,12 +2555,19 @@ def remove_not_chosen_groups(spws, shorten_spws):
     given rec array, it leaves the ipsps. So IPSPs must follow given earlier
     rule at least in one electrode, not necessary in all"""
     # each group have to be separate in each spw
-    assert len(np.unique(shorten_spws['group'])) == len(np.unique(shorten_spws[['group', 'spw_no']]))
-    
-    all_groups_left = np.unique(shorten_spws['group'])
+    #assert len(np.unique(shorten_spws['group'])) == len(np.unique(shorten_spws[['group', 'spw_no']]))
+    #assert len(np.unique(spws['group'])) == len(np.unique(spws[['group', 'spw_no']]))
+               
+#    if len(np.unique(shorten_spws['group'])) != len(np.unique(shorten_spws[['group', 'spw_no']])):
+#        import pdb; pdb.set_trace()
+        
+    all_groups_left = np.unique(shorten_spws[['group', 'spw_no']])
     spws_left = []
-    for group in all_groups_left:
-        spws_left.append(spws[spws['group'] == group])
+    for spw in all_groups_left:
+        #import pdb; pdb.set_trace()
+        group = spw[0]
+        spw_no = spw[1]
+        spws_left.append(spws[(spws['group'] == group) & (spws['spw_no'] == spw_no)])
     if len(spws_left) > 0:
         return np.concatenate(spws_left)
     #import pdb; pdb.set_trace()
@@ -2642,7 +2649,12 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
         # check which IPSPs are of too low amplitude (on filtered data so that amplitude is not checked on spikes
         max_ampls = calculate_max_in_given_patch(data_trace, spw_ipsps_trace[['electrode','ipsp_start']], distanse_from_point, fs)  
         #max_ampls[max_ampls >= expected_min_ipsp_ampl]
+        
+        #if len(np.unique(spw_ipsps_trace['group'])) != len(np.unique(spw_ipsps_trace[['group', 'spw_no']])):
+        #    import pdb; pdb.set_trace()
         ipsps_trace_temp = spw_ipsps_trace[max_ampls >= expected_min_ipsp_ampl]
+        
+
         ipsps_trace = remove_not_chosen_groups(spw_ipsps_trace, ipsps_trace_temp)
         #import pdb; pdb.set_trace()
         

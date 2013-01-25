@@ -84,7 +84,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             updater.up_highWaves_numb(save_folder, save_file = SPWs_potential_numb, load_spwsfile = SPWs_potential, reanalize = reanalize)
         
         SPWs_ipsps      = 'spws_params.npz' #'spws_ipsps.npz'
-        if run_all_functions:
+        if not run_all_functions:
             # it finds the preliminary IPSPs for each of the detected waves
             updater.up_SPW_ipsp(save_folder, filter_folder, save_file = SPWs_ipsps, load_datafile = raw_baselined, load_waves = SPWs_potential_numb, load_spikes = spikes_largest, reanalize = reanalize)
         
@@ -138,7 +138,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     #    # ----> check if the group does not exist on other electrodes
         SPWs_missing_link = 'SPWs_missing_link.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.up_add_missing_electrodes_SPW(save_folder, SPWs_missing_link, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
         
         SPWs_merged = 'SPWs_merged.npz'
@@ -162,7 +162,6 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             updater.up_remove_with_to_few_ipsps(save_folder, SPWs_ipsps_final, SPWs_ipsps_corrected2, to_remove = min_no_ipsps, reanalize = reanalize)
     
         #print intr_electrode
-
         data_intra = 'data_intra.npz'
         if not run_all_functions:
             updater.up_intrafile(filename, save_folder, save_file = data_intra, int_electrodes = [0], reanalize = reanalize)

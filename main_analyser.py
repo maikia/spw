@@ -131,21 +131,32 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         groups_w_firing_rate = 'groups_w_firing_rate'
         save_plot_in = plots_folder+ groups_w_firing_rate + '/'
         
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_groups_w_fr(save_folder, plot_folder = save_plot_in, 
                                       plot_file = groups_w_firing_rate, data_file = raw_data, 
                                       spw_groups = group_per_isps_all, spw_details = equal_init_spont,
                                       spike_data = all_spikes , ext = ext, win = win)
                                     # spikes_largest           
+        
+        cumulative_plot = 'cumulative_plot'
+        save_plot_in = plots_folder+ cumulative_plot + '/'
+        if run_all_functions:
+            fold_mng.create_folder(save_folder + save_plot_in)
+            analyser.cum_distribution_funct(save_folder, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
+                                      spw_groups = group_per_isps_all, spw_details = equal_init_spont,
+                                      ext = ext, win = win)
+        
         import pdb; pdb.set_trace() 
         
         plot_ampl_synch = 'ampl_synchrony'
         save_file = 'ampl_sync_dat'
-        if not run_all_functions: #->
-            analyser.plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder = solutions_folder + final_results + '/', 
-                                                 plot_file = plot_ampl_synch, data_file = raw_baselined,
-                                                 spw_groups = group_per_isps_all,spw_details = SPWs_ipsps_final, ext = ext) 
+        save_plot_in = plots_folder+ plot_ampl_synch + '/'
+        if not run_all_functions: 
+            fold_mng.create_folder(save_folder + save_plot_in)
+            analyser.plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder = save_plot_in, 
+                                                 plot_file = plot_ampl_synch, data_file = raw_data,
+                                                 spw_groups = group_per_isps_all, spw_details = equal_init_spont, ext = ext) 
 
 
 def update_all_plots_all_cells(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], intr_electrode = 1, data_part = 'all'):
