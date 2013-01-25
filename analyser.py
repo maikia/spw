@@ -828,7 +828,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_g
     win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
     size_win_pts = win_pts[1] - win_pts[0] + 1
 
-    all_for_cum = np.zeros([len(data), len(names), )
+    #all_for_cum = np.zeros([len(data), len(names), )
     # go through every type possible
     for typ in range(len(names)):
         spw_group_typ = groups[typ]
