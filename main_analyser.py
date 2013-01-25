@@ -144,7 +144,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         if run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.cum_distribution_funct(save_folder, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
-                                      spw_groups = group_per_isps_all, spw_details = equal_init_spont,
+                                      spw_details = equal_init_spont,
                                       ext = ext, win = win)
         
         import pdb; pdb.set_trace() 

@@ -799,7 +799,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     gc.collect()    
     
     
-def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details, ext, win):
+def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_details, ext, win):
     """ it calculate mean root mean square of each of the SPWs (separately for spontaneous and induced,
     and from this create comulative distribution function for each of the groups"""
     npzfile        = np.load(save_folder + data_file)
@@ -808,14 +808,14 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_g
     npzfile.close() 
     
     npzfile = np.load(save_folder + spw_details)
-    spws = [npzfile['spw_ipsps']]
-    types = ['all']
-    npzfile.close()     
-        
-    npzfile = np.load(save_folder + spw_groups)
-    groups = [npzfile['group']]
-    names = npzfile['names'] 
-    npzfile.close()
+    spont = npzfile['spontaneous']
+    init = npzfile['initiated']
+    types = ['spontaneous', 'initiated']
+    spws = [spont, init]     
+    npzfile.close()    
+    
+    # make sure that there is equal number of spontaneous and initiated SPWs
+    assert len(np.unique(init['spw_no'])) == len(np.unique(spont['spw_no']))
     
     remove_baseline = True
     win_base = [-10, -5]
@@ -826,27 +826,24 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_g
     
     window_to_plot = [-10, 70] #win
     win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
-    size_win_pts = win_pts[1] - win_pts[0] + 1
+    size_win_pts = win_pts[1] - win_pts[0]
+    
+    no_of_spws_in_group =  len(np.unique(spont['spw_no']))
+    all_cums = np.zeros([len(data), len(types),no_of_spws_in_group])
+    
 
-    #all_for_cum = np.zeros([len(data), len(names), )
     # go through every type possible
-    for typ in range(len(names)):
-        spw_group_typ = groups[typ]
-        group_nos = np.unique(spw_group_typ['group'])
-        spw_type = spws[typ]   
-        # go through every group detected
-        #for group_no in group_nos:
+    for typ in range(len(types)):
+        spws_used = spws[typ]   
+        # go through every group detected  
+        all_spws = np.ones([no_of_spws_in_group, np.size(data,0), size_win_pts]) * np.nan
+        spw_nos_used = np.unique(spws_used['spw_no'])
+        #no_bins = 150
+        #electro_bins = np.zeros([np.size(data,0), no_bins])
         
-        fig = plt.figure()
-        spw_nos_used = spw_group_typ[spw_group_typ['group'] == group_no]['spw_no']
-        
-        all_spws = np.zeros([len(spw_nos_used), np.size(data,0), size_win_pts]) * 0.01
-        
-        no_bins = 150
-        electro_bins = np.zeros([np.size(data,0), no_bins])
         # go through every spw used in this group
         for idx, spw_no in enumerate(spw_nos_used):
-            spw_used = spw_type[spw_type['spw_no'] == spw_no]
+            spw_used = spws_used[spws_used['spw_no'] == spw_no]
             spw_start = spw_used['spw_start'][0]
             trace = spw_used['trace'][0]
             data_used = data[:,trace,:]
@@ -861,13 +858,17 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_g
             data_spw = data_used[:, start_trace_pts: end_trace_pts]
             #import pdb; pdb.set_trace() 
             if remove_baseline:
-                base = data_used[:, start_trace_pts + win_base_pts[0]: start_trace_pts + win_base_pts[1]]
+                base = data_used[:, max(0, start_trace_pts + win_base_pts[0]): max(20, start_trace_pts + win_base_pts[1])]
                 base = np.mean(base, axis = 1)
                 data_spw = np.transpose(data_spw) - base
                 data_spw = np.transpose(data_spw)
+
+            all_spws[idx, :, 0:np.size(data_spw,1)] = data_spw[:, 0:size_win_pts]
+            #if idx == 4:
+            #    import pdb; pdb.set_trace() 
+            #    all_spws[4, 0, :]
                 
-            all_spws[idx, :, 0:np.size(data_spw,1)] = data_spw
-            
+        #import pdb; pdb.set_trace()     
         all_root_means = np.zeros([len(data_spw), len(all_spws)])    
         # calculate variablility - cumulative sum - of all spws in this type
         for electr in range(len(data_spw)):
@@ -877,19 +878,47 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_g
             mean_squared = sum_s_means_across/sum_no_nans
             root_mean_square = np.sqrt(mean_squared) # it should be equal to no of spws
             all_root_means[electr, :] = root_mean_square
-        
             # cumulative_distribution_function 
-            all_root_means[electr, :].sort()
-            n = np.arange(len(all_root_means[electr,:]))
-            n = n / len(all_root_means[electr, :])
             
-            
-            plt.plot(all_root_means[electr, :], n)
-            plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)) + 'electrode: ' + str(electr))
-            
-            from scipy.stats import ks_2samp
-            ks_2samp(x, y)
-            plt.show()
+        # save all the root mean squares for this function    
+        all_cums[:, typ, :] = all_root_means
+        
+    #import pdb; pdb.set_trace() 
+    colors = ['b', 'g']
+    fig = plt.figure()
+    from scipy.stats import ks_2samp
+    for electr in range(len(data_spw)):
+        plt.subplot(len(data_spw), 1, electr + 1 )
+        for typ in range(len(types)):
+            temp_cum_dist = np.sort(all_cums[electr, typ, :])
+            y_ax = np.arange(len(temp_cum_dist)) * 1.0
+            y_ax = y_ax / len(temp_cum_dist)
+            plt.plot(temp_cum_dist, y_ax, colors[typ], label = types[typ])
+        
+        a_value, p_value = ks_2samp(np.sort(all_cums[electr, 0, :]), np.sort(all_cums[electr, 1, :]))
+        #print p_value
+        p_value = p_value * 100
+        
+        if electr == 0:
+            plt.legend()
+            plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
+        plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
+    fig.savefig(save_base + ext, dpi=600) 
+
+    plt.figure() 
+    first_group = np.sort(np.concatenate(all_cums[:, 0, :]))
+    second_group = np.sort(np.concatenate(all_cums[:, 1, :]))
+    y_ax = np.arange(len(first_group)) * 1.0
+    y_ax = y_ax / len(first_group)
+    plt.plot(first_group, y_ax, colors[0], label = types[0])
+    plt.plot(second_group, y_ax, colors[1], label = types[1])
+    a_value, p_value = ks_2samp(first_group, second_group)
+    p_value = p_value * 100
+    plt.legend()
+    plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', all')
+    plt.ylabel('KS:'  + str("%.4f" % p_value) + '%')
+    fig.savefig(save_base + '_all_'+ ext, dpi=600) 
+    plt.show()
 
 def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details, spike_data, ext, win):
     """ makes the plot of every given group and finds the firing rate for it"""
@@ -949,7 +978,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             
             fig = plt.figure()
             spw_nos_used = spw_group_typ[spw_group_typ['group'] == group_no]['spw_no']
-            all_spws = np.zeros([len(spw_nos_used), np.size(data,0), size_win_pts]) * 0.01
+            all_spws = np.zeros([len(spw_nos_used), np.size(data,0), size_win_pts])
             
             no_bins = 150
             electro_bins = np.zeros([np.size(data,0), no_bins])
@@ -988,7 +1017,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
                 data_spw = data_used[:, start_trace_pts: end_trace_pts]
                 #import pdb; pdb.set_trace() 
                 if remove_baseline:
-                    base = data_used[:, start_trace_pts + win_base_pts[0]: start_trace_pts + win_base_pts[1]]
+                    base = data_used[:, max(0, start_trace_pts + win_base_pts[0]): max(20, start_trace_pts + win_base_pts[1])]
                     base = np.mean(base, axis = 1)
                     data_spw = np.transpose(data_spw) - base
                     data_spw = np.transpose(data_spw)
@@ -1039,8 +1068,9 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             plt.xlabel('time (ms)')
             plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
             #import pdb; pdb.set_trace()
-            fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)    
             plt.xlim([t[0], t[-1]])
+            fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)    
+            
             
                             
             # for drawing box plot
