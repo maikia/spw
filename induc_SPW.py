@@ -1206,40 +1206,6 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                                 allow = True
                 else:
                     allow = False
-
-                
-                #import pdb; pdb.set_trace() 
-                
-#                # check what happens before this ipsp
-#                if (ipsp_prev == -1) or (ipsp_start_pts - group_pts >= -min_len_ipsp_pts):
-#                    before_ok = 0
-#                    ipsp_start_pts = group_pts
-#                else:
-#                    data_prev_ipsp = data_trace[electr,ipsp_start_pts:group_pts]
-#                    try:
-#                        before_ok = check_if_ipsp(data_prev_ipsp, min_ampl)
-#                    except:
-#                        import pdb; pdb.set_trace() 
-#                
-#                # check what happens after this IPSP      
-#                if (ipsp_next == -1) or (ipsp_end_pts - group_pts <= min_len_ipsp_pts):
-#                    after_ok = 0
-#                    ipsp_end_pts = ms2pts(ipsp_prev, fs).astype('i4')
-#                    data_next_ipsps = data_trace[electr,group_pts:group_pts+ipsp_size_pts]
-#                else:
-#                    try:
-#                        data_next_ipsps = data_trace[electr,group_pts:ipsp_end_pts]
-#                        after_ok = check_if_ipsp(data_next_ipsps, min_ampl)
-#                    except:
-#                        import pdb; pdb.set_trace() 
-                   
-
-                # check what happens between this and the next ipsps
-                # unless it's the last one
-#                if ipsp_next != 0:
-#                    after_ok = 0
-#                else:
-#                    after_ok = 0
                 
                 #make decision if to add this electrode to this group or not
                 #import pdb; pdb.set_trace() 
