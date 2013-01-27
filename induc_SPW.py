@@ -1266,14 +1266,30 @@ def update_remove_with_to_few_ipsps(save_folder, save_file, spw_file, to_remove)
     #import pdb; pdb.set_trace()
     assert len(np.unique(spws[['trace','spw_start']])) == len(np.unique(spws['spw_no']))
     chosen_spws = []
-    for spw_no in np.unique(spws['spw_no']):
-        spw_used = spws[spws['spw_no'] == spw_no]
-        no_groups = len(np.unique(spw_used['group']))
-        if no_groups >= to_remove:
-            chosen_spws.append(spw_used)
     
-    chosen_spws = np.concatenate(chosen_spws)
-    np.savez(save_folder + save_file, spw_ipsps = chosen_spws)
+    #[[-1, 2], [3, -1], [-1, -1]]
+    #import pdb; pdb.set_trace()
+    if to_remove[0] == -1 and to_remove[1] == -1:
+        np.savez(save_folder + save_file, spw_ipsps = spws)
+    else:
+        for spw_no in np.unique(spws['spw_no']):
+            spw_used = spws[spws['spw_no'] == spw_no]
+            no_groups = len(np.unique(spw_used['group']))
+            if to_remove[0] == -1:
+                # if only upper bound
+                if no_groups <= to_remove[1]:
+                    chosen_spws.append(spw_used)
+            elif to_remove[1] == -1:
+                # only lower bound
+                if no_groups >= to_remove[0]:
+                    chosen_spws.append(spw_used)
+            else:
+                # bounds from lower and upper
+                if no_groups <= to_remove[1] and no_groups >= to_remove[0]:
+                    chosen_spws.append(spw_used)
+        
+        chosen_spws = np.concatenate(chosen_spws)
+        np.savez(save_folder + save_file, spw_ipsps = chosen_spws)
 
 
 
