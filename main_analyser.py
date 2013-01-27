@@ -51,21 +51,21 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         plot_name_ipsps_2_dist = 'numIPSP_distance'
         save_plot_in = plots_folder+plot_name_ipsps_2_dist + '/'
-        if run_all_functions:
+        if not run_all_functions:
             """ plots relation between distance from the spike and number of ipsp groups in a SPW """
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_noIpsps2distance(save_folder,save_plot_in , save_plots = plot_name_ipsps_2_dist, spw_file = spws_file, dist_file = distances, ext = ext)
         
         dist_spw2psike = 'dist_spw2spike'
         save_plot_in = plots_folder+dist_spw2psike + '/'
-        if run_all_functions:
+        if not run_all_functions:
             """ it plots histogram showing number of SPWs distant from spike"""
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_dist_spw2spike(save_folder, save_plot_in, save_plots = dist_spw2psike, dist_file = distances, ext = ext)
         
         alignedSPWs = 'aligned_SPWs'
         save_plot_in = plots_folder+ alignedSPWs + '/'
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_alignedSPW(save_folder, save_plot_in, save_plots = alignedSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = ext)
 
@@ -80,7 +80,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         spikePerElectrode = 'spike_per_electrode'
         hist_spike_bins = name_used + 'all_dists_hist.npz'
         save_plot_in = plots_folder+ spikePerElectrode + '/'
-        if run_all_functions: 
+        if not run_all_functions: 
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_spike(save_folder, save_plot_in, save_plots = spikePerElectrode, 
                             save_file = hist_spike_bins, spike_data = spike_file, spw_data = equal_init_spont, 
@@ -115,7 +115,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
             
         
         group_per_isps_all = name_used + 'group_per_isps_all.npz'
-        if run_all_functions:
+        if not run_all_functions:
             analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_data, 
                                               spw_data = equal_init_spont, ext = ext)#
 
@@ -134,7 +134,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         groups_w_firing_rate = name_used + 'groups_w_firing_rate'
         save_plot_in = plots_folder+ groups_w_firing_rate + '/'
         
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_groups_w_fr(save_folder, plot_folder = save_plot_in, 
                                       plot_file = groups_w_firing_rate, data_file = raw_data, 
@@ -178,8 +178,7 @@ if __name__=='__main__':
     # (cell_no, between_electr, and_electr) 
     
     update = 1
-    analyse = 0
-    sum_up_all = 0
+    sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
@@ -277,11 +276,3 @@ if __name__=='__main__':
                                                  amplitudes = all_ampls, synchronise= all_syncs, 
                                                  ext = '.pdf')
 
-    
-    if analyse == 1:
-        #for nex in range(12, len(all)):
-        #for nex in [5]: #range(12, len(all)):
-        #for nex in [11]:
-        for nex in range(5):
-            filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
-            analyse_all(filename, save_folder, intra)
