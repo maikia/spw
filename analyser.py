@@ -621,40 +621,84 @@ def plot_dendograms(save_folder, plot_folder, plot_file, data_file, spw_groups, 
  
 def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells, 
                                                  amplitudes, synchronise, 
-                                                 ext = '.pdf'):
-    all_cells = np.unique(cells)
-    cell_no = len(all_cells)
-    cols = define_colors(no_colors = cell_no)
-    cells = np.array(cells)
+                                                 group_nos, names, ext = '.pdf'):
     plot_it = True
-    amplitudes = np.array(amplitudes)
-    sunchronise = np.array(synchronise)
+    #import pdb; pdb.set_trace()
+    all_cells = np.unique(cells)
+    #cell_no = len(all_cells)
+    #cols = define_colors(no_colors = cell_no)
+    maxs_groups =  max(np.max(np.concatenate(group_nos[0])),  np.max(np.concatenate(group_nos[1])))
+    cols = define_colors(no_colors = maxs_groups, type = 'grey')
+    cols = np.array(cols)
+    cols = cols[::-1]
+
+    #import pdb; pdb.set_trace()
+    cells = np.array(cells)
+    
+    #amplitudes = np.array(amplitudes)
+    #synchronise = np.array(synchronise)
     spw_nos_used = 0
     linestyl = '.'
-    fig = plt.figure()
-    for idx, cell in enumerate(cells):
-        ampl_used = amplitudes[idx]
-        sync_used = synchronise[idx]
-        idx_cell, = np.where(all_cells == cell)
+    fig_all = plt.figure(0)
+    fig_1 = plt.figure(1)
+    fig_2 = plt.figure(2)
+    all_ampl = []
+    all_synch = []
+    all_group = []
+    marker_size = 3
+    for group in range(len(names)):
+        plt.figure(group + 1)
+        ampl_group = amplitudes[group]
+        ampl_group = np.concatenate(ampl_group)
+        all_ampl.append(ampl_group)
         
-        #import pdb; pdb.set_trace() 
-        plt.plot(ampl_used, sync_used, linestyl, alpha = 0.4, color = cols[idx_cell[0]])
+        synch_group = synchronise[group]
+        synch_group = np.concatenate(synch_group)
+        all_synch.append(synch_group)
         
+        group_group = group_nos[group]
+        group_group = np.concatenate(group_group)
+        all_group.append(group_group)
         
-        spw_nos_used = spw_nos_used + len(ampl_used)
+        plt.figure(group+1)
+        plt.scatter(ampl_group, synch_group, color = cols[group_group-1,:], s = marker_size)
         
+        spw_nos_group = spw_nos_used + len(ampl_group)
+        
+        plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
+        plt.xlabel('amplitude [micro V]')
+        plt.title(names[group] + ' ,no of SPWs: ' + str(len(ampl_group)))      
+        plt.colorbar()       
+        plt.savefig(plot_folder +plot_file + names[group] + ext, dpi=600) 
+        
+    
+    plt.figure(0)
+    
+    plt.scatter(np.concatenate(all_ampl), np.concatenate(all_synch), color = cols[np.concatenate(all_group)-1,:], s = marker_size)
     plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
     plt.xlabel('amplitude [micro V]')
-    plt.title('Group: ' + ',no of SPWs: ' + str(spw_nos_used))
+    plt.title('Spont and Init ,no of SPWs: ' + str(spw_nos_group)) 
+    plt.colorbar() 
+    plt.savefig(plot_folder + plot_file + 'spont_init_' + ext, dpi=600)  
+    
 #    import pdb; pdb.set_trace() 
-#    lines = []
-#    for idx in range(len(np.unique(cells))):
-#        lines.append(plt.Line2D(range(10), range(10), linestyle=linestyl, marker='o'))
-#    line = plt.Line2D(range(10), range(10), linestyle=linestyl, marker='o')
-#    label = 
-#    legend((line,), (label,))
-            
-    fig.savefig(plot_folder +plot_file + ext, dpi=600)   
+#    spw_nos_used = 0
+#    for group in range(len(names)):
+#        fig = plt.figure()
+#        for idx, cell in enumerate(cells):
+#            ampl_used = amplitudes[idx]
+#            sync_used = synchronise[idx]
+#            idx_cell, = np.where(all_cells == cell)
+#            group_used = group_nos[idx]
+#            #
+#            plt.plot(ampl_used, sync_used, linestyl, alpha = 0.4, color = cols[idx])
+#            spw_nos_used = spw_nos_used + len(ampl_used)
+#            
+#        plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
+#        plt.xlabel('amplitude [micro V]')
+#        plt.title('Group: ' + ',no of SPWs: ' + str(spw_nos_used))            
+#        fig.savefig(plot_folder +plot_file + ext, dpi=600)      
+    
     if plot_it: 
         plt.show() 
     plt.clf()
@@ -710,7 +754,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     #import pdb; pdb.set_trace() 
     all_ampls = []
     all_syncs = []
-    
+    all_groups = []
     for typ in range(len(names)):
         spw_group_typ = groups[typ]
         #import pdb; pdb.set_trace() 
@@ -722,6 +766,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
             spw_type = spws
         temp_ampls = []
         temp_syncs = []
+        temp_groups = []
         # go through every group detected
         for group_no in group_nos:    
             fig = plt.figure()
@@ -736,6 +781,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
             electro_bins = np.zeros([np.size(data,0), no_bins])
             all_sync = []
             all_ampl = []
+            all_group = []
             # go through every spw used in this group
             for idx, spw_no in enumerate(spw_nos_used):
                 spw_used = spw_type[spw_type['spw_no'] == spw_no]
@@ -779,7 +825,8 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                 
                 all_ampl.append(ampls)
                 all_sync.append(sync)
-
+                all_group.append(no_group_ipsp)
+                #import pdb; pdb.set_trace() 
             plt.plot(all_ampl, all_sync, '.', alpha = 0.4)
             plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
             plt.xlabel('amplitude [micro V]')
@@ -787,15 +834,18 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
             
             temp_ampls.append(all_ampl)
             temp_syncs.append(all_sync)
+            temp_groups.append(all_group)
         #import pdb; pdb.set_trace() 
         all_syncs.append(np.concatenate(np.array(temp_syncs)))
         all_ampls.append(np.concatenate(np.array(temp_ampls)))
-            
+        all_groups.append(np.concatenate(np.array(temp_groups)))
+    #import pdb; pdb.set_trace() 
     fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)   
     if plot_it: 
         plt.show() 
-    plt.clf()
-    np.savez(save_folder + save_file, group = group_nos, all_ampls = all_ampl, all_syncs = all_sync) 
+    plt.close()
+    #import pdb; pdb.set_trace() 
+    np.savez(save_folder + save_file, group = types, all_ampls = all_ampls, all_syncs = all_syncs, groups_ipsp = all_groups) 
     gc.collect()    
     
     
@@ -1781,7 +1831,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     electr_spont =  np.argmax(all_dists_hist[0]) + 1
     electr_init = np.argmax(all_dists_hist[1]) + 1
     
-    
+    #import pdb; pdb.set_trace()
     np.savez(save_folder + 'max_electr_origin.npz', spont_diff = electr_spont_diff, init_diff = electr_init_diff, spont = electr_spont, init = electr_init)
     # plot imshow - difference between the two
     #for idx_type, typ in enumerate([spontaneous, initiated]):  
@@ -2062,17 +2112,28 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
         
     
 #---------------------------old -----------------------------
-def define_colors(no_colors = 8):
+def define_colors(no_colors = 8, type = 'color'):
     import colorsys
-    RGB_tuples = []
-    #import pdb; pdb.set_trace()
-    for i in range(no_colors):
-        i = i * 1.0
-        RGB_tuples.append(colorsys.hsv_to_rgb(i/no_colors, 0.5, 0.5))
-    #RGB_tuples = [(x*1.0/no_colors, x*0.5/no_colors,x*0.5/no_colors) for x in range(no_colors)]
-    RGB_tuples = np.array(RGB_tuples)
-    #RGB_tuples = [(1, 0, 0), (1, 0.5, 0), (1, 1, 0), (0.5, 1, 0), (0, 1, 0.5), (0, 1, 1), (0, 0.5, 1), (0, 0, 1)]
-    #RGB_tuples = [(0.5, 1, 0), (0, 1, 0.5), (0, 1, 1), (0, 0.5, 1), (0, 0, 1), (0.5, 0, 1), (1, 0, 1), (1, 0, 0.5)]
+    if type == 'color':
+        RGB_tuples = []
+        #import pdb; pdb.set_trace()
+        for i in range(no_colors):
+            i = i * 1.0
+            RGB_tuples.append(colorsys.hsv_to_rgb(i/no_colors, 0.5, 0.5))
+        #RGB_tuples = [(x*1.0/no_colors, x*0.5/no_colors,x*0.5/no_colors) for x in range(no_colors)]
+        RGB_tuples = np.array(RGB_tuples)
+        #RGB_tuples = [(1, 0, 0), (1, 0.5, 0), (1, 1, 0), (0.5, 1, 0), (0, 1, 0.5), (0, 1, 1), (0, 0.5, 1), (0, 0, 1)]
+        #RGB_tuples = [(0.5, 1, 0), (0, 1, 0.5), (0, 1, 1), (0, 0.5, 1), (0, 0, 1), (0.5, 0, 1), (1, 0, 1), (1, 0, 0.5)]
+    
+    elif type == 'grey':
+        #import pdb; pdb.set_trace()
+        use_vals = np.linspace(0, 1.0, no_colors + 1)
+        RGB_tuples = []
+        #import pdb; pdb.set_trace()
+        for i in use_vals[1:]:
+            #i = i*1.0 + 1
+            RGB_tuples.append((i, i, i))
+    
     return RGB_tuples
 
 def micro():
