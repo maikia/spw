@@ -912,7 +912,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
     
     no_of_spws_in_group =  len(np.unique(spont['spw_no']))
     all_cums = np.zeros([len(data), len(types), size_win_pts])
-    
+    all_cums_corrected = np.zeros([len(data), len(types), size_win_pts])
 
     # go through every type possible
     for typ in range(len(types)):
@@ -951,21 +951,35 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
             #    all_spws[4, 0, :]
                 
             
-        all_root_means = np.zeros([len(data_spw), np.size(all_spws, 2)])    
+        all_root_means = np.zeros([len(data_spw), np.size(all_spws, 2)])   
+        all_root_meaned = np.zeros([len(data_spw), np.size(all_spws, 2)]) 
         # calculate variablility - cumulative sum - of all spws in this type
         from scipy.stats import nanmean
         for electr in range(len(data_spw)):
+            # normal equation
             s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
             variance = all_spws[:, electr, :] - s_mean_across[None, :] # subtracts mean from each SPW
             squared = variance ** 2 # power of every point
             meaned = nanmean(squared, 0) # calculate mean from the powers
             sqruted = np.sqrt(meaned) # sqrt of 
             all_root_means[electr, :] = np.cumsum(sqruted) 
-            #all_root_means[electr, :] = all_root_means[electr, :]/ all_root_means[electr, -1]
             
+            # normalised by amplitude of mean
+            s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
+            max_mean = max(s_mean_across)
+            normalize_by_mean = all_spws[:, electr, :] / max_mean
+            s_mean_across = s_mean_across/max_mean
+            #import pdb; pdb.set_trace() 
+            variance = normalize_by_mean - s_mean_across[None, :] # subtracts mean from each SPW
+            squared = variance ** 2 # power of every point
+            meaned = nanmean(squared, 0) # calculate mean from the powers
+            sqruted = np.sqrt(meaned) # sqrt of 
+            all_root_meaned[electr, :] = np.cumsum(sqruted)             
+
+            #all_root_means[electr, :] = all_root_means[electr, :]/ all_root_means[electr, -1]           
         # save all the root mean squares for this function    
         all_cums[:, typ, :] = all_root_means
-    
+        all_cums_corrected[:, typ, :] = all_root_meaned
     colors = ['b', 'g']
     
     #from scipy.stats import ks_2samp
@@ -976,22 +990,24 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
         #plt.subplot(len(data_spw), 1, electr + 1 )
         for typ in range(len(types)):
             plt.plot(t, all_cums[electr, typ, :], colors[typ], label = types[typ])
-            
-            #temp_cum_dist = np.sort(all_cums[electr, typ, :])
-            #y_ax = np.arange(len(temp_cum_dist)) * 1.0
-            #y_ax = y_ax / len(temp_cum_dist)
-            #plt.plot(temp_cum_dist, y_ax, colors[typ], label = types[typ])
-        
-        #a_value, p_value = ks_2samp(np.sort(all_cums[electr, 0, :]), np.sort(all_cums[electr, 1, :]))
-        #print p_value
-        #p_value = p_value * 100
-        
+        plt.legend()
+        plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
+        plt.xlabel('Time (ms)')
+        plt.ylabel('Cumulative change of variance')
+        fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600)
 
-        if electr == 0:
-            plt.legend()
-            plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
-#        plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
-    fig.savefig(save_base + ext, dpi=600) 
+
+        fig = plt.figure()
+        #plt.subplot(len(data_spw), 1, electr + 1 )
+        for typ in range(len(types)):
+            plt.plot(t, all_cums_corrected[electr, typ, :], colors[typ], label = types[typ])
+        plt.legend()
+        plt.title('Corrected by mean, no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
+        plt.xlabel('Time (ms)')
+        plt.ylabel('Cumulative change of variance')
+        fig.savefig(save_base + 'corrected_electr_' + str(electr) + ext, dpi=600)
+        
+        #plt.show()
 
 #    fig = plt.figure() 
 #    first_group = np.sort(np.concatenate(all_cums[:, 0, :]))
@@ -1009,7 +1025,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
 #        plt.ylabel('Cumulative change of variance')
 #        #plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
 #        fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600) 
-#        plt.close()
+    plt.close()
 #    fig = plt.figure() 
 #    #import pdb; pdb.set_trace() 
 #    for typ in range(len(types)):
@@ -1027,17 +1043,18 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
 #        plt.close()
 #    fig = plt.figure() 
 #    #import pdb; pdb.set_trace() 
-#    for typ in range(len(types)):
-#        #import pdb; pdb.set_trace() 
-#        plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
-#    plt.xlabel('Time (ms)')
+    for typ in range(len(types)):
+        #import pdb; pdb.set_trace() 
+        plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
+    plt.xlabel('Time (ms)')
 #>>>>>>> refs/remotes/origin/master
     plt.legend()
     plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
     #plt.ylabel('KS:'  + str("%.4f" % p_value) + '%')
     plt.ylabel('Cumulative change of variance')
+    plt.xlabel('Time (ms)')
     fig.savefig(save_base + '_all_'+ ext, dpi=600) 
-    plt.show()
+    #plt.show()
 
 def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details, spike_data, ext, win):
     """ makes the plot of every given group and finds the firing rate for it"""

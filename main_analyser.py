@@ -23,7 +23,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     #================files which were previously analysed =======================
     names = ['max_2_', 'min_3_', 'all_'] # depending on max number of IPSPs used it should be added before
      # name of the file: spws_file, distances, equal_init_spont
-    name_used = names[2]
+    name_used = names[1]
     
     spws_file = name_used + 'SPWs_ipsps_final.npz'
     distances = name_used + 'spw_dist2first.npz'
@@ -144,7 +144,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         cumulative_plot = 'cumulative_plot'
         save_plot_in = plots_folder+ cumulative_plot + '/'
-        if not run_all_functions:
+        if run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.cum_distribution_funct(save_folder, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
                                       spw_details = equal_init_spont,
@@ -155,7 +155,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         plot_ampl_synch = 'ampl_synchrony'
         save_file = name_used + 'ampl_sync_dat'
         save_plot_in = plots_folder+ plot_ampl_synch + '/'
-        if run_all_functions: 
+        if not run_all_functions: 
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder = save_plot_in, 
                                                  plot_file = plot_ampl_synch, data_file = raw_data,
@@ -178,7 +178,7 @@ if __name__=='__main__':
     # (cell_no, between_electr, and_electr) 
     
     update = 1
-    sum_up_all = 1
+    sum_up_all = 0
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
