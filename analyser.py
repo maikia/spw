@@ -1026,36 +1026,26 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
 #        #plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
 #        fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600) 
     plt.close()
-#    fig = plt.figure() 
-#    #import pdb; pdb.set_trace() 
-#    for typ in range(len(types)):
-#        #import pdb; pdb.set_trace() 
-#        plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
-#    plt.xlabel('Time (ms)')
-#=======
-#        #if electr == 0:
-#        plt.legend()
-#        plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
-#        plt.xlabel('Time (ms)')
-#        plt.ylabel('Cumulative change of variance')
-#        #plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
-#        fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600) 
-#        plt.close()
-#    fig = plt.figure() 
-#    #import pdb; pdb.set_trace() 
+    
+    plt.figure()
     for typ in range(len(types)):
-        #import pdb; pdb.set_trace() 
         plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
     plt.xlabel('Time (ms)')
-#>>>>>>> refs/remotes/origin/master
     plt.legend()
     plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
-    #plt.ylabel('KS:'  + str("%.4f" % p_value) + '%')
     plt.ylabel('Cumulative change of variance')
-    plt.xlabel('Time (ms)')
     fig.savefig(save_base + '_all_'+ ext, dpi=600) 
     plt.close()
-    #plt.show()
+    
+    plt.figure()
+    for typ in range(len(types)):
+        plt.plot(t, nanmean(all_cums_corrected[:, typ, :], 0), colors[typ], label = types[typ])
+    plt.xlabel('Time (ms)')
+    plt.legend()
+    plt.title('Corrected, no of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
+    plt.ylabel('Cumulative change of variance')
+    fig.savefig(save_base + '_corrected_all_'+ ext, dpi=600) 
+    plt.close()    
 
 def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details, spike_data, ext, win):
     """ makes the plot of every given group and finds the firing rate for it"""
