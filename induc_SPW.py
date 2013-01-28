@@ -1206,40 +1206,6 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                                 allow = True
                 else:
                     allow = False
-
-                
-                #import pdb; pdb.set_trace() 
-                
-#                # check what happens before this ipsp
-#                if (ipsp_prev == -1) or (ipsp_start_pts - group_pts >= -min_len_ipsp_pts):
-#                    before_ok = 0
-#                    ipsp_start_pts = group_pts
-#                else:
-#                    data_prev_ipsp = data_trace[electr,ipsp_start_pts:group_pts]
-#                    try:
-#                        before_ok = check_if_ipsp(data_prev_ipsp, min_ampl)
-#                    except:
-#                        import pdb; pdb.set_trace() 
-#                
-#                # check what happens after this IPSP      
-#                if (ipsp_next == -1) or (ipsp_end_pts - group_pts <= min_len_ipsp_pts):
-#                    after_ok = 0
-#                    ipsp_end_pts = ms2pts(ipsp_prev, fs).astype('i4')
-#                    data_next_ipsps = data_trace[electr,group_pts:group_pts+ipsp_size_pts]
-#                else:
-#                    try:
-#                        data_next_ipsps = data_trace[electr,group_pts:ipsp_end_pts]
-#                        after_ok = check_if_ipsp(data_next_ipsps, min_ampl)
-#                    except:
-#                        import pdb; pdb.set_trace() 
-                   
-
-                # check what happens between this and the next ipsps
-                # unless it's the last one
-#                if ipsp_next != 0:
-#                    after_ok = 0
-#                else:
-#                    after_ok = 0
                 
                 #make decision if to add this electrode to this group or not
                 #import pdb; pdb.set_trace() 
@@ -1300,14 +1266,30 @@ def update_remove_with_to_few_ipsps(save_folder, save_file, spw_file, to_remove)
     #import pdb; pdb.set_trace()
     assert len(np.unique(spws[['trace','spw_start']])) == len(np.unique(spws['spw_no']))
     chosen_spws = []
-    for spw_no in np.unique(spws['spw_no']):
-        spw_used = spws[spws['spw_no'] == spw_no]
-        no_groups = len(np.unique(spw_used['group']))
-        if no_groups >= to_remove:
-            chosen_spws.append(spw_used)
     
-    chosen_spws = np.concatenate(chosen_spws)
-    np.savez(save_folder + save_file, spw_ipsps = chosen_spws)
+    #[[-1, 2], [3, -1], [-1, -1]]
+    #import pdb; pdb.set_trace()
+    if to_remove[0] == -1 and to_remove[1] == -1:
+        np.savez(save_folder + save_file, spw_ipsps = spws)
+    else:
+        for spw_no in np.unique(spws['spw_no']):
+            spw_used = spws[spws['spw_no'] == spw_no]
+            no_groups = len(np.unique(spw_used['group']))
+            if to_remove[0] == -1:
+                # if only upper bound
+                if no_groups <= to_remove[1]:
+                    chosen_spws.append(spw_used)
+            elif to_remove[1] == -1:
+                # only lower bound
+                if no_groups >= to_remove[0]:
+                    chosen_spws.append(spw_used)
+            else:
+                # bounds from lower and upper
+                if no_groups <= to_remove[1] and no_groups >= to_remove[0]:
+                    chosen_spws.append(spw_used)
+        
+        chosen_spws = np.concatenate(chosen_spws)
+        np.savez(save_folder + save_file, spw_ipsps = chosen_spws)
 
 
 

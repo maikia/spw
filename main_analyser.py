@@ -21,9 +21,13 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     """ work on given data file"""
     ext = '.png'
     #================files which were previously analysed =======================
-    spws_file = 'SPWs_ipsps_final.npz'
-    distances = 'spw_dist2first.npz'
-    equal_init_spont = 'induc_spont_equal.npz'
+    names = ['max_2_', 'min_3_', 'all_'] # depending on max number of IPSPs used it should be added before
+     # name of the file: spws_file, distances, equal_init_spont
+    name_used = names[2]
+    
+    spws_file = name_used + 'SPWs_ipsps_final.npz'
+    distances = name_used + 'spw_dist2first.npz'
+    equal_init_spont = name_used + 'induc_spont_equal.npz'
     raw_data = "data_bas.npz"
     intra_data = 'data_baseintra.npz'
     spike_file = 'spikes_largest.npz'
@@ -31,7 +35,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     all_spikes = 'spikes.npz'
     #==============================================================
     #import pdb; pdb.set_trace()
-    plots_folder = 'plots/'
+    plots_folder = 'plots/' + name_used
     print 'working on: ' +  filename
     
     #solutions_folder = 'plots/'
@@ -47,7 +51,6 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         plot_name_ipsps_2_dist = 'numIPSP_distance'
         save_plot_in = plots_folder+plot_name_ipsps_2_dist + '/'
-        
         if not run_all_functions:
             """ plots relation between distance from the spike and number of ipsp groups in a SPW """
             fold_mng.create_folder(save_folder + save_plot_in)
@@ -75,7 +78,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
 
         
         spikePerElectrode = 'spike_per_electrode'
-        hist_spike_bins = 'all_dists_hist.npz'
+        hist_spike_bins = name_used + 'all_dists_hist.npz'
         save_plot_in = plots_folder+ spikePerElectrode + '/'
         if not run_all_functions: 
             fold_mng.create_folder(save_folder + save_plot_in)
@@ -111,15 +114,15 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
 #                                 spikes_filter = filter_folder + spike_file, ext = ext, win = win)
             
         
-        group_per_isps_all = 'group_per_isps_all.npz'
+        group_per_isps_all = name_used + 'group_per_isps_all.npz'
         if not run_all_functions:
             analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_data, 
                                               spw_data = equal_init_spont, ext = ext)#
 
-                                              #spw_data = spw_more_ipsps, ext = ext)
+
                                               
 
-        final_results = 'final_results'
+#         final_results = 'final_results'
 #        dendogram = 'dendogram'
 #        if not run_all_functions:
 #            analyser.plot_dendograms(save_folder, plot_folder = solutions_folder + final_results + '/', 
@@ -128,7 +131,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
 #                                      spike_data = spikes_raw , ext = ext, win = win)
         
         
-        groups_w_firing_rate = 'groups_w_firing_rate'
+        groups_w_firing_rate = name_used + 'groups_w_firing_rate'
         save_plot_in = plots_folder+ groups_w_firing_rate + '/'
         
         if not run_all_functions:
@@ -141,18 +144,18 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         cumulative_plot = 'cumulative_plot'
         save_plot_in = plots_folder+ cumulative_plot + '/'
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.cum_distribution_funct(save_folder, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
                                       spw_details = equal_init_spont,
                                       ext = ext, win = win)
         
-        import pdb; pdb.set_trace() 
-        
+        #import pdb; pdb.set_trace() 
+#        
         plot_ampl_synch = 'ampl_synchrony'
-        save_file = 'ampl_sync_dat'
+        save_file = name_used + 'ampl_sync_dat'
         save_plot_in = plots_folder+ plot_ampl_synch + '/'
-        if not run_all_functions: 
+        if run_all_functions: 
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder = save_plot_in, 
                                                  plot_file = plot_ampl_synch, data_file = raw_data,
@@ -174,16 +177,15 @@ if __name__=='__main__':
                         '11': (6, 7)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 1
-    analyse = 0
-    sum_up_all = 0
+    update = 0
+    sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
         #for nex in [15]: [1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18]
-        for nex in [18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):
@@ -194,6 +196,10 @@ if __name__=='__main__':
             update_all_plots_one_cell(filename, save_folder, ex_electr, intra)
     
     if sum_up_all == 1:
+        names = ['max_2_', 'min_3_', 'all_'] # depending on max number of IPSPs used it should be added before
+        # name of the file: spws_file, distances, equal_init_spont
+        name_used = names[2]
+        
         spike = False
         ampl_synch = True
         solutions_folder = get_save_folder() + 'solutions/'
@@ -246,39 +252,49 @@ if __name__=='__main__':
         
         if ampl_synch:
             
-            all_ampls = []
-            all_syncs = []
+            all_ampls1 = []
+            all_ampls2 = []
+            all_syncs1 = []
+            all_syncs2 = []
             all_cells = []
+            all_groups1 = []
+            all_groups2 = []
             for nex in range(len(all)):
                 filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
-                file_name = 'ampl_sync_dat.npz'
+                file_name = name_used + 'ampl_sync_dat.npz'
                 exists = fold_mng.file_exists(save_folder, file_name)
                 
                 if exists:
+                    #import pdb; pdb.set_trace()
                     npzfile = np.load(save_folder + file_name)
                     groups = npzfile['group']
                     ampls = npzfile['all_ampls']
                     syncs = npzfile['all_syncs']
-                    npzfile.close()
+                    group_nos = npzfile['groups_ipsp']
                     
-                    if len(groups) == 1:
-                        # there is only one group
-                        all_cells.append(all[nex][0])
-                        all_ampls.append(ampls)
-                        all_syncs.append(syncs)
-                
+                    npzfile.close()
+                    all_ampls1.append(ampls[0])
+                    all_ampls2.append(ampls[1])
+                    all_syncs1.append(syncs[0])
+                    all_syncs2.append(syncs[1])
+                    all_groups1.append(group_nos[0])
+                    all_groups2.append(group_nos[1])
+                    all_cells.append(all[nex][0])                                      
+                    
+                    
+#                    if len(groups) == 1:
+#                        # there is only one group
+#                        all_cells.append(all[nex][0])
+#                        all_ampls.append(ampls)
+#                        all_syncs.append(syncs)
+#                        all_groups.append(group_nos)
+                    
+                    
+            #import pdb; pdb.set_trace()    
             plot_ampl_synch = 'ampl_synchrony'
 
             analyser.plot_amplitude_vs_synchrony_all(plot_folder = solutions_folder, 
                                                  plot_file = plot_ampl_synch, cells = all_cells, 
-                                                 amplitudes = all_ampls, synchronise= all_syncs, 
-                                                 ext = '.pdf')
+                                                 amplitudes = [all_ampls1, all_ampls2], synchronise= [all_syncs1, all_syncs2], 
+                                                 group_nos = [all_groups1, all_groups2], names = groups, ext = '.pdf')
 
-    
-    if analyse == 1:
-        #for nex in range(12, len(all)):
-        #for nex in [5]: #range(12, len(all)):
-        #for nex in [11]:
-        for nex in range(5):
-            filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
-            analyse_all(filename, save_folder, intra)
