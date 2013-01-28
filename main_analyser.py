@@ -177,8 +177,8 @@ if __name__=='__main__':
                         '11': (6, 7)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 0
-    sum_up_all = 1
+    update = 1
+    sum_up_all = 0
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
@@ -201,7 +201,7 @@ if __name__=='__main__':
         name_used = names[2]
         
         spike = False
-        ampl_synch = True
+        ampl_synch = False
         solutions_folder = get_save_folder() + 'solutions/'
         fold_mng.create_folder(solutions_folder)
         
