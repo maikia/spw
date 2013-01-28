@@ -905,7 +905,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
         plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
     fig.savefig(save_base + ext, dpi=600) 
 
-    plt.figure() 
+    fig = plt.figure() 
     first_group = np.sort(np.concatenate(all_cums[:, 0, :]))
     second_group = np.sort(np.concatenate(all_cums[:, 1, :]))
     y_ax = np.arange(len(first_group)) * 1.0
