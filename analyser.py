@@ -1121,7 +1121,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
                 # plot data trace 
                 #import pdb; pdb.set_trace() 
                 for electr in range(np.size(data, 0)):
-                    plt.plot(t, data_spw[electr,:] + add_it * electr, color = 'k', alpha = max(0.1, 1.0/len(spw_nos_used)))
+                    plt.plot(t, data_spw[electr,:] + add_it * electr, color = 'k', alpha = max(0.05, 1.0/len(spw_nos_used))) #, lw = 4)
                 
 
                 all_spws[idx, :, 0:np.size(data_spw,1)] = data_spw
@@ -1136,7 +1136,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             t = dat.get_timeline(mean_spw[0,:], fs, 'ms')
             for electr in range(np.size(data, 0)):
                 #import pdb; pdb.set_trace() 
-                plt.plot(t, mean_spw[electr,:] + add_it * electr, color = 'r')
+                plt.plot(t, mean_spw[electr,:] + add_it * electr, color = 'r', lw = 2)
 
                
 
@@ -1167,7 +1167,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)    
             
             
-                            
+            #plt.show()             
             # for drawing box plot
 #            add_it = 500
 #            plt.figure()
