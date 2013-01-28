@@ -200,8 +200,8 @@ if __name__=='__main__':
         # name of the file: spws_file, distances, equal_init_spont
         name_used = names[2]
         
-        spike = False
-        ampl_synch = True
+        spike = True
+        ampl_synch = False
         solutions_folder = get_save_folder() + 'solutions/'
         fold_mng.create_folder(solutions_folder)
         
