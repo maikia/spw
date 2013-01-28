@@ -899,7 +899,9 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
     # make sure that there is equal number of spontaneous and initiated SPWs
     assert len(np.unique(init['spw_no'])) == len(np.unique(spont['spw_no']))
     
+    remove_mean = True
     remove_baseline = True
+    
     win_base = [-10, -5]
     win_base_pts = [ispw.ms2pts(win_base[0], fs),ispw.ms2pts(win_base[1], fs)]
     save_fold = save_folder + plot_folder
@@ -912,7 +914,6 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
     
     no_of_spws_in_group =  len(np.unique(spont['spw_no']))
     all_cums = np.zeros([len(data), len(types), size_win_pts])
-    all_cums_corrected = np.zeros([len(data), len(types), size_win_pts])
 
     # go through every type possible
     for typ in range(len(types)):
@@ -945,11 +946,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
                 data_spw = np.transpose(data_spw) - base
                 data_spw = np.transpose(data_spw)
 
-            all_spws[idx, :, 0:np.size(data_spw,1)] = data_spw[:, 0:size_win_pts]
-            #if idx == 4:
-            #    import pdb; pdb.set_trace() 
-            #    all_spws[4, 0, :]
-                
+            all_spws[idx, :, 0:np.size(data_spw,1)] = data_spw[:, 0:size_win_pts]              
             
         all_root_means = np.zeros([len(data_spw), np.size(all_spws, 2)])   
         all_root_meaned = np.zeros([len(data_spw), np.size(all_spws, 2)]) 
@@ -957,29 +954,29 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
         from scipy.stats import nanmean
         for electr in range(len(data_spw)):
             # normal equation
-            s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
-            variance = all_spws[:, electr, :] - s_mean_across[None, :] # subtracts mean from each SPW
-            squared = variance ** 2 # power of every point
-            meaned = nanmean(squared, 0) # calculate mean from the powers
-            sqruted = np.sqrt(meaned) # sqrt of 
-            all_root_means[electr, :] = np.cumsum(sqruted) 
-            
-            # normalised by amplitude of mean
-            #s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
-            max_mean = max(s_mean_across)
-            normalize_by_mean = all_spws[:, electr, :] / max_mean
-            s_mean_across = s_mean_across/max_mean
-            #import pdb; pdb.set_trace() 
-            variance = normalize_by_mean - s_mean_across[None, :] # subtracts mean from each SPW
-            squared = variance ** 2 # power of every point
-            meaned = nanmean(squared, 0) # calculate mean from the powers
-            sqruted = np.sqrt(meaned) # sqrt of 
-            all_root_meaned[electr, :] = np.cumsum(sqruted)             
+            if ~remove_mean:
+                s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
+                variance = all_spws[:, electr, :] - s_mean_across[None, :] # subtracts mean from each SPW
+                squared = variance ** 2 # power of every point
+                meaned = nanmean(squared, 0) # calculate mean from the powers
+                sqruted = np.sqrt(meaned) # sqrt of 
+                all_root_means[electr, :] = np.cumsum(sqruted) 
+            else:
+                # normalised by amplitude of mean
+                s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
+                max_mean = max(s_mean_across)
+                normalize_by_mean = all_spws[:, electr, :] / max_mean
+                s_mean_across = s_mean_across/max_mean
+                #import pdb; pdb.set_trace() 
+                variance = normalize_by_mean - s_mean_across[None, :] # subtracts mean from each SPW
+                squared = variance ** 2 # power of every point
+                meaned = nanmean(squared, 0) # calculate mean from the powers
+                sqruted = np.sqrt(meaned) # sqrt of 
+                all_root_means[electr, :] = np.cumsum(sqruted)             
 
             #all_root_means[electr, :] = all_root_means[electr, :]/ all_root_means[electr, -1]           
         # save all the root mean squares for this function    
         all_cums[:, typ, :] = all_root_means
-        all_cums_corrected[:, typ, :] = all_root_meaned
     colors = ['b', 'g']
     
     #from scipy.stats import ks_2samp
@@ -991,61 +988,32 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
         for typ in range(len(types)):
             plt.plot(t, all_cums[electr, typ, :], colors[typ], label = types[typ])
         plt.legend()
-        plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
         plt.xlabel('Time (ms)')
         plt.ylabel('Cumulative change of variance')
-        fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600)
-
-
-        fig = plt.figure()
-        #plt.subplot(len(data_spw), 1, electr + 1 )
-        for typ in range(len(types)):
-            plt.plot(t, all_cums_corrected[electr, typ, :], colors[typ], label = types[typ])
-        plt.legend()
-        plt.title('Corrected by mean, no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
-        plt.xlabel('Time (ms)')
-        plt.ylabel('Cumulative change of variance')
-        fig.savefig(save_base + 'corrected_electr_' + str(electr) + ext, dpi=600)
         
-        #plt.show()
+        if remove_mean:
+            plt.title('no of SPWs: ' + str(len(spw_nos_used)) + 'corrected by mean , electrode: ' + str(electr))
+            fig.savefig(save_base + 'corrected_electr_' + str(electr) + ext, dpi=600)
+        else:
+            plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
+            fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600)
 
-#    fig = plt.figure() 
-#    first_group = np.sort(np.concatenate(all_cums[:, 0, :]))
-#    second_group = np.sort(np.concatenate(all_cums[:, 1, :]))
-#    y_ax = np.arange(len(first_group)) * 1.0
-#    y_ax = y_ax / len(first_group)
-#    plt.plot(first_group, y_ax, colors[0], label = types[0])
-#    plt.plot(second_group, y_ax, colors[1], label = types[1])
-#    a_value, p_value = ks_2samp(first_group, second_group)
-#    p_value = p_value * 100
-#        #if electr == 0:
-#        plt.legend()
-#        plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
-#        plt.xlabel('Time (ms)')
-#        plt.ylabel('Cumulative change of variance')
-#        #plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
-#        fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600) 
-    plt.close()
-    
-    plt.figure()
+        plt.close()
+    fig = plt.figure()
     for typ in range(len(types)):
         plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
     plt.xlabel('Time (ms)')
-    plt.legend()
-    plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
-    plt.ylabel('Cumulative change of variance')
-    fig.savefig(save_base + '_all_'+ ext, dpi=600) 
-    plt.close()
-    
-    plt.figure()
-    for typ in range(len(types)):
-        plt.plot(t, nanmean(all_cums_corrected[:, typ, :], 0), colors[typ], label = types[typ])
-    plt.xlabel('Time (ms)')
-    plt.legend()
-    plt.title('Corrected, no of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
-    plt.ylabel('Cumulative change of variance')
-    fig.savefig(save_base + '_corrected_all_'+ ext, dpi=600) 
+    plt.legend()    
+    plt.ylabel('Cumulative change of variance')  
+    if remove_mean:
+        plt.title('Corrected, no of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
+        fig.savefig(save_base + '_corrected_all_'+ ext, dpi=600) 
+    else:
+        plt.title('No of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
+        fig.savefig(save_base + '_all_'+ ext, dpi=600) 
     plt.close()    
+    del all_root_meaned, all_root_means
+    gc.collect()   
 
 def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details, spike_data, ext, win):
     """ makes the plot of every given group and finds the firing rate for it"""
