@@ -177,7 +177,7 @@ if __name__=='__main__':
                         '11': (6, 7)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 0
+    update = 1
     sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
@@ -203,7 +203,7 @@ if __name__=='__main__':
 
         spike = False
 
-        ampl_synch = False
+        ampl_synch = True
         solutions_folder = get_save_folder() + 'solutions/'
         fold_mng.create_folder(solutions_folder)
         

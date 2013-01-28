@@ -1,3 +1,7 @@
+                                                                     
+                                                                     
+                                                                     
+                                             
 import numpy as np
 import data_mang as dat
 import pylab as plt
@@ -627,8 +631,12 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     all_cells = np.unique(cells)
     #cell_no = len(all_cells)
     #cols = define_colors(no_colors = cell_no)
-    maxs_groups =  max(np.max(np.concatenate(group_nos[0])),  np.max(np.concatenate(group_nos[1])))
-    cols = define_colors(no_colors = maxs_groups, type = 'grey')
+    #maxs_groups =  max(np.max(np.concatenate(group_nos[0])),  np.max(np.concatenate(group_nos[1])))
+    no_of_colors = 5
+    groups_for_colors = np.array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
+    cols = define_colors(no_colors = no_of_colors , type = 'grey')
+    
+    
     cols = np.array(cols)
     cols = cols[::-1]
 
@@ -637,7 +645,7 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     
     #amplitudes = np.array(amplitudes)
     #synchronise = np.array(synchronise)
-    spw_nos_used = 0
+    spw_nos_group = 0
     linestyl = '.'
     fig_all = plt.figure(0)
     fig_1 = plt.figure(1)
@@ -647,7 +655,7 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     all_group = []
     marker_size = 3
     for group in range(len(names)):
-        plt.figure(group + 1)
+        
         ampl_group = amplitudes[group]
         ampl_group = np.concatenate(ampl_group)
         all_ampl.append(ampl_group)
@@ -658,27 +666,37 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         
         group_group = group_nos[group]
         group_group = np.concatenate(group_group)
-        all_group.append(group_group)
+        # assign groups their colors
+        #import pdb; pdb.set_trace()
+        group_group[group_group > len(groups_for_colors) -1] = len(groups_for_colors) -1
+        colors_group = groups_for_colors[group_group]
+        all_group.append(colors_group)
         
-        plt.figure(group+1)
-        plt.scatter(ampl_group, synch_group, color = cols[group_group-1,:], s = marker_size)
+        fig = plt.figure(group+1)
+        ax1 = fig.add_subplot(111)
+        im = ax1.scatter(ampl_group, synch_group, color = cols[colors_group,:], s = marker_size)
         
-        spw_nos_group = spw_nos_used + len(ampl_group)
+        spw_nos_group = spw_nos_group + len(ampl_group)
         
         plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
         plt.xlabel('amplitude [micro V]')
-        plt.title(names[group] + ' ,no of SPWs: ' + str(len(ampl_group)))      
-        plt.colorbar()       
+        plt.title(names[group] + ' ,no of SPWs: ' + str(len(ampl_group)))
+        #import pdb; pdb.set_trace()      
+        #fig.colorbar(im)       
+        plt.ylim([0,1])
+        plt.xlim([0,1600])
         plt.savefig(plot_folder +plot_file + names[group] + ext, dpi=600) 
         
     
     plt.figure(0)
     
-    plt.scatter(np.concatenate(all_ampl), np.concatenate(all_synch), color = cols[np.concatenate(all_group)-1,:], s = marker_size)
+    plt.scatter(np.concatenate(all_ampl), np.concatenate(all_synch), color = cols[np.concatenate(all_group),:], s = marker_size)
     plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
     plt.xlabel('amplitude [micro V]')
     plt.title('Spont and Init ,no of SPWs: ' + str(spw_nos_group)) 
-    plt.colorbar() 
+    #plt.colorbar() 
+    plt.ylim([0,1])
+    plt.xlim([0,1600])
     plt.savefig(plot_folder + plot_file + 'spont_init_' + ext, dpi=600)  
     
 #    import pdb; pdb.set_trace() 
@@ -750,6 +768,11 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     window_to_plot = [0, 5] #win
     win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
     size_win_pts = win_pts[1] - win_pts[0] + 1
+     
+     
+    no_of_colors = 5
+    groups_for_colors = np.array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
+    cols = np.array(define_colors(no_colors = no_of_colors , type = 'grey'))
         
     #import pdb; pdb.set_trace() 
     all_ampls = []
@@ -816,10 +839,10 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                 # calculate synchrony
                 # (no_ipsps all together)/(no_of_electrodes * no_group_ipsp)
                 no_ipsps = len(spw_used)
-                all_electr = np.size(data, 0)
+                all_electr = np.size(data, 0) * 1.0
                 no_group_ipsp = len(np.unique(spw_used['group']))
                 
-                sync = (no_ipsps)/(all_electr * no_group_ipsp * 1.0)
+                sync = (no_ipsps * 1.0)/(all_electr * no_group_ipsp * 1.0)
                 
                 
                 
@@ -827,11 +850,20 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                 all_sync.append(sync)
                 all_group.append(no_group_ipsp)
                 #import pdb; pdb.set_trace() 
-            plt.plot(all_ampl, all_sync, '.', alpha = 0.4)
+            
+            #import pdb; pdb.set_trace()
+            group_group = np.copy(all_group)
+            group_group[group_group > len(groups_for_colors) -1] = len(groups_for_colors) -1
+            colors_group = groups_for_colors[group_group]
+            #all_group.append(colors_group)
+            #import pdb; pdb.set_trace()
+            plt.scatter(all_ampl, all_sync, color = cols[colors_group,:], s = 3)
+            #plt.plot(all_ampl, all_sync, '.', alpha = 0.4)
             plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
             plt.xlabel('amplitude [micro V]')
             plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
-            
+            plt.xlim([0, 1600])
+            plt.ylim([0, 1])
             temp_ampls.append(all_ampl)
             temp_syncs.append(all_sync)
             temp_groups.append(all_group)
@@ -839,8 +871,8 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
         all_syncs.append(np.concatenate(np.array(temp_syncs)))
         all_ampls.append(np.concatenate(np.array(temp_ampls)))
         all_groups.append(np.concatenate(np.array(temp_groups)))
-    #import pdb; pdb.set_trace() 
-    fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)   
+        #import pdb; pdb.set_trace() 
+        fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)   
     if plot_it: 
         plt.show() 
     plt.close()
@@ -954,20 +986,52 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
         #print p_value
         #p_value = p_value * 100
         
-        #if electr == 0:
-        plt.legend()
-        plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
-        plt.xlabel('Time (ms)')
-        plt.ylabel('Cumulative change of variance')
-        #plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
-        fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600) 
-        plt.close()
-    fig = plt.figure() 
-    #import pdb; pdb.set_trace() 
-    for typ in range(len(types)):
-        #import pdb; pdb.set_trace() 
-        plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
-    plt.xlabel('Time (ms)')
+
+        if electr == 0:
+            plt.legend()
+            plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
+#        plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
+    fig.savefig(save_base + ext, dpi=600) 
+
+#    fig = plt.figure() 
+#    first_group = np.sort(np.concatenate(all_cums[:, 0, :]))
+#    second_group = np.sort(np.concatenate(all_cums[:, 1, :]))
+#    y_ax = np.arange(len(first_group)) * 1.0
+#    y_ax = y_ax / len(first_group)
+#    plt.plot(first_group, y_ax, colors[0], label = types[0])
+#    plt.plot(second_group, y_ax, colors[1], label = types[1])
+#    a_value, p_value = ks_2samp(first_group, second_group)
+#    p_value = p_value * 100
+#        #if electr == 0:
+#        plt.legend()
+#        plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
+#        plt.xlabel('Time (ms)')
+#        plt.ylabel('Cumulative change of variance')
+#        #plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
+#        fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600) 
+#        plt.close()
+#    fig = plt.figure() 
+#    #import pdb; pdb.set_trace() 
+#    for typ in range(len(types)):
+#        #import pdb; pdb.set_trace() 
+#        plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
+#    plt.xlabel('Time (ms)')
+#=======
+#        #if electr == 0:
+#        plt.legend()
+#        plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
+#        plt.xlabel('Time (ms)')
+#        plt.ylabel('Cumulative change of variance')
+#        #plt.ylabel('KS:'  + str("%.2f" % p_value) + '%')
+#        fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600) 
+#        plt.close()
+#    fig = plt.figure() 
+#    #import pdb; pdb.set_trace() 
+#    for typ in range(len(types)):
+#        #import pdb; pdb.set_trace() 
+#        plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
+#    plt.xlabel('Time (ms)')
+#>>>>>>> refs/remotes/origin/master
     plt.legend()
     plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
     #plt.ylabel('KS:'  + str("%.4f" % p_value) + '%')
@@ -4579,3 +4643,4 @@ def plot_extra_params(save_folder, ext = '.png', intra = 0):
             fig.savefig(nom,dpi=600)
             plt.close()            
     
+
