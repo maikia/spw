@@ -965,7 +965,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
             all_root_means[electr, :] = np.cumsum(sqruted) 
             
             # normalised by amplitude of mean
-            s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
+            #s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
             max_mean = max(s_mean_across)
             normalize_by_mean = all_spws[:, electr, :] / max_mean
             s_mean_across = s_mean_across/max_mean
@@ -1054,6 +1054,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
     plt.ylabel('Cumulative change of variance')
     plt.xlabel('Time (ms)')
     fig.savefig(save_base + '_all_'+ ext, dpi=600) 
+    plt.close()
     #plt.show()
 
 def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details, spike_data, ext, win):
