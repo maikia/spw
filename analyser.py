@@ -899,7 +899,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
     # make sure that there is equal number of spontaneous and initiated SPWs
     assert len(np.unique(init['spw_no'])) == len(np.unique(spont['spw_no']))
     
-    remove_mean = True
+    remove_mean = False
     remove_baseline = True
     
     win_base = [-10, -5]
@@ -954,7 +954,8 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
         from scipy.stats import nanmean
         for electr in range(len(data_spw)):
             # normal equation
-            if ~remove_mean:
+            #import pdb; pdb.set_trace() 
+            if not remove_mean:
                 s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
                 variance = all_spws[:, electr, :] - s_mean_across[None, :] # subtracts mean from each SPW
                 squared = variance ** 2 # power of every point
@@ -962,10 +963,12 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
                 sqruted = np.sqrt(meaned) # sqrt of 
                 all_root_means[electr, :] = np.cumsum(sqruted) 
             else:
+               
                 # normalised by amplitude of mean
                 s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
                 max_mean = max(s_mean_across)
                 normalize_by_mean = all_spws[:, electr, :] / max_mean
+                #import pdb; pdb.set_trace() 
                 s_mean_across = s_mean_across/max_mean
                 #import pdb; pdb.set_trace() 
                 variance = normalize_by_mean - s_mean_across[None, :] # subtracts mean from each SPW
@@ -994,6 +997,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
         if remove_mean:
             plt.title('no of SPWs: ' + str(len(spw_nos_used)) + 'corrected by mean , electrode: ' + str(electr))
             fig.savefig(save_base + 'corrected_electr_' + str(electr) + ext, dpi=600)
+            
         else:
             plt.title('no of SPWs: ' + str(len(spw_nos_used)) + ', electrode: ' + str(electr))
             fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600)
@@ -1008,6 +1012,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
     if remove_mean:
         plt.title('Corrected, no of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
         fig.savefig(save_base + '_corrected_all_'+ ext, dpi=600) 
+        
     else:
         plt.title('No of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
         fig.savefig(save_base + '_all_'+ ext, dpi=600) 

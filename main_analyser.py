@@ -134,7 +134,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         groups_w_firing_rate = name_used + 'groups_w_firing_rate'
         save_plot_in = plots_folder+ groups_w_firing_rate + '/'
         
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_groups_w_fr(save_folder, plot_folder = save_plot_in, 
                                       plot_file = groups_w_firing_rate, data_file = raw_data, 
@@ -144,7 +144,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         cumulative_plot = 'cumulative_plot'
         save_plot_in = plots_folder+ cumulative_plot + '/'
-        if not run_all_functions:
+        if run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.cum_distribution_funct(save_folder, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
                                       spw_details = equal_init_spont,
