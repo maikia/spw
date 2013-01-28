@@ -728,7 +728,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     fs = npzfile['fs']
     npzfile.close() 
     
-    plot_it = True
+    plot_it = False
     
     npzfile = np.load(save_folder + spw_details)
     try:
