@@ -634,11 +634,11 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     #maxs_groups =  max(np.max(np.concatenate(group_nos[0])),  np.max(np.concatenate(group_nos[1])))
     no_of_colors = 5
     groups_for_colors = np.array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
-    cols = define_colors(no_colors = no_of_colors , type = 'grey')
-    
-    
-    cols = np.array(cols)
+    cols = define_colors(no_colors = no_of_colors + 1 , type = 'grey')
+    cols = cols[:-1]
     cols = cols[::-1]
+    cols = np.array(cols)
+    
 
     #import pdb; pdb.set_trace()
     cells = np.array(cells)
@@ -691,6 +691,7 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     plt.figure(0)
     
     plt.scatter(np.concatenate(all_ampl), np.concatenate(all_synch), color = cols[np.concatenate(all_group),:], s = marker_size)
+    #import pdb; pdb.set_trace() 
     plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
     plt.xlabel('amplitude [micro V]')
     plt.title('Spont and Init ,no of SPWs: ' + str(spw_nos_group)) 
@@ -698,7 +699,7 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     plt.ylim([0,1])
     plt.xlim([0,1600])
     plt.savefig(plot_folder + plot_file + 'spont_init_' + ext, dpi=600)  
-    
+    plt.show()
 #    import pdb; pdb.set_trace() 
 #    spw_nos_used = 0
 #    for group in range(len(names)):
@@ -772,8 +773,11 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
      
     no_of_colors = 5
     groups_for_colors = np.array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
-    cols = np.array(define_colors(no_colors = no_of_colors , type = 'grey'))
-        
+    cols = np.array(define_colors(no_colors = no_of_colors + 1, type = 'grey'))
+    cols = cols[:-1]
+    cols = cols[::-1]
+    cols = np.array(cols)
+    
     #import pdb; pdb.set_trace() 
     all_ampls = []
     all_syncs = []
@@ -821,7 +825,6 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
 
                 start_trace_pts = ispw.ms2pts(start_trace, fs).astype('i4')
                 end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
-                add_it = 150
 
                 data_spw = data_used[:, start_trace_pts: end_trace_pts]
                 #import pdb; pdb.set_trace() 
@@ -858,6 +861,8 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
             #all_group.append(colors_group)
             #import pdb; pdb.set_trace()
             plt.scatter(all_ampl, all_sync, color = cols[colors_group,:], s = 3)
+            #import pdb; pdb.set_trace() 
+            #im = ax1.scatter(ampl_group, synch_group, color = cols[colors_group,:], s = marker_size)
             #plt.plot(all_ampl, all_sync, '.', alpha = 0.4)
             plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
             plt.xlabel('amplitude [micro V]')

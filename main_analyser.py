@@ -23,7 +23,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     #================files which were previously analysed =======================
     names = ['max_2_', 'min_3_', 'all_'] # depending on max number of IPSPs used it should be added before
      # name of the file: spws_file, distances, equal_init_spont
-    name_used = names[1]
+    name_used = names[2]
     
     spws_file = name_used + 'SPWs_ipsps_final.npz'
     distances = name_used + 'spw_dist2first.npz'
@@ -144,7 +144,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         cumulative_plot = 'cumulative_plot'
         save_plot_in = plots_folder+ cumulative_plot + '/'
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.cum_distribution_funct(save_folder, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
                                       spw_details = equal_init_spont,
@@ -155,7 +155,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         plot_ampl_synch = 'ampl_synchrony'
         save_file = name_used + 'ampl_sync_dat'
         save_plot_in = plots_folder+ plot_ampl_synch + '/'
-        if not run_all_functions: 
+        if run_all_functions: 
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder = save_plot_in, 
                                                  plot_file = plot_ampl_synch, data_file = raw_data,
@@ -177,7 +177,7 @@ if __name__=='__main__':
                         '11': (6, 7)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 0
+    update = 1
     sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
@@ -265,9 +265,10 @@ if __name__=='__main__':
                 filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
                 file_name = name_used + 'ampl_sync_dat.npz'
                 exists = fold_mng.file_exists(save_folder, file_name)
-                
+                print filename
                 if exists:
-                    #import pdb; pdb.set_trace()
+                    print 'exists'
+                    
                     npzfile = np.load(save_folder + file_name)
                     groups = npzfile['group']
                     ampls = npzfile['all_ampls']
@@ -291,7 +292,8 @@ if __name__=='__main__':
 #                        all_syncs.append(syncs)
 #                        all_groups.append(group_nos)
                     
-                    
+                else:
+                    print 'does not exist'   
             #import pdb; pdb.set_trace()    
             plot_ampl_synch = 'ampl_synchrony'
 
