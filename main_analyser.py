@@ -177,8 +177,8 @@ if __name__=='__main__':
                         '11': (6, 7)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 1
-    sum_up_all = 0
+    update = 0
+    sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
@@ -298,5 +298,5 @@ if __name__=='__main__':
             analyser.plot_amplitude_vs_synchrony_all(plot_folder = solutions_folder, 
                                                  plot_file = plot_ampl_synch, cells = all_cells, 
                                                  amplitudes = [all_ampls1, all_ampls2], synchronise= [all_syncs1, all_syncs2], 
-                                                 group_nos = [all_groups1, all_groups2], names = groups, ext = '.pdf')
+                                                 group_nos = [all_groups1, all_groups2], names = groups, ext = '.png')
 
