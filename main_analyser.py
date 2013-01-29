@@ -23,7 +23,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     #================files which were previously analysed =======================
     names = ['max_2_', 'min_3_', 'all_'] # depending on max number of IPSPs used it should be added before
      # name of the file: spws_file, distances, equal_init_spont
-    name_used = names[2]
+    name_used = names[1]
     
     spws_file = name_used + 'SPWs_ipsps_final.npz'
     distances = name_used + 'spw_dist2first.npz'
@@ -77,13 +77,15 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
 #                                 spikes_filter = [], ext = ext, win = win)
 
         
-        spikePerElectrode = 'spike_per_electrode'
+        spikePerElectrode = name_used + 'spike_per_electrode'
         hist_spike_bins = name_used + 'all_dists_hist.npz'
+        save_name_max_electr = name_used + 'max_electr_origin.npz'
         save_plot_in = plots_folder+ spikePerElectrode + '/'
-        if not run_all_functions: 
+        if run_all_functions: 
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_spike(save_folder, save_plot_in, save_plots = spikePerElectrode, 
-                            save_file = hist_spike_bins, spike_data = spike_file, spw_data = equal_init_spont, 
+                            save_file = hist_spike_bins, save_name_max_electr = save_name_max_electr, 
+                            spike_data = spike_file, spw_data = equal_init_spont, 
                             ext = ext, win = win)
                 
 #        alignmend_spws = 'alignmend_spws'
@@ -155,7 +157,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         plot_ampl_synch = 'ampl_synchrony'
         save_file = name_used + 'ampl_sync_dat'
         save_plot_in = plots_folder+ plot_ampl_synch + '/'
-        if run_all_functions: 
+        if not run_all_functions: 
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder = save_plot_in, 
                                                  plot_file = plot_ampl_synch, data_file = raw_data,
@@ -174,10 +176,10 @@ if __name__=='__main__':
     electr_placement = {'1': (5, 6), '3': (2, 3), '4': (2, 3),
                         '5': (5, 6), '6': (5, 6), '7': (5, 6),
                         '8': (3, 4), '9': (2, 3), '10': (2, 3),
-                        '11': (6, 7)}
+                        '11': (1, 2)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 1
+    update = 0
     sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
@@ -190,7 +192,7 @@ if __name__=='__main__':
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):
             filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
-            #import pdb; pdb.set_trace()
+            
             ex_electr = range(intra, 8+intra)
             print 'intra ' + str(intra)
             update_all_plots_one_cell(filename, save_folder, ex_electr, intra)
@@ -202,14 +204,13 @@ if __name__=='__main__':
         
 
         spike = False
-
         ampl_synch = True
         solutions_folder = get_save_folder() + 'solutions/'
         fold_mng.create_folder(solutions_folder)
         
         if spike:
             # plot gathared number of spikes on the beginning (imshow)
-            file_name = 'max_electr_origin.npz'
+            file_name = name_used + 'max_electr_origin.npz'
             distance_sponts = []
             distance_inits = []
             distance_spont_diffs = []
@@ -217,7 +218,7 @@ if __name__=='__main__':
             
             
             for nex in range(len(all)):
-                
+                #import pdb; pdb.set_trace()
                 filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
                 # check if it exists:
                 exists = fold_mng.file_exists(save_folder, file_name)
@@ -242,15 +243,16 @@ if __name__=='__main__':
             dists_diff = [distance_spont_diffs, distance_inits_diffs]
             
             
-            plt.figure()
+            fig = plt.figure()
             plt.hist(dists, normed = True)
             plt.title('normal, blue = spont, green = init')
+            fig.savefig(solutions_folder + 'init_distance', dpi=600)  
             
-            plt.figure()
+            fig = plt.figure()
             plt.hist(dists_diff, normed = True)
             plt.title('diff, blue = spont, green = init')
-            
-            plt.show()
+            fig.savefig(solutions_folder + 'init_distance normed', dpi=600)  
+            #plt.show()
         
         if ampl_synch:
             
@@ -267,7 +269,6 @@ if __name__=='__main__':
                 exists = fold_mng.file_exists(save_folder, file_name)
                 print filename
                 if exists:
-                    print 'exists'
                     
                     npzfile = np.load(save_folder + file_name)
                     groups = npzfile['group']
@@ -293,6 +294,7 @@ if __name__=='__main__':
 #                        all_groups.append(group_nos)
                     
                 else:
+                    print save_folder + file_name
                     print 'does not exist'   
             #import pdb; pdb.set_trace()    
             plot_ampl_synch = 'ampl_synchrony'

@@ -633,7 +633,7 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     #cols = define_colors(no_colors = cell_no)
     #maxs_groups =  max(np.max(np.concatenate(group_nos[0])),  np.max(np.concatenate(group_nos[1])))
     no_of_colors = 5
-    groups_for_colors = np.array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
+    groups_for_colors = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4])
     cols = define_colors(no_colors = no_of_colors + 1 , type = 'grey')
     cols = cols[:-1]
     cols = cols[::-1]
@@ -1716,7 +1716,7 @@ def plot_imshow_origin(dane, window, save_name, title, electrodes, vrange = [0, 
         
     
 
-def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'spike.npz', spw_data = 'spw.npz', ext = '.pdf', win = [-20, 20]):
+def plot_spike(save_folder, plot_folder, save_plots, save_file, save_name_max_electr, spike_data = 'spike.npz', spw_data = 'spw.npz', ext = '.pdf', win = [-20, 20]):
     """ counts how many spikes are in each electrode during all the spws and do the image shows """
     #import pdb; pdb.set_trace()
     npzfile        = np.load(save_folder + spike_data)
@@ -1882,7 +1882,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, spike_data = 'sp
     electr_init = np.argmax(all_dists_hist[1]) + 1
     
     #import pdb; pdb.set_trace()
-    np.savez(save_folder + 'max_electr_origin.npz', spont_diff = electr_spont_diff, init_diff = electr_init_diff, spont = electr_spont, init = electr_init)
+    np.savez(save_folder + save_name_max_electr, spont_diff = electr_spont_diff, init_diff = electr_init_diff, spont = electr_spont, init = electr_init)
     # plot imshow - difference between the two
     #for idx_type, typ in enumerate([spontaneous, initiated]):  
     title = 'found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes)
