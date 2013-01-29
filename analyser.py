@@ -623,23 +623,52 @@ def plot_dendograms(save_folder, plot_folder, plot_file, data_file, spw_groups, 
     fig.savefig('dendrogram.png')
  
  
+def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png'):
+    # plots the scatter plot
+    
+    # define variables
+    groups_for_colors = np.array([5, 4, 4, 3, 3, 2, 2, 1, 1])
+    max_color = max(groups_for_colors) * 1.0
+    groups_for_colors = groups_for_colors / max_color
+    
+    # define colorbar ticks
+    #ticks = [0,1,2, 3, 4, 5]
+    ticks = np.linspace(min(groups_for_colors), max(groups_for_colors), len(np.unique(groups_for_colors)))
+    #ticks = ticks[::-1]
+    ticks_labels = ['0 IPSPs','1-2 IPSPs','3-4 IPSPs', '5-6 IPSPs', '7 or more']
+    ticks_labels = ticks_labels[::-1]
+    marker_size = 60
+    import matplotlib as mpl
+    #import pdb; pdb.set_trace() 
+    
+    fig = plt.figure()
+
+    group[group > len(groups_for_colors) -1] = len(groups_for_colors) - 1
+    colors_group = groups_for_colors[group-1] 
+    plt.scatter(ampl, synch, c = colors_group, s = marker_size, cmap=mpl.cm.gray)
+    cbar = plt.colorbar()
+    cbar.set_ticks(ticks)
+    cbar.set_ticklabels(ticks_labels)
+
+    plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
+    plt.xlabel('amplitude [micro V]')
+    plt.title(name + ' ,no of SPWs: ' + str(len(ampl)))
+    #import pdb; pdb.set_trace()      
+    #fig.colorbar(im)       
+    plt.ylim([0,1.01])
+    plt.xlim([0,1200])
+    plt.savefig(save_file + name + ext, dpi=600) 
+    
+    
+    
+    
 def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells, 
                                                  amplitudes, synchronise, 
                                                  group_nos, names, ext = '.pdf'):
     plot_it = True
     #import pdb; pdb.set_trace()
     all_cells = np.unique(cells)
-    #cell_no = len(all_cells)
-    #cols = define_colors(no_colors = cell_no)
-    #maxs_groups =  max(np.max(np.concatenate(group_nos[0])),  np.max(np.concatenate(group_nos[1])))
-    no_of_colors = 5
-    groups_for_colors = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4])
-    cols = define_colors(no_colors = no_of_colors + 1 , type = 'grey')
-    cols = cols[:-1]
-    cols = cols[::-1]
-    cols = np.array(cols)
-    
-
+   
     #import pdb; pdb.set_trace()
     cells = np.array(cells)
     
@@ -647,13 +676,10 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     #synchronise = np.array(synchronise)
     spw_nos_group = 0
     linestyl = '.'
-    fig_all = plt.figure(0)
-    fig_1 = plt.figure(1)
-    fig_2 = plt.figure(2)
     all_ampl = []
     all_synch = []
     all_group = []
-    marker_size = 3
+
     for group in range(len(names)):
         
         ampl_group = amplitudes[group]
@@ -666,57 +692,16 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         
         group_group = group_nos[group]
         group_group = np.concatenate(group_group)
-        # assign groups their colors
         #import pdb; pdb.set_trace()
-        group_group[group_group > len(groups_for_colors) -1] = len(groups_for_colors) -1
-        colors_group = groups_for_colors[group_group]
-        all_group.append(colors_group)
+        all_group.append(group_group) 
+        create_scatter_synch(ampl_group, synch_group, group_group, names[group], plot_folder +plot_file, ext)
+        #spw_nos_group = spw_nos_group + len(ampl)
         
-        fig = plt.figure(group+1)
-        ax1 = fig.add_subplot(111)
-        im = ax1.scatter(ampl_group, synch_group, color = cols[colors_group,:], s = marker_size)
-        
-        spw_nos_group = spw_nos_group + len(ampl_group)
-        
-        plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
-        plt.xlabel('amplitude [micro V]')
-        plt.title(names[group] + ' ,no of SPWs: ' + str(len(ampl_group)))
-        #import pdb; pdb.set_trace()      
-        #fig.colorbar(im)       
-        plt.ylim([0,1])
-        plt.xlim([0,1600])
-        plt.savefig(plot_folder +plot_file + names[group] + ext, dpi=600) 
-        
-    
-    plt.figure(0)
-    
-    plt.scatter(np.concatenate(all_ampl), np.concatenate(all_synch), color = cols[np.concatenate(all_group),:], s = marker_size)
-    #import pdb; pdb.set_trace() 
-    plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
-    plt.xlabel('amplitude [micro V]')
-    plt.title('Spont and Init ,no of SPWs: ' + str(spw_nos_group)) 
-    #plt.colorbar() 
-    plt.ylim([0,1])
-    plt.xlim([0,1600])
-    plt.savefig(plot_folder + plot_file + 'spont_init_' + ext, dpi=600)  
-    plt.show()
-#    import pdb; pdb.set_trace() 
-#    spw_nos_used = 0
-#    for group in range(len(names)):
-#        fig = plt.figure()
-#        for idx, cell in enumerate(cells):
-#            ampl_used = amplitudes[idx]
-#            sync_used = synchronise[idx]
-#            idx_cell, = np.where(all_cells == cell)
-#            group_used = group_nos[idx]
-#            #
-#            plt.plot(ampl_used, sync_used, linestyl, alpha = 0.4, color = cols[idx])
-#            spw_nos_used = spw_nos_used + len(ampl_used)
-#            
-#        plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
-#        plt.xlabel('amplitude [micro V]')
-#        plt.title('Group: ' + ',no of SPWs: ' + str(spw_nos_used))            
-#        fig.savefig(plot_folder +plot_file + ext, dpi=600)      
+    all_ampl = np.concatenate(all_ampl)
+    all_synch = np.concatenate(all_synch)
+    all_group = np.concatenate(all_group)
+    create_scatter_synch(all_ampl, all_synch, all_group, 'spont_init_', plot_folder +plot_file, ext)
+
     
     if plot_it: 
         plt.show() 
