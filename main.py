@@ -160,8 +160,8 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         # [-1, 2] - all to two IPSPS
         # 3 IPSPS to any number
         # any number of IPSPS 
-        min_no_ipsps_used = [[-1, 2], [3, -1], [-1, -1]]
-        names = ['max_2_', 'min_3_', 'all_']
+        min_no_ipsps_used = [[-1, 2], [3, -1], [-1, -1], [2, -1]]
+        names = ['max_2_', 'min_3_', 'all_', 'min_2_']
         for idx, min_no_ipsps in enumerate(min_no_ipsps_used): 
 
             SPWs_ipsps_final = names[idx] + 'SPWs_ipsps_final.npz'

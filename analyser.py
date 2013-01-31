@@ -645,7 +645,8 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png'):
 
     group[group > len(groups_for_colors) -1] = len(groups_for_colors) - 1
     colors_group = groups_for_colors[group-1] 
-    plt.scatter(ampl, synch, c = colors_group, s = marker_size, cmap=mpl.cm.gray)
+    #plt.scatter(ampl, synch, c = colors_group, s = marker_size, cmap=mpl.cm.gray)
+    plt.scatter(ampl, synch, c = colors_group, s = marker_size, alpha = 0.2)
     cbar = plt.colorbar()
     cbar.set_ticks(ticks)
     cbar.set_ticklabels(ticks_labels)
@@ -756,12 +757,12 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     size_win_pts = win_pts[1] - win_pts[0] + 1
      
      
-    no_of_colors = 5
-    groups_for_colors = np.array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
-    cols = np.array(define_colors(no_colors = no_of_colors + 1, type = 'grey'))
-    cols = cols[:-1]
-    cols = cols[::-1]
-    cols = np.array(cols)
+    #no_of_colors = 5
+    #groups_for_colors = np.array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
+    #cols = np.array(define_colors(no_colors = no_of_colors + 1, type = 'grey'))
+    #cols = cols[:-1]
+    #cols = cols[::-1]
+    #cols = np.array(cols)
     
     #import pdb; pdb.set_trace() 
     all_ampls = []
@@ -781,7 +782,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
         temp_groups = []
         # go through every group detected
         for group_no in group_nos:    
-            fig = plt.figure()
+
             if spw_group_typ != 0:
                 spw_nos_used = spw_group_typ[spw_group_typ['group'] == group_no]['spw_no']
             else:
@@ -840,20 +841,25 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                 #import pdb; pdb.set_trace() 
             
             #import pdb; pdb.set_trace()
-            group_group = np.copy(all_group)
-            group_group[group_group > len(groups_for_colors) -1] = len(groups_for_colors) -1
-            colors_group = groups_for_colors[group_group]
+            #group_group = np.copy(all_group)
+            #group_group[group_group > len(groups_for_colors) -1] = len(groups_for_colors) -1
+            #colors_group = groups_for_colors[group_group]
             #all_group.append(colors_group)
             #import pdb; pdb.set_trace()
-            plt.scatter(all_ampl, all_sync, color = cols[colors_group,:], s = 3)
+            name  = '_group_' + str(group_no) + '_' + types[typ]
+            #import pdb; pdb.set_trace()
+            create_scatter_synch(all_ampl, all_sync, np.array(all_group), name, save_base, ext = '.png')
+            
+            
+            #plt.scatter(all_ampl, all_sync, color = cols[colors_group,:], s = 3)
             #import pdb; pdb.set_trace() 
             #im = ax1.scatter(ampl_group, synch_group, color = cols[colors_group,:], s = marker_size)
             #plt.plot(all_ampl, all_sync, '.', alpha = 0.4)
-            plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
-            plt.xlabel('amplitude [micro V]')
-            plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
-            plt.xlim([0, 1600])
-            plt.ylim([0, 1])
+            #plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
+            #plt.xlabel('amplitude [micro V]')
+            #plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
+            #plt.xlim([0, 1600])
+            #plt.ylim([0, 1])
             temp_ampls.append(all_ampl)
             temp_syncs.append(all_sync)
             temp_groups.append(all_group)
@@ -862,7 +868,8 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
         all_ampls.append(np.concatenate(np.array(temp_ampls)))
         all_groups.append(np.concatenate(np.array(temp_groups)))
         #import pdb; pdb.set_trace() 
-        fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)   
+        #fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)   
+        #plt.savefig(save_file + name + ext, dpi=600) 
     if plot_it: 
         plt.show() 
     plt.close()
@@ -889,7 +896,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
     # make sure that there is equal number of spontaneous and initiated SPWs
     assert len(np.unique(init['spw_no'])) == len(np.unique(spont['spw_no']))
     
-    remove_mean = False
+    remove_mean = True
     remove_baseline = True
     
     win_base = [-10, -5]
@@ -898,7 +905,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
     fold_mng.create_folder(save_fold)
     save_base = save_fold + plot_file
     
-    window_to_plot = [-10, 70] #win
+    window_to_plot = [0, 70] #win
     win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
     size_win_pts = win_pts[1] - win_pts[0]
     

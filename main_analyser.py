@@ -21,7 +21,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     """ work on given data file"""
     ext = '.png'
     #================files which were previously analysed =======================
-    names = ['max_2_', 'min_3_', 'all_'] # depending on max number of IPSPs used it should be added before
+    names = ['max_2_', 'min_3_', 'all_', 'min_2_'] # depending on max number of IPSPs used it should be added before
      # name of the file: spws_file, distances, equal_init_spont
     name_used = names[1]
     
@@ -81,7 +81,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         hist_spike_bins = name_used + 'all_dists_hist.npz'
         save_name_max_electr = name_used + 'max_electr_origin.npz'
         save_plot_in = plots_folder+ spikePerElectrode + '/'
-        if run_all_functions: 
+        if not run_all_functions: 
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_spike(save_folder, save_plot_in, save_plots = spikePerElectrode, 
                             save_file = hist_spike_bins, save_name_max_electr = save_name_max_electr, 
@@ -191,7 +191,7 @@ if __name__=='__main__':
     if update == 1:
 
         #for nex in [15]: [1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18]
-        for nex in range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(11, len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):
@@ -202,7 +202,7 @@ if __name__=='__main__':
             update_all_plots_one_cell(filename, save_folder, ex_electr, intra)
     
     if sum_up_all == 1:
-        names = ['max_2_', 'min_3_', 'all_'] # depending on max number of IPSPs used it should be added before
+        names = ['max_2_', 'min_3_', 'all_', 'min_2_'] # depending on max number of IPSPs used it should be added before
         # name of the file: spws_file, distances, equal_init_spont
         name_used = names[2]
         
