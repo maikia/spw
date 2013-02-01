@@ -58,11 +58,28 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         dist_spw2psike = 'dist_spw2spike'
         save_plot_in = plots_folder+dist_spw2psike + '/'
-        if not run_all_functions:
+        if run_all_functions:
             """ it plots histogram showing number of SPWs distant from spike"""
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_dist_spw2spike(save_folder, save_plot_in, save_plots = dist_spw2psike, dist_file = distances, ext = ext)
-        
+
+        firing_rate = name_used + 'firing_rate'
+        save_plot_in = plots_folder+ firing_rate + '/'
+        if run_all_functions:
+            fold_mng.create_folder(save_folder + save_plot_in)
+            analyser.plot_fr_after_spike(save_folder, plot_folder = save_plot_in, 
+                                      plot_file = firing_rate, intra_spikes = intra_spike_file,
+                                      spike_data = spike_file , ext = ext, win = win)
+
+        firing_rate_and_spws = name_used + 'firing_rate_and_spws'
+        save_plot_in = plots_folder+ firing_rate_and_spws + '/'
+        if not run_all_functions:
+            fold_mng.create_folder(save_folder + save_plot_in)
+            analyser.plot_fr_after_spike_and_distances_after_spike(save_folder, plot_folder = save_plot_in,  
+                                      plot_file = firing_rate_and_spws, intra_spikes = intra_spike_file, dist_file = distances,
+                                      spike_data = spike_file , ext = ext)
+
+
         alignedSPWs = 'aligned_SPWs'
         save_plot_in = plots_folder+ alignedSPWs + '/'
         if not run_all_functions:
@@ -132,10 +149,13 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
 #                                      spw_groups = group_per_isps_all, spw_details = used_spw_data,
 #                                      spike_data = spikes_raw , ext = ext, win = win)
         
+
+
+
+
         
         groups_w_firing_rate = name_used + 'groups_w_firing_rate'
         save_plot_in = plots_folder+ groups_w_firing_rate + '/'
-        
         if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_groups_w_fr(save_folder, plot_folder = save_plot_in, 
@@ -183,15 +203,15 @@ if __name__=='__main__':
                         '11': (1, 2)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 0
-    sum_up_all = 1
+    update = 1
+    sum_up_all = 0
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
         #for nex in [15]: [1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18]
-        for nex in range(11, len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):

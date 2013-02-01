@@ -25,19 +25,21 @@ def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     dist = npzfile['dist_spwspike']
     
     distance = dist['distance']
-    xlim = [-20, 100]
-    no_bins = 50
+    npzfile.close()
+    
+    xlim = [-3, 100]
+    no_bins = 200
     distance = distance[(distance > xlim[0]) & (distance < xlim[1])]
     #import pdb; pdb.set_trace() 
     fig = plt.figure()                
-    plt.hist(distance, no_bins, normed=1)
+    plt.hist(distance, no_bins, normed=1, color = 'k')
     plt.title('Distribution of SPWs from the spike')
     plt.xlim(xlim)
     plt.ylabel('Fraction of SPWs')
     plt.xlabel('Distance from spike (ms)')
     fig.savefig(save_folder + plot_folder + save_plots + ext,dpi=600)         
     #plt.show() 
-    plt.close()  
+    #plt.close()  
     
     
 def plot_noIpsps2distance(save_folder, plot_folder, save_plots, spw_file, dist_file, ext):
@@ -1180,7 +1182,118 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
 #            plt.title(types[typ])
 #            plt.xlabel('time (ms)')      
     #plt.show()
+
+def calculate_dist_extra_spikes_to_intra_spike(intra_spikes, extra_spikes):    
+    distance = []
+    
+    for trace in np.unique(intra_spikes['trace']):
+        intra_spikes_used = intra_spikes[intra_spikes['trace'] == trace]
+        spikes_used = extra_spikes[extra_spikes['trace'] == trace]
+        
+        if len(intra_spikes_used['time']) > 1:
+            # only one SPW in this trace
+            for spik in range(len(intra_spikes_used['time'])):
+                if spik ==0:
+                    # it's the first one
+                    current_spik = intra_spikes_used[spik]['time']
+                    next_spik = intra_spikes_used[spik + 1]['time']
+                    spiki_used = spikes_used[spikes_used['time'] < next_spik]
+                    
+                    
+                elif spik != len(intra_spikes_used['time']) - 1:
+
+                    current_spik = intra_spikes_used[spik]['time']
+                    next_spik = intra_spikes_used[spik + 1]['time']
+                    
+                    spiki_used = spikes_used[(spikes_used['time'] >= current_spik) & (spikes_used['time'] < next_spik)]
+
+                else:
+                    # it's the last spike
+                    current_spik = intra_spikes_used[spik]['time']
+                    spiki_used = spikes_used[spikes_used['time'] >= current_spik]
+                dist = spiki_used['time']  -current_spik
+                distance.append(dist)
+            #import pdb; pdb.set_trace()
+        else:       
+            dist = spikes_used['time'] - intra_spikes_used['time']
+            distance.append(dist)
+        
+    distance = np.concatenate(distance)
+    return distance
+
+def plot_fr_after_spike_and_distances_after_spike(save_folder, plot_folder, 
+                                      plot_file, intra_spikes, dist_file,
+                                      spike_data , ext):
+    """ plots the histogram of the distribution of spws from the spike
+    and the histogram of firing rate after spike"""
+    npzfile         = np.load(save_folder + dist_file)
+    dist = npzfile['dist_spwspike']
+    distance = dist['distance']
+    npzfile.close()
+
+    npzfile        = np.load(save_folder + intra_spikes)
+    intra_spikes = npzfile['spikes_first']
+    npzfile.close()
+    
+    npzfile        = np.load(save_folder + spike_data)
+    spikes = npzfile['spike_idx']
+    npzfile.close()
+    
+    xlim = [-3, 100]
+    no_bins = 200
+    distance = distance[(distance > xlim[0]) & (distance < xlim[1])]
+    
+    distance_spike = calculate_dist_extra_spikes_to_intra_spike(intra_spikes, spikes)
+    distance_spike = distance_spike[(distance_spike > xlim[0]) & (distance_spike < xlim[1])]
+    #import pdb; pdb.set_trace() 
+
+    fig = plt.figure()   
+    plt.hist(distance_spike, no_bins, xlim, normed=1, color = 'b', alpha = 0.7, label = 'firing rate')             
+    plt.hist(distance, no_bins, xlim, normed=1,  color = 'k', alpha = 0.6, label = 'SPW beginnings')
+    plt.legend()
+    
+    plt.title('Distribution of SPWs from the spike')
+    plt.xlim(xlim)
+    plt.ylabel('Fraction of SPWs')
+    plt.xlabel('Distance from spike (ms)')
+    fig.savefig(save_folder + plot_folder + plot_file + ext,dpi=600)         
+    #plt.show() 
+    plt.close()  
    
+
+
+def plot_fr_after_spike(save_folder, plot_folder, 
+                                      plot_file, intra_spikes,
+                                      spike_data , ext, win):
+    npzfile        = np.load(save_folder + intra_spikes)
+    intra_spikes = npzfile['spikes_first']
+    npzfile.close()
+    
+    npzfile        = np.load(save_folder + spike_data)
+    spikes = npzfile['spike_idx']
+    npzfile.close()
+    
+    xlim = [-3, 100]
+    no_bins = 200
+    
+    distance = calculate_dist_extra_spikes_to_intra_spike(intra_spikes, spikes)
+    
+    distance = distance[(distance > xlim[0]) & (distance < xlim[1])]
+    #import pdb; pdb.set_trace() 
+    fig = plt.figure()                
+    plt.hist(distance, no_bins, normed=1, color = 'k')
+    plt.title('Distribution of extracelluar spikes from the intracellular spike')
+    plt.xlim(xlim)
+    plt.ylabel('Fraction of SPWs')
+    plt.xlabel('Distance from spike (ms)')
+    fig.savefig(save_folder + plot_folder + plot_file + ext,dpi=600)         
+    plt.show() 
+    plt.close()     
+    #import pdb; pdb.set_trace()
+     
+
+
+
 def plot_spw_ipsps_no_groups_all(save_folder, save_file, data_file, spw_data, ext):
     """ similar to plot_spw_ipsps_no_groups but does not divide first group into
     origin of the first ipsp"""
