@@ -58,14 +58,14 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         dist_spw2psike = 'dist_spw2spike'
         save_plot_in = plots_folder+dist_spw2psike + '/'
-        if run_all_functions:
+        if not run_all_functions:
             """ it plots histogram showing number of SPWs distant from spike"""
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_dist_spw2spike(save_folder, save_plot_in, save_plots = dist_spw2psike, dist_file = distances, ext = ext)
 
         firing_rate = name_used + 'firing_rate'
         save_plot_in = plots_folder+ firing_rate + '/'
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_fr_after_spike(save_folder, plot_folder = save_plot_in, 
                                       plot_file = firing_rate, intra_spikes = intra_spike_file,
@@ -166,9 +166,10 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         cumulative_plot = 'cumulative_plot'
         save_plot_in = plots_folder+ cumulative_plot + '/'
-        if not run_all_functions:
+        save_file = name_used + 'cum_change_variance.npz'
+        if run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
-            analyser.cum_distribution_funct(save_folder, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
+            analyser.cum_distribution_funct(save_folder, save_file, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
                                       spw_details = equal_init_spont,
                                       ext = ext, win = win)
         
@@ -203,8 +204,8 @@ if __name__=='__main__':
                         '11': (1, 2)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 1
-    sum_up_all = 0
+    update = 0
+    sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
@@ -224,14 +225,52 @@ if __name__=='__main__':
     if sum_up_all == 1:
         names = ['max_2_', 'min_3_', 'all_', 'min_2_'] # depending on max number of IPSPs used it should be added before
         # name of the file: spws_file, distances, equal_init_spont
-        name_used = names[2]
+        name_used = names[1]
         
 
-        spike = False
-        ampl_synch = True
+        spike = True
+        ampl_synch = False
+        cum_change_var = False
+        
         solutions_folder = get_save_folder() + 'solutions/'
         fold_mng.create_folder(solutions_folder)
         
+        if cum_change_var:
+            # gather all the cumulative change of variance and plot them on one plot
+            file_name = name_used + 'cum_change_variance.npz'
+            
+            all_var_spont = []
+            all_var_init = []
+            
+            for nex in range(len(all)):
+                #import pdb; pdb.set_trace()
+                filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
+                # check if it exists:       
+                exists = fold_mng.file_exists(save_folder, file_name)
+
+                if exists:  
+                    print all[nex][0]               
+                    npzfile = np.load(save_folder + file_name)
+                    
+                    init_temp = npzfile['cum_change_init']
+                    spont_temp = npzfile['cum_change_spont']
+                    timeline = npzfile['timeline']
+                    fs = npzfile['fs']
+                    npzfile.close()
+                    all_var_spont.append(spont_temp.tolist())
+                    all_var_init.append(init_temp.tolist())
+            fs = fs.tolist()
+            fs = int(fs)      
+            all_var_spont = np.array(all_var_spont)
+            all_var_init = np.array(all_var_init)
+            #import pdb; pdb.set_trace()
+            plot_cum = 'cumulative_distribution'
+            analyser.plot_all_cum_change_var(plot_folder = solutions_folder, 
+                                                 plot_file = plot_cum, all_var_spont = all_var_spont, 
+                                                 all_var_init = all_var_init, timeline = timeline, fs = fs,
+                                                 ext = '.png')
+                    
+                    
         if spike:
             # plot gathared number of spikes on the beginning (imshow)
             file_name = name_used + 'max_electr_origin.npz'

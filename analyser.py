@@ -27,7 +27,7 @@ def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     distance = dist['distance']
     npzfile.close()
     
-    xlim = [-3, 100]
+    xlim = [-3, 70]
     no_bins = 200
     distance = distance[(distance > xlim[0]) & (distance < xlim[1])]
     #import pdb; pdb.set_trace() 
@@ -623,22 +623,86 @@ def plot_dendograms(save_folder, plot_folder, plot_file, data_file, spw_groups, 
     Z1 = sch.dendrogram(Y,leaf_label_func=llf,leaf_rotation=90)
     fig.show()
     fig.savefig('dendrogram.png')
- 
+
+
+
+def plot_all_cum_change_var(plot_folder, plot_file, 
+                            all_var_spont, all_var_init, timeline, fs, 
+                            ext = '.png'):
+    plot_it = True
+    
+     #                box_pos = [10,20,30, 40, 50, 60, 70]
+#                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)]+add_it*electr for mils in box_pos]
+#                plt.boxplot(vs, positions=box_pos)  
+    
+    from scipy.stats import nanmean
+    #plt.plot(np.transpose(all_var_spont), 'b', label = 'spontaneous', alpha = 0.3, ms = 12)
+    #plt.plot(np.transpose(all_var_init), 'g', label = 'initiated', alpha = 0.3, ms = 12)
+    
+    all_vars = [all_var_spont, all_var_init]
+    names = ['spontaneous', 'initiated']
+    colors = ['b', 'g']
+    line_widt = 4
+    
+    for idx, var in enumerate(all_vars):
+        # every result separately
+        #plt.plot(timeline, np.transpose(var), colors[idx], alpha =0.2, lw = 3)
+        # all the mean
+        plt.plot(timeline, np.transpose(np.mean(var, 0)), colors[idx], label = names[idx], lw = line_widt)
+        box_pos = [10, 20, 30, 40, 50, 60]
+        vs = [var[:,int(ispw.ms2pts(mils, fs))] for mils in box_pos]
+        plt.boxplot(vs, positions=box_pos) 
+    plt.legend(loc=2)
+    plt.xlim([min(timeline), max(timeline)])
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Cumulative change of variance')
+    #import pdb; pdb.set_trace()
+    
+    #plt.box
+    #plt.boxplot(vs, positions=box_pos) 
+    #plt.er
+    #plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
+    #if plot_it: 
+    #    plt.show()
+    plt.savefig(plot_folder +plot_file + ext, dpi=600) 
+    if plot_it:
+        plt.show()
+     
+    
+    plt.clf()
+    gc.collect() 
+
+    
  
 def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png'):
     # plots the scatter plot
     
     # define variables
-    groups_for_colors = np.array([5, 4, 4, 3, 3, 2, 2, 1, 1])
+    
+    #groups_for_colors = np.array([1, 1, 2, 2, 3, 3, 4, 4]) # less groups, no 1 IPSP
+    #ticks_labels = ['2-3 IPSPs','4-5 IPSPs', '6-7 IPSPs', '8 or more'] # less groups, no 1 IPSP
+    
+    #groups_for_colors = np.array([1, 2, 2, 3, 3, 4, 4, 5, 5]) # less groups, with 1 IPSP
+    #ticks_labels = ['1 IPSPs','2-3 IPSPs','4-5 IPSPs', '6-7 IPSPs', '8 or more'] # less groups, with 1 IPSP
+    
+    #groups_for_colors = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8]) # more groups, no 1 IPSP
+    #ticks_labels = ['2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
+    
+    groups_for_colors = np.array([1, 2, 3, 4, 5, 6, 7, 8]) # more groups, with 1 IPSP
+    ticks_labels = ['1 IPSP', '2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
+    
     max_color = max(groups_for_colors) * 1.0
     groups_for_colors = groups_for_colors / max_color
     
     # define colorbar ticks
     #ticks = [0,1,2, 3, 4, 5]
     ticks = np.linspace(min(groups_for_colors), max(groups_for_colors), len(np.unique(groups_for_colors)))
-    #ticks = ticks[::-1]
-    ticks_labels = ['0 IPSPs','1-2 IPSPs','3-4 IPSPs', '5-6 IPSPs', '7 or more']
-    ticks_labels = ticks_labels[::-1]
+    
+    #ticks_labels = ['1 IPSPs','2-3 IPSPs','4-5 IPSPs', '6-7 IPSPs', '8 or more']
+   
+    #ticks_labels = ['2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
+    #ticks_labels = ['1 IPSP', '2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
+    #ticks_labels = ticks_labels[::-1]
     marker_size = 60
     import matplotlib as mpl
     #import pdb; pdb.set_trace() 
@@ -648,7 +712,7 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png'):
     group[group > len(groups_for_colors) -1] = len(groups_for_colors) - 1
     colors_group = groups_for_colors[group-1] 
     #plt.scatter(ampl, synch, c = colors_group, s = marker_size, cmap=mpl.cm.gray)
-    plt.scatter(ampl, synch, c = colors_group, s = marker_size, alpha = 0.2)
+    plt.scatter(ampl, synch, c = colors_group, s = marker_size) #, alpha = 0.2)
     cbar = plt.colorbar()
     cbar.set_ticks(ticks)
     cbar.set_ticklabels(ticks_labels)
@@ -658,12 +722,11 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png'):
     plt.title(name + ' ,no of SPWs: ' + str(len(ampl)))
     #import pdb; pdb.set_trace()      
     #fig.colorbar(im)       
-    plt.ylim([0,1.01])
+    plt.ylim([0,1.05])
     plt.xlim([0,1200])
     plt.savefig(save_file + name + ext, dpi=600) 
     
-    
-    
+     
     
 def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells, 
                                                  amplitudes, synchronise, 
@@ -832,7 +895,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                 no_ipsps = len(spw_used)
                 all_electr = np.size(data, 0) * 1.0
                 no_group_ipsp = len(np.unique(spw_used['group']))
-                
+                #import pdb; pdb.set_trace()
                 sync = (no_ipsps * 1.0)/(all_electr * no_group_ipsp * 1.0)
                 
                 
@@ -880,7 +943,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     gc.collect()    
     
     
-def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_details, ext, win):
+def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_file, spw_details, ext, win):
     """ it calculate mean root mean square of each of the SPWs (separately for spontaneous and induced,
     and from this create comulative distribution function for each of the groups"""
     npzfile        = np.load(save_folder + data_file)
@@ -1002,6 +1065,7 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
             fig.savefig(save_base + '_electr_' + str(electr) + ext, dpi=600)
 
         plt.close()
+        
     fig = plt.figure()
     for typ in range(len(types)):
         plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
@@ -1015,6 +1079,11 @@ def cum_distribution_funct(save_folder, plot_folder, plot_file, data_file, spw_d
     else:
         plt.title('No of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
         fig.savefig(save_base + '_all_'+ ext, dpi=600) 
+    
+    np.savez(save_folder + save_file, cum_change_spont = nanmean(all_cums[:, 0, :]), cum_change_init = nanmean(all_cums[:, 1, :]), timeline = t, fs = fs) 
+    
+    #plt.show()
+    #import pdb; pdb.set_trace() 
     plt.close()    
     del all_root_meaned, all_root_means
     gc.collect()   
@@ -1273,9 +1342,11 @@ def plot_fr_after_spike(save_folder, plot_folder,
     spikes = npzfile['spike_idx']
     npzfile.close()
     
-    xlim = [-3, 100]
+    xlim = [-3, 70]
     no_bins = 200
-    
+    plt.rcParams.update({'font.size': 22})
+
+
     distance = calculate_dist_extra_spikes_to_intra_spike(intra_spikes, spikes)
     
     distance = distance[(distance > xlim[0]) & (distance < xlim[1])]
