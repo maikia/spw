@@ -306,16 +306,10 @@ if __name__=='__main__':
             dists_diff = [distance_spont_diffs, distance_inits_diffs]
             
             
-            fig = plt.figure()
-            plt.hist(dists, normed = True)
-            plt.title('normal, blue = spont, green = init')
-            fig.savefig(solutions_folder + 'init_distance', dpi=600)  
+            analyser.plot_spikes(save_folder = solutions_folder, save_name = 'init_distance', distances = dists, ext = '.png')
+            analyser.plot_spikes(save_folder = solutions_folder, save_name = 'init_distance normed', distances = dists_diff, ext = '.png')
+
             
-            fig = plt.figure()
-            plt.hist(dists_diff, normed = True)
-            plt.title('diff, blue = spont, green = init')
-            fig.savefig(solutions_folder + 'init_distance normed', dpi=600)  
-            #plt.show()
         
         if ampl_synch:
             

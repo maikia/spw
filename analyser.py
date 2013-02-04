@@ -625,15 +625,33 @@ def plot_dendograms(save_folder, plot_folder, plot_file, data_file, spw_groups, 
     fig.savefig('dendrogram.png')
 
 
+def plot_spikes(save_folder, save_name, distances, ext = '.png'):
+    
+    # plot histogram
+    fig = plt.figure()
+    plt.hist(distances, normed = True)
+    plt.title('normal, blue = spont, green = init')
+    fig.savefig(save_folder + 'init_distance' + ext, dpi=600)  
+    
+    #import pdb; pdb.set_trace()
+    # errorbars
+    fig, ax = plt.subplots()
+    fig.canvas.draw()
+    plt.boxplot(np.transpose(np.array(distances)))
+    labels = [item.get_text() for item in ax.get_xticklabels()]
+    labels[0] = 'spontaneous'
+    labels[1] = 'initiated'
+    ax.set_xticklabels(labels)
+    plt.ylabel('Distance of from SPW initiation site* from intracellular electrode')
+    
+    fig.savefig(save_folder + 'init_distance_box' + ext, dpi=900)  
+    import pdb; pdb.set_trace()
+    #plt.show()
 
 def plot_all_cum_change_var(plot_folder, plot_file, 
                             all_var_spont, all_var_init, timeline, fs, 
                             ext = '.png'):
     plot_it = True
-    
-     #                box_pos = [10,20,30, 40, 50, 60, 70]
-#                vs = [all_spws[:,electr,ispw.ms2pts(mils, fs)]+add_it*electr for mils in box_pos]
-#                plt.boxplot(vs, positions=box_pos)  
     
     from scipy.stats import nanmean
     #plt.plot(np.transpose(all_var_spont), 'b', label = 'spontaneous', alpha = 0.3, ms = 12)
