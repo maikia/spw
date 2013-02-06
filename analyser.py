@@ -30,7 +30,7 @@ def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     xlim = [-3, 70]
     no_bins = 200
     distance = distance[(distance > xlim[0]) & (distance < xlim[1])]
-    #import pdb; pdb.set_trace() 
+    import pdb; pdb.set_trace() 
     fig = plt.figure()                
     plt.hist(distance, no_bins, normed=1, color = 'k')
     plt.title('Distribution of SPWs from the spike')
@@ -633,7 +633,8 @@ def plot_spikes(save_folder, save_name, distances, ext = '.png'):
     plt.title('normal, blue = spont, green = init')
     fig.savefig(save_folder + 'init_distance' + ext, dpi=600)  
     
-    #import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
+    
     # errorbars
     fig, ax = plt.subplots()
     fig.canvas.draw()
@@ -652,11 +653,17 @@ def plot_all_cum_change_var(plot_folder, plot_file,
                             all_var_spont, all_var_init, timeline, fs, 
                             ext = '.png'):
     plot_it = True
-    
+
+    # save the data in the txt files
+    all_var_spont_array = [np.array(all_var_spont[var]) for var in range(len(all_var_spont))]
+    all_var_init_array = [np.array(all_var_init[var]) for var in range(len(all_var_init))]
+    np.savetxt(plot_folder + 'cum_spontaneous.txt', np.array(all_var_spont_array))
+    np.savetxt(plot_folder + 'cum_initiated.txt', np.array(all_var_init_array))
+    #temp = np.loadtxt(plot_folder + 'cum_spontaneous.txt')
+
     from scipy.stats import nanmean
     #plt.plot(np.transpose(all_var_spont), 'b', label = 'spontaneous', alpha = 0.3, ms = 12)
     #plt.plot(np.transpose(all_var_init), 'g', label = 'initiated', alpha = 0.3, ms = 12)
-    
     all_vars = [all_var_spont, all_var_init]
     names = ['spontaneous', 'initiated']
     colors = ['b', 'g']
@@ -686,9 +693,12 @@ def plot_all_cum_change_var(plot_folder, plot_file,
     if plot_it:
         plt.show()
      
-    
+
     plt.clf()
     gc.collect() 
+
+    #import pdb; pdb.set_trace()
+
 
     
  

@@ -58,7 +58,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         dist_spw2psike = 'dist_spw2spike'
         save_plot_in = plots_folder+dist_spw2psike + '/'
-        if not run_all_functions:
+        if run_all_functions:
             """ it plots histogram showing number of SPWs distant from spike"""
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_dist_spw2spike(save_folder, save_plot_in, save_plots = dist_spw2psike, dist_file = distances, ext = ext)
@@ -211,7 +211,7 @@ if __name__=='__main__':
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        #for nex in [15]: [1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18]
+        #for nex in [15]: #[1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18]
         for nex in range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
@@ -228,8 +228,8 @@ if __name__=='__main__':
         name_used = names[1]
         
 
-        spike = True
-        ampl_synch = False
+        spike = False
+        ampl_synch = True
         cum_change_var = False
         
         solutions_folder = get_save_folder() + 'solutions/'
@@ -343,14 +343,6 @@ if __name__=='__main__':
                     all_groups1.append(group_nos[0])
                     all_groups2.append(group_nos[1])
                     all_cells.append(all[nex][0])                                      
-                    
-                    
-#                    if len(groups) == 1:
-#                        # there is only one group
-#                        all_cells.append(all[nex][0])
-#                        all_ampls.append(ampls)
-#                        all_syncs.append(syncs)
-#                        all_groups.append(group_nos)
                     
                 else:
                     print save_folder + file_name
