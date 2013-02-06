@@ -23,7 +23,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     #================files which were previously analysed =======================
     names = ['max_2_', 'min_3_', 'all_', 'min_2_'] # depending on max number of IPSPs used it should be added before
      # name of the file: spws_file, distances, equal_init_spont
-    name_used = names[1]
+    name_used = names[0]
     
     spws_file = name_used + 'SPWs_ipsps_final.npz'
     distances = name_used + 'spw_dist2first.npz'
@@ -58,7 +58,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         dist_spw2psike = 'dist_spw2spike'
         save_plot_in = plots_folder+dist_spw2psike + '/'
-        if run_all_functions:
+        if not run_all_functions:
             """ it plots histogram showing number of SPWs distant from spike"""
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_dist_spw2spike(save_folder, save_plot_in, save_plots = dist_spw2psike, dist_file = distances, ext = ext)
@@ -134,7 +134,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
             
         
         group_per_isps_all = name_used + 'group_per_isps_all.npz'
-        if not run_all_functions:
+        if run_all_functions:
             analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_data, 
                                               spw_data = equal_init_spont, ext = ext)#
 
@@ -167,7 +167,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         cumulative_plot = 'cumulative_plot'
         save_plot_in = plots_folder+ cumulative_plot + '/'
         save_file = name_used + 'cum_change_variance.npz'
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.cum_distribution_funct(save_folder, save_file, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
                                       spw_details = equal_init_spont,
@@ -178,7 +178,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         plot_ampl_synch = 'ampl_synchrony'
         save_file = name_used + 'ampl_sync_dat'
         save_plot_in = plots_folder+ plot_ampl_synch + '/'
-        if not run_all_functions: 
+        if run_all_functions: 
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder = save_plot_in, 
                                                  plot_file = plot_ampl_synch, data_file = raw_data,
@@ -225,7 +225,7 @@ if __name__=='__main__':
     if sum_up_all == 1:
         names = ['max_2_', 'min_3_', 'all_', 'min_2_'] # depending on max number of IPSPs used it should be added before
         # name of the file: spws_file, distances, equal_init_spont
-        name_used = names[1]
+        name_used = names[0]
         
 
         spike = False
