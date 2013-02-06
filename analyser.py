@@ -657,8 +657,26 @@ def plot_all_cum_change_var(plot_folder, plot_file,
     # save the data in the txt files
     all_var_spont_array = [np.array(all_var_spont[var]) for var in range(len(all_var_spont))]
     all_var_init_array = [np.array(all_var_init[var]) for var in range(len(all_var_init))]
-    np.savetxt(plot_folder + 'cum_spontaneous.txt', np.array(all_var_spont_array))
-    np.savetxt(plot_folder + 'cum_initiated.txt', np.array(all_var_init_array))
+    np.savetxt(plot_folder + 'cum_spontaneous.txt', np.array(all_var_spont_array),delimiter='\t')
+    np.savetxt(plot_folder + 'cum_initiated.txt', np.array(all_var_init_array),delimiter='\t')
+    
+    
+    import csv
+    
+    #cum_spont= csv.writer(open(plot_folder + "MYFILE.csv", "wb"))
+    #spamWriter.writerow([1,2,3])
+    
+    file = open(plot_folder + "MYFILE3.csv", "wb")
+    #fileWriter = csv.writer(file , delimiter='\n',quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    #fileWriter.writerow([1,2,3])
+    #spamWriter = csv.writer(file , delimiter=',',quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    spamWriter = csv.writer(file)
+    for row in range(len(all_var_spont)):
+    #spamWriter = csv.writer(file , delimiter=',',quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        import pdb; pdb.set_trace()
+        spamWriter.writerow(all_var_spont[row].tolist())
+    file.close()
+    
     #temp = np.loadtxt(plot_folder + 'cum_spontaneous.txt')
 
     from scipy.stats import nanmean
@@ -796,9 +814,37 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     all_group = np.concatenate(all_group)
     create_scatter_synch(all_ampl, all_synch, all_group, 'spont_init_', plot_folder +plot_file, ext)
 
+    plt.close()
+    
+    plt.figure() 
+        
+    # fit the data points
+    
+    from scipy import optimize
+    #from pylab import *
+    #from scipy import *
+    fitfunc = lambda p, x: p[0]* np.sqrt(x + p[1]) +p[2] # Target function
+    errfunc = lambda p, x, y: fitfunc(p, x) - y
+   
+    sort_idx = np.argsort(all_ampl)
+    all_ampl = all_ampl[sort_idx]
+    all_synch = all_synch[sort_idx]
+    
+    p0 = [0.1, 0.2, 0.3]
+    p1, success = optimize.leastsq(errfunc, p0, args=(all_ampl, all_synch), maxfev=10000)
+    print p1
+    #optimize.le
+    #time = plt.linspace(all_ampl.min(), all_ampl.max(), 100)
+    #time = plt.linspace(0., all_synch.max(), 100)
+    #plt.plot(all_ampl, all_synch, "ro", time, fitfunc(p1, time), "r-")
+    import pdb; pdb.set_trace()
+    
+    plt.plot(all_ampl, fitfunc(p1, all_ampl), 'r-')
+    
     
     if plot_it: 
-        plt.show() 
+        plt.show()
+    import pdb; pdb.set_trace()
     plt.clf()
     gc.collect()    
     
