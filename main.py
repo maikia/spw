@@ -160,8 +160,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         # [-1, 2] - all to two IPSPS
         # 3 IPSPS to any number
         # any number of IPSPS 
-        min_no_ipsps_used = [[-1, 2], [3, -1], [-1, -1], [2, -1]]
-        names = ['max_2_', 'min_3_', 'all_', 'min_2_']
+        #min_no_ipsps_used = [[-1, 2], [3, -1], [-1, -1], [2, -1], [-1, 1]]
+        min_no_ipsps_used = [ [-1, 1]]
+        #names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_']
+        names = ['max_1_']
         for idx, min_no_ipsps in enumerate(min_no_ipsps_used): 
 
             SPWs_ipsps_final = names[idx] + 'SPWs_ipsps_final.npz'
@@ -191,7 +193,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                 updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
             
             ##SPWs_ipsps_corrected2 = SPWs_ipsps_final 
-            if run_all_functions:
+            if not run_all_functions:
                 # it makes the plot to exactly analyse each SPW
                 analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_final  , 
                                                load_spikefile = spikes_largest, load_spikesall = spikes_raw, 

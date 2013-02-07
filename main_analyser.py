@@ -21,9 +21,9 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     """ work on given data file"""
     ext = '.png'
     #================files which were previously analysed =======================
-    names = ['max_2_', 'min_3_', 'all_', 'min_2_'] # depending on max number of IPSPs used it should be added before
+    names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_'] # depending on max number of IPSPs used it should be added before
      # name of the file: spws_file, distances, equal_init_spont
-    name_used = names[0]
+    name_used = names[4]
     
     spws_file = name_used + 'SPWs_ipsps_final.npz'
     distances = name_used + 'spw_dist2first.npz'
@@ -223,9 +223,9 @@ if __name__=='__main__':
             update_all_plots_one_cell(filename, save_folder, ex_electr, intra)
     
     if sum_up_all == 1:
-        names = ['max_2_', 'min_3_', 'all_', 'min_2_'] # depending on max number of IPSPs used it should be added before
+        names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_'] # depending on max number of IPSPs used it should be added before
         # name of the file: spws_file, distances, equal_init_spont
-        name_used = names[0]
+        name_used = names[4]
         
 
         spike = False

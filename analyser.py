@@ -808,7 +808,9 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         all_group.append(group_group) 
         create_scatter_synch(ampl_group, synch_group, group_group, names[group], plot_folder +plot_file, ext)
         #spw_nos_group = spw_nos_group + len(ampl)
-        
+    np.savetxt(plot_folder + 'all_synch_transposed.txt', np.transpose(all_synch),delimiter='\t')  
+    np.savetxt(plot_folder + 'all_ampl_transposed.txt', np.transpose(all_ampl),delimiter='\t')   
+    import pdb; pdb.set_trace()
     all_ampl = np.concatenate(all_ampl)
     all_synch = np.concatenate(all_synch)
     all_group = np.concatenate(all_group)
@@ -828,7 +830,9 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     fitfunc = lambda p, x: p[0]*x +p[1] # Target function
     plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1, 0.2]) 
 
-    
+    fitfunc = lambda p, x: x * p[0] # Target function
+    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1]) 
+        
     if plot_it: 
         plt.show()
     import pdb; pdb.set_trace()
@@ -851,6 +855,7 @@ def plot_fit(fitfunc, x_data, y_data, guess_values):
     #import pdb; pdb.set_trace()
     plt.plot(x_data, y_data, "ro")
     plt.plot(x_data, fitfunc(p1, x_data), 'r-')
+    plt.ylim([0, 1.1])
     #plt.show()      
         
 
