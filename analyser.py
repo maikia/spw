@@ -777,7 +777,7 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png'):
 def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells, 
                                                  amplitudes, synchronise, 
                                                  group_nos, names, ext = '.pdf'):
-    plot_it = True
+    plot_it = False
     #import pdb; pdb.set_trace()
     all_cells = np.unique(cells)
    
@@ -806,6 +806,7 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         group_group = np.concatenate(group_group)
         #import pdb; pdb.set_trace()
         all_group.append(group_group) 
+        #import pdb; pdb.set_trace()
         create_scatter_synch(ampl_group, synch_group, group_group, names[group], plot_folder +plot_file, ext)
         #spw_nos_group = spw_nos_group + len(ampl)
     np.savetxt(plot_folder + 'all_synch_transposed.txt', np.transpose(all_synch),delimiter='\t')  
@@ -823,23 +824,40 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     fitfunc = lambda p, x: p[0]* np.sqrt(x) +p[1] # Target function
     all_ampl = all_ampl[all_ampl >= 0 ]
     all_synch = all_synch[all_ampl >= 0]
-    
-    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1, 0.2]) 
+    file_save = plot_folder +plot_file
+    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1, 0.2], save_name = '_sqrt_root', save_file = file_save, ext = ext) 
 
     # linear function only
-    fitfunc = lambda p, x: p[0]*x +p[1] # Target function
-    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1, 0.2]) 
+    fitfunc = lambda p, x: p[0]*x +p[1]
+    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1, 0.2], save_name = '_linear_not_zero', save_file = file_save, ext = ext)
 
-    fitfunc = lambda p, x: x * p[0] # Target function
-    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1]) 
-        
+    fitfunc = lambda p, x: x * p[0]
+    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1], save_name = '_linear_zero', save_file = file_save, ext = ext)
+    #import pdb; pdb.set_trace() 
+    fitfunc = lambda p, x: 1 - np.exp(-x/p[0])
+    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [30], save_name = '_exp',save_file = file_save, ext = ext)
+    
+    fitfunc = lambda p, x: 1 - np.exp(-x/p[0]) + p[1]
+    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [30, 0], save_name = '_exp_non_zero',save_file = file_save, ext = ext)
+    
+    fitfunc = lambda p, x: x**2 * p[0] + x * p[1]
+    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0, 0], save_name = '_square',save_file = file_save, ext = ext)
+    
+    fitfunc = lambda p, x: -np.exp(-x/p[0]) + p[1]*x+p[2]
+    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [1, 1, 1], save_name = '_exp2',save_file = file_save, ext = ext)
+    #plt.show()
+    
+#    import pdb; pdb.set_trace() 
+#    x_axis = range(0,1000)
+#    plt.plot(x_axis, np.exp(x_axis))
+#    plt.show()
     if plot_it: 
         plt.show()
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     plt.clf()
     gc.collect()    
     
-def plot_fit(fitfunc, x_data, y_data, guess_values):
+def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False, ext = '.png'):
     
     from scipy import optimize
     plt.figure()
@@ -852,12 +870,20 @@ def plot_fit(fitfunc, x_data, y_data, guess_values):
     y_data = y_data[sort_idx]
 
     p1, success = optimize.leastsq(errfunc, guess_values, args=(x_data, y_data))
+    
     #import pdb; pdb.set_trace()
     plt.plot(x_data, y_data, "ro")
-    plt.plot(x_data, fitfunc(p1, x_data), 'r-')
+    plt.plot(x_data, fitfunc(p1, x_data), 'b-', lw = 4)
     plt.ylim([0, 1.1])
-    #plt.show()      
-        
+    plt.xlim([0, 1200])
+    import inspect
+    name = inspect.getsource(fitfunc)
+    plt.title(name + 'p = ' + str(p1))
+    #plt.show()     
+    if save_file != False: 
+        #import pdb; pdb.set_trace()
+        save_name = save_file + save_name + ext
+        plt.savefig(save_name, dpi=600)   
 
 def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, data_file, spw_groups,spw_details, ext):
     
@@ -945,7 +971,10 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
             # go through every spw used in this group
             for idx, spw_no in enumerate(spw_nos_used):
                 spw_used = spw_type[spw_type['spw_no'] == spw_no]
-                spw_start = spw_used['spw_start'][0]
+                try: 
+                    spw_start = spw_used['spw_start'][0]
+                except:
+                    import pdb; pdb.set_trace() 
                 last_ipsp = np.max(spw_used['ipsp_start'])
                 trace = spw_used['trace'][0]
                 data_used = data[:,trace,:]
@@ -1261,7 +1290,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
 
                 start_trace_pts = ispw.ms2pts(start_trace, fs).astype('i4')
                 end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
-                add_it = 300
+                add_it = 1100
                 
 
                 data_spw = data_used[:, start_trace_pts: end_trace_pts]
@@ -1305,7 +1334,8 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             bar_width = bar_lin[1]-bar_lin[0]
             # for this group plot the histogram of the spikes
             for electr in range(np.size(data,0)):
-                plt.bar(bar_lin[:-1], (electro_bins[electr,:]/len(spw_nos_used))*50, bottom = add_it * electr, alpha = 0.8, width = bar_width)  
+                plt.bar(bar_lin[:-1], (electro_bins[electr,:]/len(spw_nos_used))*5, bottom = add_it * electr, alpha = 0.8, width = bar_width) 
+                #plt.bar(bar_lin[:-1], (electro_bins[electr,:])*10, bottom = add_it * electr, alpha = 0.8, width = bar_width) 
              
 
 
@@ -1314,7 +1344,7 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
                  
             spike_distribution = np.sum(electro_bins, 0)
             #import pdb; pdb.set_trace() 
-            plt.bar(bar_lin[:-1], (spike_distribution/len(spw_nos_used))*50, bottom = add_it * (-1), width = bar_width) #, alpha = 0.7)  
+            plt.bar(bar_lin[:-1], (spike_distribution/len(spw_nos_used))*500, bottom = add_it * (-1), width = bar_width) #, alpha = 0.7)  
             plt.xlabel('time (ms)')
             plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
             #import pdb; pdb.set_trace()
@@ -2049,7 +2079,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, save_name_max_el
         for_imshow.append(dist_electrode)
         all_dists_hist.append(for_histogram)
         all_p_dist.append(for_p_distribution)
-    
+    #import pdb; pdb.set_trace()
     # plot imshow - not normalized
     for idx_type, typ in enumerate([spontaneous, initiated]):  
         title = types[idx_type] + ', found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(all_spikes[idx_type])
@@ -2140,7 +2170,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, save_name_max_el
     electr_init = np.argmax(all_dists_hist[1]) + 1
     
     #import pdb; pdb.set_trace()
-    np.savez(save_folder + save_name_max_electr, spont_diff = electr_spont_diff, init_diff = electr_init_diff, spont = electr_spont, init = electr_init)
+    np.savez(save_folder + save_name_max_electr, spont_diff = electr_spont_diff, init_diff = electr_init_diff, spont = electr_spont, init = electr_init, spont_all = all_p_dist[0], induc_all = all_p_dist[1], spw_number = len(np.unique(typ['spw_no'])))
     # plot imshow - difference between the two
     #for idx_type, typ in enumerate([spontaneous, initiated]):  
     title = 'found spws: ' + str(len(np.unique(typ['spw_no']))) + ', found spikes: ' + str(numb_spikes)
@@ -2380,7 +2410,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             
     titles = ['Induced', 'Spontaneous']
     #import pdb; pdb.set_trace() 
-    add_it = 400
+    add_it = 1100
     t = dat.get_timeline(data_temp[0], fs, 'ms') + win[0]
     #in_spikes = np.concatenate(in_spikes).astype(int)
     for idx, data_spw in enumerate(all_data_traces): 
@@ -2391,13 +2421,15 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             
             data_used = data_spw[electr,:]
             for s in range(len(data_used)):
-
-                plt.plot(t, data_used[s] + electr * add_it, 'b', alpha=0.2)
+                if electr == 0:
+                    plt.plot(t, data_used[s] * 10 + electr * add_it, 'b', alpha=0.2)
+                else:
+                    plt.plot(t, data_used[s] + electr * add_it, 'b', alpha=0.2)
                 
                 if electr == 0:
                     print s
                     #import pdb; pdb.set_trace()
-                    plt.plot(t[in_spikes[s]], data_used[s, in_spikes[s]] + electr * add_it, 'r.')
+                    plt.plot(t[in_spikes[s]], data_used[s, in_spikes[s]] + electr * add_it - 200, 'r.')
                 
                 
             if electr != 0:
