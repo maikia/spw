@@ -204,15 +204,15 @@ if __name__=='__main__':
                         '11': (1, 2)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 1
-    sum_up_all = 0
+    update = 0
+    sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        for nex in [15]: #[1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18]
-        #for nex in range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        #for nex in [1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18]
+        for nex in range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):
@@ -225,11 +225,11 @@ if __name__=='__main__':
     if sum_up_all == 1:
         names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_'] # depending on max number of IPSPs used it should be added before
         # name of the file: spws_file, distances, equal_init_spont
-        name_used = names[1]
+        name_used = names[2]
         
 
-        spike = True
-        ampl_synch = False
+        spike = False
+        ampl_synch = True
         cum_change_var = False
         
         solutions_folder = get_save_folder() + 'solutions/'
@@ -318,7 +318,7 @@ if __name__=='__main__':
                     distance_inits.append(np.abs(init - electr_place))
                     distance_spont_diffs.append(np.abs(spont_diff - electr_place))
                     distance_inits_diffs.append(np.abs(init_diff - electr_place))
-            import pdb; pdb.set_trace()    
+            #import pdb; pdb.set_trace()    
             np.savetxt(solutions_folder + 'test.txt', np.transpose(all_induc_spikes), delimiter='\t',  fmt='%i') 
                     
             

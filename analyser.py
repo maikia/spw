@@ -777,6 +777,7 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png'):
 def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells, 
                                                  amplitudes, synchronise, 
                                                  group_nos, names, ext = '.pdf'):
+    fit_by_group = True
     plot_it = False
     #import pdb; pdb.set_trace()
     all_cells = np.unique(cells)
@@ -805,46 +806,79 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         group_group = group_nos[group]
         group_group = np.concatenate(group_group)
         #import pdb; pdb.set_trace()
-        all_group.append(group_group) 
+        #import pdb; pdb.set_trace()
+        all_group.append(group_group.copy()) 
         #import pdb; pdb.set_trace()
         create_scatter_synch(ampl_group, synch_group, group_group, names[group], plot_folder +plot_file, ext)
         #spw_nos_group = spw_nos_group + len(ampl)
     np.savetxt(plot_folder + 'all_synch_transposed.txt', np.transpose(all_synch),delimiter='\t')  
     np.savetxt(plot_folder + 'all_ampl_transposed.txt', np.transpose(all_ampl),delimiter='\t')   
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     all_ampl = np.concatenate(all_ampl)
     all_synch = np.concatenate(all_synch)
     all_group = np.concatenate(all_group)
-    create_scatter_synch(all_ampl, all_synch, all_group, 'spont_init_', plot_folder +plot_file, ext)
+    #import pdb; pdb.set_trace()
+    
+    create_scatter_synch(all_ampl.copy(), all_synch.copy(), all_group.copy(), 'spont_init_', plot_folder +plot_file, ext)
     plt.close()
     
-    plt.figure() 
+    if fit_by_group:
+        group_to_use = group_group
+        synch_to_use = synch_group
+        ampl_to_use = ampl_group
+        #import pdb; pdb.set_trace()
+        all_ampl = ampl_to_use[ampl_to_use >= 0 ]
+        all_synch = synch_to_use[ampl_to_use >= 0]
+        group_to_use = group_to_use[ampl_to_use >= 0]
+        create_scatter_synch(all_ampl, all_synch, group_to_use, 'other', plot_folder +plot_file, ext)
+        file_save = plot_folder +plot_file
+        all_group[all_group > 7] = 7
+        for g_group in np.unique(all_group):
+            #import pdb; pdb.set_trace()
+            ampls_used = all_ampl[group_to_use == g_group]
+            synch_used = synch_to_use[group_to_use == g_group]
+            fitfunc = lambda p, x: 1 - np.exp(-x/p[0])
+            if g_group == 7:
+                label = '7 or more'
+            else:
+                label = str(g_group)
+            plot_fit(fitfunc, ampls_used, synch_used, guess_values = [30], save_name = '_exp_non_zero_' + str(g_group), save_file = file_save, ext = ext, label = label)
+            
+        plt.legend()
+        plt.show()
         
-    # fit the data points
-    fitfunc = lambda p, x: p[0]* np.sqrt(x) +p[1] # Target function
-    all_ampl = all_ampl[all_ampl >= 0 ]
-    all_synch = all_synch[all_ampl >= 0]
-    file_save = plot_folder +plot_file
-    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1, 0.2], save_name = '_sqrt_root', save_file = file_save, ext = ext) 
-
-    # linear function only
-    fitfunc = lambda p, x: p[0]*x +p[1]
-    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1, 0.2], save_name = '_linear_not_zero', save_file = file_save, ext = ext)
-
-    fitfunc = lambda p, x: x * p[0]
-    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1], save_name = '_linear_zero', save_file = file_save, ext = ext)
-    #import pdb; pdb.set_trace() 
-    fitfunc = lambda p, x: 1 - np.exp(-x/p[0])
-    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [30], save_name = '_exp',save_file = file_save, ext = ext)
+        #import pdb; pdb.set_trace()
+    else:  
+        plt.close()
     
-    fitfunc = lambda p, x: 1 - np.exp(-x/p[0]) + p[1]
-    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [30, 0], save_name = '_exp_non_zero',save_file = file_save, ext = ext)
+        plt.figure() 
+              
+        # fit the data points
+        fitfunc = lambda p, x: p[0]* np.sqrt(x) +p[1] # Target function
+        all_ampl = all_ampl[all_ampl >= 0 ]
+        all_synch = all_synch[all_ampl >= 0]
+        file_save = plot_folder +plot_file
+        plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1, 0.2], save_name = '_sqrt_root', save_file = file_save, ext = ext) 
     
-    fitfunc = lambda p, x: x**2 * p[0] + x * p[1]
-    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0, 0], save_name = '_square',save_file = file_save, ext = ext)
+        # linear function only
+        fitfunc = lambda p, x: p[0]*x +p[1]
+        plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1, 0.2], save_name = '_linear_not_zero', save_file = file_save, ext = ext)
     
-    fitfunc = lambda p, x: -np.exp(-x/p[0]) + p[1]*x+p[2]
-    plot_fit(fitfunc, all_ampl, all_synch, guess_values = [1, 1, 1], save_name = '_exp2',save_file = file_save, ext = ext)
+        fitfunc = lambda p, x: x * p[0]
+        plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0.1], save_name = '_linear_zero', save_file = file_save, ext = ext)
+        #import pdb; pdb.set_trace() 
+        fitfunc = lambda p, x: 1 - np.exp(-x/p[0])
+        plot_fit(fitfunc, all_ampl, all_synch, guess_values = [30], save_name = '_exp',save_file = file_save, ext = ext)
+        
+        fitfunc = lambda p, x: 1 - np.exp(-x/p[0]) + p[1]
+        plot_fit(fitfunc, all_ampl, all_synch, guess_values = [30, 0], save_name = '_exp_non_zero',save_file = file_save, ext = ext)
+        
+        fitfunc = lambda p, x: x**2 * p[0] + x * p[1]
+        plot_fit(fitfunc, all_ampl, all_synch, guess_values = [0, 0], save_name = '_square',save_file = file_save, ext = ext)
+        
+        fitfunc = lambda p, x: -np.exp(-x/p[0]) + p[1]*x+p[2]
+        plot_fit(fitfunc, all_ampl, all_synch, guess_values = [1, 1, 1], save_name = '_exp2',save_file = file_save, ext = ext)
+        
     #plt.show()
     
 #    import pdb; pdb.set_trace() 
@@ -857,10 +891,10 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     plt.clf()
     gc.collect()    
     
-def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False, ext = '.png'):
+def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False, ext = '.png', label = False):
     
     from scipy import optimize
-    plt.figure()
+    #plt.figure()
     errfunc = lambda p, x, y: fitfunc(p, x) - y
  
     idxs = range(0,len(x_data))
@@ -872,8 +906,11 @@ def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False
     p1, success = optimize.leastsq(errfunc, guess_values, args=(x_data, y_data))
     
     #import pdb; pdb.set_trace()
-    plt.plot(x_data, y_data, "ro")
-    plt.plot(x_data, fitfunc(p1, x_data), 'b-', lw = 4)
+    if label != False:
+        plt.plot(x_data, fitfunc(p1, x_data), lw = 4, label = label)
+    else:
+        plt.plot(x_data, y_data, "ro")
+        plt.plot(x_data, fitfunc(p1, x_data), 'b-', lw = 4)
     plt.ylim([0, 1.1])
     plt.xlim([0, 1200])
     import inspect
@@ -884,6 +921,7 @@ def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False
         #import pdb; pdb.set_trace()
         save_name = save_file + save_name + ext
         plt.savefig(save_name, dpi=600)   
+    #return p1
 
 def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, data_file, spw_groups,spw_details, ext):
     
