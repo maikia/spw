@@ -720,7 +720,7 @@ def plot_all_cum_change_var(plot_folder, plot_file,
 
     
  
-def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png'):
+def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png', colorb = True):
     # plots the scatter plot
     
     # define variables
@@ -731,37 +731,50 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png'):
     #groups_for_colors = np.array([1, 2, 2, 3, 3, 4, 4, 5, 5]) # less groups, with 1 IPSP
     #ticks_labels = ['1 IPSPs','2-3 IPSPs','4-5 IPSPs', '6-7 IPSPs', '8 or more'] # less groups, with 1 IPSP
     
-    #groups_for_colors = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8]) # more groups, no 1 IPSP
+    #groups_for_colors = np.array([2, 3, 4, 5, 6, 7, 8]) # more groups, no 1 IPSP
     #ticks_labels = ['2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
     
-    groups_for_colors = np.array([1, 2, 3, 4, 5, 6, 7, 8]) # more groups, with 1 IPSP
-    ticks_labels = ['1 IPSP', '2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
+    #groups_for_colors = np.array([1, 2, 3, 4, 5, 6, 7, 8]) # more groups, with 1 IPSP
+    #ticks_labels = ['1 IPSP', '2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
     
+    groups_for_colors = np.array([1, 0, 2]) # only either 1 IPSP or 3 or more
+    ticks_labels = ['1 IPSP', '3 or more', ]
+
+    # if any of the groups == 0, remove it
+    idx, = np.where(groups_for_colors == 0)
+    for idxs in idx + 1:
+        ampl = ampl[group != idxs]
+        synch = synch[group != idxs]
+        group = group[group != idxs]
+    groups_for_colors = groups_for_colors[groups_for_colors != 0]  
+    #import pdb; pdb.set_trace() 
+    # define colors
     max_color = max(groups_for_colors) * 1.0
     groups_for_colors = groups_for_colors / max_color
     
+    # assign all the higher numbered groups to the last defined group
+    group[group > max_color] = max_color #len(groups_for_colors) - 1
+    #import pdb; pdb.set_trace() 
+    colors_group = groups_for_colors[group-1]     
+    
     # define colorbar ticks
-    #ticks = [0,1,2, 3, 4, 5]
     ticks = np.linspace(min(groups_for_colors), max(groups_for_colors), len(np.unique(groups_for_colors)))
     
-    #ticks_labels = ['1 IPSPs','2-3 IPSPs','4-5 IPSPs', '6-7 IPSPs', '8 or more']
-   
-    #ticks_labels = ['2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
-    #ticks_labels = ['1 IPSP', '2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
-    #ticks_labels = ticks_labels[::-1]
     marker_size = 60
     import matplotlib as mpl
     #import pdb; pdb.set_trace() 
-    
     fig = plt.figure()
-
-    group[group > len(groups_for_colors) -1] = len(groups_for_colors) - 1
-    colors_group = groups_for_colors[group-1] 
+    
+    #import pdb; pdb.set_trace() 
     #plt.scatter(ampl, synch, c = colors_group, s = marker_size, cmap=mpl.cm.gray)
-    plt.scatter(ampl, synch, c = colors_group, s = marker_size) #, alpha = 0.2)
-    cbar = plt.colorbar()
-    cbar.set_ticks(ticks)
-    cbar.set_ticklabels(ticks_labels)
+    if colorb:
+        plt.scatter(ampl, synch, c = colors_group, s = marker_size) #, alpha = 0.2)
+    
+        cbar = plt.colorbar()
+        cbar.set_ticks(ticks)
+        cbar.set_ticklabels(ticks_labels)
+    else:
+        plt.scatter(ampl, synch, c = colors_group, s = marker_size, alpha = 0.8)
 
     plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
     plt.xlabel('amplitude [micro V]')
@@ -819,31 +832,50 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     all_group = np.concatenate(all_group)
     #import pdb; pdb.set_trace()
     
-    create_scatter_synch(all_ampl.copy(), all_synch.copy(), all_group.copy(), 'spont_init_', plot_folder +plot_file, ext)
+    create_scatter_synch(all_ampl.copy(), all_synch.copy(), all_group.copy(), 'spont_init_', plot_folder + plot_file, ext)
     plt.close()
     
     if fit_by_group:
+        #import pdb; pdb.set_trace()
         group_to_use = group_group
         synch_to_use = synch_group
         ampl_to_use = ampl_group
+        
+        synch_to_use = synch_to_use[group_to_use != 2] 
+        ampl_to_use = ampl_to_use[group_to_use != 2] 
+        group_to_use[group_to_use > 3] = 3
+        group_to_use = group_to_use[group_to_use != 2]   
+        
         #import pdb; pdb.set_trace()
         all_ampl = ampl_to_use[ampl_to_use >= 0 ]
         all_synch = synch_to_use[ampl_to_use >= 0]
         group_to_use = group_to_use[ampl_to_use >= 0]
-        create_scatter_synch(all_ampl, all_synch, group_to_use, 'other', plot_folder +plot_file, ext)
-        file_save = plot_folder +plot_file
-        all_group[all_group > 7] = 7
-        for g_group in np.unique(all_group):
-            #import pdb; pdb.set_trace()
+        
+        create_scatter_synch(all_ampl, all_synch, group_to_use, 'other', plot_folder +plot_file, ext, colorb = False)
+        file_save = plot_folder +plot_file        
+        #import pdb; pdb.set_trace()
+        
+        for g_group in np.unique(group_to_use):
+            
             ampls_used = all_ampl[group_to_use == g_group]
             synch_used = synch_to_use[group_to_use == g_group]
-            fitfunc = lambda p, x: 1 - np.exp(-x/p[0])
-            if g_group == 7:
-                label = '7 or more'
+
+            #fitfunc = lambda p, x: p[0] - np.exp(-x/p[1])
+            #fitfunc = lambda p, x: x * p[0]
+            if g_group == 1:
+                fitfunc = lambda p, x: x * p[0]
+                label = "1"
+                col = 'b'
+                guess_vars = [30]
             else:
-                label = str(g_group)
-            plot_fit(fitfunc, ampls_used, synch_used, guess_values = [30], save_name = '_exp_non_zero_' + str(g_group), save_file = file_save, ext = ext, label = label)
-            
+                fitfunc = lambda p, x: p[0]-np.exp(p[1]/x)
+                label = '3 or more'
+                col = 'r'
+                guess_vars = [30, 30]
+            #try:
+            plot_fit(fitfunc, ampls_used, synch_used, guess_values = guess_vars, save_name = '_exp_non_zero_' + str(g_group), save_file = file_save, ext = ext, label = label, color = col)
+            #except:
+            #import pdb; pdb.set_trace()
         plt.legend()
         plt.show()
         
@@ -888,10 +920,10 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     if plot_it: 
         plt.show()
     #import pdb; pdb.set_trace()
-    plt.clf()
+    #plt.clf()
     gc.collect()    
     
-def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False, ext = '.png', label = False):
+def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False, ext = '.png', label = False, color = False):
     
     from scipy import optimize
     #plt.figure()
@@ -907,7 +939,10 @@ def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False
     
     #import pdb; pdb.set_trace()
     if label != False:
-        plt.plot(x_data, fitfunc(p1, x_data), lw = 4, label = label)
+        if color != False:
+            plt.plot(x_data, fitfunc(p1, x_data), color, lw = 4, label = label)
+        else:
+            plt.plot(x_data, fitfunc(p1, x_data), lw = 4, label = label)
     else:
         plt.plot(x_data, y_data, "ro")
         plt.plot(x_data, fitfunc(p1, x_data), 'b-', lw = 4)
