@@ -856,6 +856,9 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         #import pdb; pdb.set_trace()
         
         for g_group in np.unique(group_to_use):
+            import pdb; pdb.set_trace()
+            np.savetxt(plot_folder + 'all_synch_transposed_Ipsp1.txt', np.transpose(synch_used),delimiter='\t')  
+            np.savetxt(plot_folder + 'all_ampl_transposed_Ipsp1.txt', np.transpose(ampls_used),delimiter='\t')  
             
             ampls_used = all_ampl[group_to_use == g_group]
             synch_used = synch_to_use[group_to_use == g_group]
