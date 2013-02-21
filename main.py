@@ -114,7 +114,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, ipsps_groups, data_file = raw_baselined, reanalize = reanalize)    
         
         SPWs_all_IPSPs = 'SPWs_all_ipsps.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_spws_ipsp_beg(save_folder, filter_folder, save_fig = 'spw_ipsp', save_file = SPWs_all_IPSPs, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
         
     #    SPWs_ipsps_first_max = 'SPWs_ipsps_first_max.npz'

@@ -855,12 +855,13 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         create_scatter_synch(all_ampl, all_synch, group_to_use, 'other', plot_folder +plot_file, ext, colorb = False)
         file_save = plot_folder +plot_file        
         #import pdb; pdb.set_trace()
-        
+        #plt.figure()
         for g_group in np.unique(group_to_use):
             #import pdb; pdb.set_trace()
             ampls_used = all_ampl[group_to_use == g_group]
             synch_used = synch_to_use[group_to_use == g_group]
             
+
             np.savetxt(plot_folder + 'all_synch_transposed_Ipsp1.txt', np.transpose(synch_used),delimiter='\t')  
             np.savetxt(plot_folder + 'all_ampl_transposed_Ipsp1.txt', np.transpose(ampls_used),delimiter='\t')  
 
@@ -870,12 +871,14 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
                 fitfunc = lambda p, x: x * p[0]
                 label = "1"
                 col = 'b'
-                guess_vars = [30]
+                guess_vars = [0.0043]
+                synch_used = synch_used[ampls_used <=200]
+                ampls_used = ampls_used[ampls_used <=200]
             else:
-                fitfunc = lambda p, x: p[0]-np.exp(p[1]/x)
+                fitfunc = lambda p, x: p[0]*np.exp(-p[1]/x)
                 label = '3 or more'
                 col = 'r'
-                guess_vars = [30, 30]
+                guess_vars = [0.85, 30]
             #try:
             plot_fit(fitfunc, ampls_used, synch_used, guess_values = guess_vars, save_name = '_exp_non_zero_' + str(g_group), save_file = file_save, ext = ext, label = label, color = col)
             #except:
@@ -1055,12 +1058,9 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                 last_ipsp = np.max(spw_used['ipsp_start'])
                 trace = spw_used['trace'][0]
                 data_used = data[:,trace,:]
-
                 
                 start_trace = spw_start + window_to_plot[0]
                 end_trace = last_ipsp + window_to_plot[1]
-
-                 
 
                 start_trace_pts = ispw.ms2pts(start_trace, fs).astype('i4')
                 end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
@@ -1105,10 +1105,10 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     #            for spi
                                 else:
                                     plt.plot(t, data_spw[electr, :] + add_it * electr, 'k')
+                            
+                            #import pdb; pdb.set_trace() 
+                            plt.title('IPSPs: ' + str(len(np.unique(spw_used['group']))) + ',  electrodes: ' + str(len(np.unique(spw_used['electrode']))))
                             plt.show()
-                            import pdb; pdb.set_trace() 
-                            #plt.title('max amplitude: ' + )
-                    
                     if ampls < 0:
                         print 1
                     # calculate synchrony
