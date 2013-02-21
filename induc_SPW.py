@@ -1057,6 +1057,8 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
     fs = npzfile['fs']
     npzfile.close()  
     
+    
+    separate_if_ipsps_further = 13 # ms
     ipsp_len = 10
     ipsp_size_pts = ms2pts(ipsp_len, fs).astype('i4')
     win = [-20, 100]
@@ -1064,13 +1066,14 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
     min_len_ipsp = 1
     min_len_ipsp_pts = ms2pts(min_len_ipsp, fs).astype('i4')
     ipsp_ae_pts = ms2pts(ipsp_allowed_error, fs).astype('i4') # allowed error in points
-    plot_it = False
+    plot_it = True
     all_new_ipsps = []
     time_if_no_ipsp = 10 #ms
     time_if_no_ipsp_pts = ms2pts(time_if_no_ipsp, fs).astype('i4')
     min_ipsp_height = 15
     
     for spw_no in np.unique(spws['spw_no']):
+        
         spw_used =  spws[spws['spw_no'] == spw_no]   
         groups = np.unique(spw_used['group'])
         
@@ -1097,6 +1100,10 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
         group_times = group_times[group_order]
         groups = groups[group_order]
         
+        if sum(np.diff(group_times) > separate_if_ipsps_further) > 1:
+            'this spw must be separated into two! (induc_SPW)'
+            import pdb; pdb.set_trace()
+        
         all_electrodes = range(len(data_trace))
         
         # analyze every group
@@ -1106,6 +1113,7 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
             no_group_electr  = np.setdiff1d(all_electrodes, group_electr)
             ipsp_time = spw_used[spw_used['group'] == group]['ipsp_start']
             #group_times[idx]
+            #import pdb; pdb.set_trace()
             
             group_pts_all = ms2pts(ipsp_time, fs).astype('i4')
             
@@ -1134,7 +1142,10 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                 # find index of smallest argument between the two IPSPs which also is changing it's sign on derivative
                 # check where to look for the min
                 search_start = max(ipsp_start_previous, min(group_pts_all)-ipsp_ae_pts)
-                search_end = min(ipsp_end_next, max(group_pts_all)+ipsp_ae_pts)
+                if ipsp_end_next == -1:
+                    search_end = max(group_pts_all)+ipsp_ae_pts
+                else:
+                    search_end = min(ipsp_end_next, max(group_pts_all)+ipsp_ae_pts)
                 # check where first derivative is changing its sign
                 deriv = np.diff(data_trace[electr, search_start:search_end])
                 deriv[deriv < 0] = 0
@@ -1233,7 +1244,7 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                 
             # find the max of each ipsp in each electrode
         
-        if plot_it and spw_no == 7:
+        if plot_it:
             data_used = data_trace[:,spw_start_pts:spw_end_pts]
             plt.figure()
             add_it = 150          
