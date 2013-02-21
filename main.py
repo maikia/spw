@@ -114,7 +114,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected, ipsps_groups, data_file = raw_baselined, reanalize = reanalize)    
         
         SPWs_all_IPSPs = 'SPWs_all_ipsps.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.up_spws_ipsp_beg(save_folder, filter_folder, save_fig = 'spw_ipsp', save_file = SPWs_all_IPSPs, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
         
     #    SPWs_ipsps_first_max = 'SPWs_ipsps_first_max.npz'
@@ -138,30 +138,30 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     #    # ----> check if the group does not exist on other electrodes
         SPWs_missing_link = 'SPWs_missing_link.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.up_add_missing_electrodes_SPW(save_folder, SPWs_missing_link, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
         
         SPWs_merged = 'SPWs_merged.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.up_merge_close_groups(save_folder, SPWs_merged, SPWs_missing_link, data_file = raw_baselined, reanalize = reanalize)
             
         SPWs_ipsps_corrected2 = 'SPWs_ipsps_corrected.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected2, SPWs_merged, data_file = raw_baselined, reanalize = reanalize)
     #        
     #    #if run_all_functions:
-    #    #    updater.separate
-    #    spws_large_enough2 = 'spw_large_enough2.npz'
-    #    min_amplitude_of_spw = 40 #microV SPW in any point, in any electrode has to be at least this amplitude
-    #    if not run_all_functions:
-    #        updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough2, load_datafile = raw_baselined, load_spwsipsp = SPWs_missing_link, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
+#    #    #    updater.separate
+#        spws_large_enough2 = 'spw_large_enough2.npz'
+#        min_amplitude_of_spw = 80 #microV SPW in any point, in any electrode has to be at least this amplitude
+#        if run_all_functions:
+#            updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough2, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected2, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
         
         # use different number of ipsps, 
         # [-1, 2] - all to two IPSPS
         # 3 IPSPS to any number
         # any number of IPSPS 
         #min_no_ipsps_used = [[-1, 2], [3, -1], [-1, -1], [2, -1], [-1, 1]]
-        min_no_ipsps_used = [ [-1, 1]]
+        min_no_ipsps_used = [[-1, -1]]
         #names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_']
         names = ['max_1_']
         for idx, min_no_ipsps in enumerate(min_no_ipsps_used): 
@@ -193,11 +193,11 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                 updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
             
             ##SPWs_ipsps_corrected2 = SPWs_ipsps_final 
-            if not run_all_functions:
+            if run_all_functions:
                 # it makes the plot to exactly analyse each SPW
                 analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_final  , 
                                                load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
-                                               load_ipspsOld =  SPWs_merged, spw_base = SPWs_potential_numb,
+                                               load_ipspsOld =  SPWs_all_IPSPs, spw_base = SPWs_potential_numb,
                                                load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
     #    
             dist_spw_inspikes = names[idx] + 'spw_dist2first.npz'
@@ -262,14 +262,14 @@ if __name__=='__main__':
     
     update = 1
     analyse = 0
-    sum_up_all = 0
+    #sum_up_all = 0
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        #for nex in [1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18, 1]:
-        for nex in range(len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in [18]:
+        #for nex in range(len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):
@@ -279,95 +279,95 @@ if __name__=='__main__':
             print 'intra ' + str(intra)
             work_on_all(filename, save_folder, ex_electr, intra)
     
-    if sum_up_all == 1:
-        spike = False
-        ampl_synch = True
-        solutions_folder = get_save_folder() + 'solutions/'
-        fold_mng.create_folder(solutions_folder)
-        
-        if spike:
-            # plot gathared number of spikes on the beginning (imshow)
-            file_name = 'max_electr_origin.npz'
-            distance_sponts = []
-            distance_inits = []
-            distance_spont_diffs = []
-            distance_inits_diffs = []
-            
-            
-            for nex in range(len(all)):
-                
-                filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
-                # check if it exists:
-                exists = fold_mng.file_exists(save_folder, file_name)
-                if exists:
-                    cell = all[nex][0]
-                    electr_place = np.mean(electr_placement[str(cell)])
-                    
-                    npzfile = np.load(save_folder + file_name)
-                    init = npzfile['init']
-                    spont = npzfile['spont']
-                    init_diff = npzfile['init_diff']
-                    spont_diff = npzfile['spont_diff']
-                    npzfile.close()
-                    
-                    # calculate the distances of the major activity from the intra electrode
-                    distance_sponts.append(np.abs(spont - electr_place))
-                    distance_inits.append(np.abs(init - electr_place))
-                    distance_spont_diffs.append(np.abs(spont_diff - electr_place))
-                    distance_inits_diffs.append(np.abs(init_diff - electr_place))
-            
-            dists = [distance_sponts, distance_inits]
-            dists_diff = [distance_spont_diffs, distance_inits_diffs]
-            
-            
-            plt.figure()
-            plt.hist(dists, normed = True)
-            plt.title('normal, blue = spont, green = init')
-            
-            plt.figure()
-            plt.hist(dists_diff, normed = True)
-            plt.title('diff, blue = spont, green = init')
-            
-            plt.show()
-        
-        if ampl_synch:
-            
-            all_ampls = []
-            all_syncs = []
-            all_cells = []
-            for nex in range(len(all)):
-                filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
-                file_name = 'ampl_sync_dat.npz'
-                exists = fold_mng.file_exists(save_folder, file_name)
-                
-                if exists:
-                    npzfile = np.load(save_folder + file_name)
-                    groups = npzfile['group']
-                    ampls = npzfile['all_ampls']
-                    syncs = npzfile['all_syncs']
-                    npzfile.close()
-                    
-                    if len(groups) == 1:
-                        # there is only one group
-                        all_cells.append(all[nex][0])
-                        all_ampls.append(ampls)
-                        all_syncs.append(syncs)
-                
-            plot_ampl_synch = 'ampl_synchrony'
-
-            analyser.plot_amplitude_vs_synchrony_all(plot_folder = solutions_folder, 
-                                                 plot_file = plot_ampl_synch, cells = all_cells, 
-                                                 amplitudes = all_ampls, synchronise= all_syncs, 
-                                                 ext = '.pdf')
-
-    
-    if analyse == 1:
-        #for nex in range(12, len(all)):
-        #for nex in [5]: #range(12, len(all)):
-        #for nex in [11]:
-        for nex in range(5):
-            filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
-            analyse_all(filename, save_folder, intra)
+#    if sum_up_all == 1:
+#        spike = False
+#        ampl_synch = True
+#        solutions_folder = get_save_folder() + 'solutions/'
+#        fold_mng.create_folder(solutions_folder)
+#        
+#        if spike:
+#            # plot gathared number of spikes on the beginning (imshow)
+#            file_name = 'max_electr_origin.npz'
+#            distance_sponts = []
+#            distance_inits = []
+#            distance_spont_diffs = []
+#            distance_inits_diffs = []
+#            
+#            
+#            for nex in range(len(all)):
+#                
+#                filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
+#                # check if it exists:
+#                exists = fold_mng.file_exists(save_folder, file_name)
+#                if exists:
+#                    cell = all[nex][0]
+#                    electr_place = np.mean(electr_placement[str(cell)])
+#                    
+#                    npzfile = np.load(save_folder + file_name)
+#                    init = npzfile['init']
+#                    spont = npzfile['spont']
+#                    init_diff = npzfile['init_diff']
+#                    spont_diff = npzfile['spont_diff']
+#                    npzfile.close()
+#                    
+#                    # calculate the distances of the major activity from the intra electrode
+#                    distance_sponts.append(np.abs(spont - electr_place))
+#                    distance_inits.append(np.abs(init - electr_place))
+#                    distance_spont_diffs.append(np.abs(spont_diff - electr_place))
+#                    distance_inits_diffs.append(np.abs(init_diff - electr_place))
+#            
+#            dists = [distance_sponts, distance_inits]
+#            dists_diff = [distance_spont_diffs, distance_inits_diffs]
+#            
+#            
+#            plt.figure()
+#            plt.hist(dists, normed = True)
+#            plt.title('normal, blue = spont, green = init')
+#            
+#            plt.figure()
+#            plt.hist(dists_diff, normed = True)
+#            plt.title('diff, blue = spont, green = init')
+#            
+#            plt.show()
+#        
+#        if ampl_synch:
+#            
+#            all_ampls = []
+#            all_syncs = []
+#            all_cells = []
+#            for nex in range(len(all)):
+#                filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
+#                file_name = 'ampl_sync_dat.npz'
+#                exists = fold_mng.file_exists(save_folder, file_name)
+#                
+#                if exists:
+#                    npzfile = np.load(save_folder + file_name)
+#                    groups = npzfile['group']
+#                    ampls = npzfile['all_ampls']
+#                    syncs = npzfile['all_syncs']
+#                    npzfile.close()
+#                    
+#                    if len(groups) == 1:
+#                        # there is only one group
+#                        all_cells.append(all[nex][0])
+#                        all_ampls.append(ampls)
+#                        all_syncs.append(syncs)
+#                
+#            plot_ampl_synch = 'ampl_synchrony'
+#
+#            analyser.plot_amplitude_vs_synchrony_all(plot_folder = solutions_folder, 
+#                                                 plot_file = plot_ampl_synch, cells = all_cells, 
+#                                                 amplitudes = all_ampls, synchronise= all_syncs, 
+#                                                 ext = '.pdf')
+#
+#    
+#    if analyse == 1:
+#        #for nex in range(12, len(all)):
+#        #for nex in [5]: #range(12, len(all)):
+#        #for nex in [11]:
+#        for nex in range(5):
+#            filename, save_folder, intra  = find_folders(all[nex][0], all[nex][1], all[nex][2])
+#            analyse_all(filename, save_folder, intra)
         
 
     

@@ -1984,7 +1984,7 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
                 # not the end of this trace yet
                 # check distance between last IPSP of this and before the next IPSP
                 distance = next_spw_used['spw_start'][0] - max(spw_used['ipsp_start'] )
-                assert distance > 0
+                #assert distance > 0
                 
                 # if distance is smaller from 0 it means that new SPW start before the old SPW ends - WRONG!
                 if distance < ipsp_length:
@@ -2578,7 +2578,7 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
     #import pdb; pdb.set_trace()
     shift_ipsp = 1.2 # maximal possible shift of IPSP
     min_electr = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    expected_min_ipsp_ampl = 30 # microV, min allowed IPSP amplitude
+    expected_min_ipsp_ampl = 0 # microV, min allowed IPSP amplitude
     expected_total_min = 3
     min_length_ipsp = 2 # minimum length of iPSP
     max_length_ipsp = 13 # maximum length of IPSP

@@ -744,6 +744,7 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png', colo
     idx, = np.where(groups_for_colors == 0)
     for idxs in idx + 1:
         ampl = ampl[group != idxs]
+
         synch = synch[group != idxs]
         group = group[group != idxs]
     groups_for_colors = groups_for_colors[groups_for_colors != 0]  
@@ -856,12 +857,12 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         #import pdb; pdb.set_trace()
         
         for g_group in np.unique(group_to_use):
-            import pdb; pdb.set_trace()
-            np.savetxt(plot_folder + 'all_synch_transposed_Ipsp1.txt', np.transpose(synch_used),delimiter='\t')  
-            np.savetxt(plot_folder + 'all_ampl_transposed_Ipsp1.txt', np.transpose(ampls_used),delimiter='\t')  
-            
+            #import pdb; pdb.set_trace()
             ampls_used = all_ampl[group_to_use == g_group]
             synch_used = synch_to_use[group_to_use == g_group]
+            
+            np.savetxt(plot_folder + 'all_synch_transposed_Ipsp1.txt', np.transpose(synch_used),delimiter='\t')  
+            np.savetxt(plot_folder + 'all_ampl_transposed_Ipsp1.txt', np.transpose(ampls_used),delimiter='\t')  
 
             #fitfunc = lambda p, x: p[0] - np.exp(-x/p[1])
             #fitfunc = lambda p, x: x * p[0]
@@ -1063,34 +1064,67 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
 
                 start_trace_pts = ispw.ms2pts(start_trace, fs).astype('i4')
                 end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
-
+                
                 data_spw = data_used[:, start_trace_pts: end_trace_pts]
-                #import pdb; pdb.set_trace() 
-                if remove_baseline:
-                    base = data_used[:, start_trace_pts + win_base_pts[0]: start_trace_pts + win_base_pts[1]]
-                    base = np.mean(base, axis = 1)
-                    data_spw = np.transpose(data_spw) - base
-                    data_spw = np.transpose(data_spw)
+                if end_trace_pts <= len(data_used[0,:]) and start_trace_pts >= 0:
+                    # don't use this trace for calculations
+                
+                    if remove_baseline:
+                        base = data_used[:, start_trace_pts + win_base_pts[0]: start_trace_pts + win_base_pts[1]]
+                        base = np.mean(base, axis = 1)
+                        data_spw = np.transpose(data_spw) - base
+                        data_spw = np.transpose(data_spw)
+                        
+                    #import pdb; pdb.set_trace()
+                    #print 'before: ' + str(np.max(spw_used['amplitude'])) + ' after: ' + str(max(np.max(data_spw, 1)))
+                    # calculate amplitude
                     
-                #import pdb; pdb.set_trace()
-                # calculate amplitude
-                ampls = max(np.max(data_spw, 1))
-                if ampls < 0:
-                    print 1
-                # calculate synchrony
-                # (no_ipsps all together)/(no_of_electrodes * no_group_ipsp)
-                no_ipsps = len(spw_used)
-                all_electr = np.size(data, 0) * 1.0
-                no_group_ipsp = len(np.unique(spw_used['group']))
-                #import pdb; pdb.set_trace()
-                sync = (no_ipsps * 1.0)/(all_electr * no_group_ipsp * 1.0)
-                
-                
-                
-                all_ampl.append(ampls)
-                all_sync.append(sync)
-                all_group.append(no_group_ipsp)
-                #import pdb; pdb.set_trace() 
+                    spw_selected = data_spw[:,win_pts[0]:]
+                    #import pdb; pdb.set_trace()
+                    #try:
+                    ampls = max(np.max(spw_selected, 1))
+                    #except:
+                    #    import pdb; pdb.set_trace()
+                    # if the SPW amplitude is larger than 200 and it's single, plot it
+                    #import pdb; pdb.set_trace()
+                    
+                    if len(np.unique(spw_used['group'])) == 1:
+                        print ampls
+                        if ampls > 200:
+                            #print 'got in'
+                            add_it = 300
+                            t = dat.get_timeline(data_spw[0, :], fs, 'ms')
+                            max_electrode = np.argmax(np.max(spw_selected, 1))
+                            for electr in range(len(data_spw)):
+                                if max_electrode == electr:
+                                    max_pt = np.argmax(spw_selected[max_electrode, :])
+                                    plt.plot(t, data_spw[electr, :] + add_it * electr, 'r')
+                                    plt.plot(t[max_pt], data_spw[electr, max_pt] + add_it * electr, 'ob', ms = 8)
+                                    tex = str(ampls)
+                                    plt.text(t[max_pt], data_spw[electr, max_pt] + add_it * electr, tex, fontsize=11, ha='center', va='top')
+    #            for spi
+                                else:
+                                    plt.plot(t, data_spw[electr, :] + add_it * electr, 'k')
+                            plt.show()
+                            import pdb; pdb.set_trace() 
+                            #plt.title('max amplitude: ' + )
+                    
+                    if ampls < 0:
+                        print 1
+                    # calculate synchrony
+                    # (no_ipsps all together)/(no_of_electrodes * no_group_ipsp)
+                    no_ipsps = len(spw_used)
+                    all_electr = np.size(data, 0) * 1.0
+                    no_group_ipsp = len(np.unique(spw_used['group']))
+                    #import pdb; pdb.set_trace()
+                    sync = (no_ipsps * 1.0)/(all_electr * no_group_ipsp * 1.0)
+                    
+                    
+                    
+                    all_ampl.append(ampls)
+                    all_sync.append(sync)
+                    all_group.append(no_group_ipsp)
+                    #import pdb; pdb.set_trace() 
             
             #import pdb; pdb.set_trace()
             #group_group = np.copy(all_group)
@@ -1100,18 +1134,8 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
             #import pdb; pdb.set_trace()
             name  = '_group_' + str(group_no) + '_' + types[typ]
             #import pdb; pdb.set_trace()
-            create_scatter_synch(all_ampl, all_sync, np.array(all_group), name, save_base, ext = '.png')
+            create_scatter_synch(np.array(all_ampl), np.array(all_sync), np.array(all_group), name, save_base, ext = '.png')
             
-            
-            #plt.scatter(all_ampl, all_sync, color = cols[colors_group,:], s = 3)
-            #import pdb; pdb.set_trace() 
-            #im = ax1.scatter(ampl_group, synch_group, color = cols[colors_group,:], s = marker_size)
-            #plt.plot(all_ampl, all_sync, '.', alpha = 0.4)
-            #plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
-            #plt.xlabel('amplitude [micro V]')
-            #plt.title('Group: ' + str(group_no) + ', ' + types[typ] + ',no of SPWs: ' + str(len(spw_nos_used)))
-            #plt.xlim([0, 1600])
-            #plt.ylim([0, 1])
             temp_ampls.append(all_ampl)
             temp_syncs.append(all_sync)
             temp_groups.append(all_group)
