@@ -133,22 +133,27 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     #        # uses previously selected largest spikes
     #        updater.up_spikes_in_spw(save_folder, save_file =spikes_inSPWs, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps_beg, reanalize = reanalize, win = win)
     
-    
+ 
     
     
     #    # ----> check if the group does not exist on other electrodes
         SPWs_missing_link = 'SPWs_missing_link.npz'
         if run_all_functions:
             updater.up_add_missing_electrodes_SPW(save_folder, SPWs_missing_link, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
-        
-        SPWs_merged = 'SPWs_merged.npz'
+
         if run_all_functions:
+            updater.up_display_SPWs(save_folder, data_file = raw_baselined, spw_file = SPWs_all_IPSPs, reanalize = False)   
+
+        SPWs_merged = 'SPWs_merged.npz'
+        if not run_all_functions:
             updater.up_merge_close_groups(save_folder, SPWs_merged, SPWs_missing_link, data_file = raw_baselined, reanalize = reanalize)
+        
             
         SPWs_ipsps_corrected2 = 'SPWs_ipsps_corrected.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected2, SPWs_merged, data_file = raw_baselined, reanalize = reanalize)
-    #        
+        
+
     #    #if run_all_functions:
 #    #    #    updater.separate
 #        spws_large_enough2 = 'spw_large_enough2.npz'
@@ -268,8 +273,8 @@ if __name__=='__main__':
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        for nex in [18]:
-        #for nex in range(len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        #for nex in [18]:
+        for nex in range(len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):

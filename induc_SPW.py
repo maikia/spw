@@ -1357,6 +1357,57 @@ def fill_gap_in_all_groups(spws):
     all_ipsps = np.concatenate(new_ipsps)
     return all_ipsps
 
+def up_display_SPWs(save_folder, data_file, spw_file):
+    
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close()   
+    
+    npzfile        = np.load(save_folder + spw_file)
+    spws = npzfile['spw_ipsps']
+    npzfile.close()           
+    
+    win = [-5, 10]
+    
+    win_pts = [ms2pts(win[0], fs), ms2pts(win[1], fs)]
+    add_it = 20
+    for spw_no in np.unique(spws['spw_no']):
+        # define start and end
+        spw_used = spws[spws['spw_no'] == spw_no]
+        spw_start = spw_used['spw_start'][0]
+        spw_start_pts = ms2pts(spw_start, fs)
+        spw_end = max(spw_used['ipsp_start'])
+        spw_end_pts = ms2pts(spw_end, fs)
+        
+        plot_start = spw_start_pts + win_pts[0]
+        plot_end = spw_end_pts + win_pts[1]
+        
+        shift = - win[0]
+        shift_pts = -win_pts[0]
+        if plot_start < 0:
+            'here'
+            import pdb; pdb.set_trace()
+        trace = spw_used['trace'][0]
+        
+        plot_data = data[:, trace, plot_start:plot_end]
+        max_all = np.max(plot_data)
+        timeline = dat.get_timeline(plot_data[0, :], fs, 'ms')
+        for electr in range(len(plot_data)):
+            plt.plot(timeline, plot_data[electr, :] + (add_it + max_all) * electr)
+
+            for ipsps in spw_used[spw_used['electrode'] == electr]:
+                #import pdb; pdb.set_trace()
+                ipsp_pts = ms2pts(ipsps['ipsp_start'], fs) - spw_start_pts
+                ipsp_place = shift_pts + ipsp_pts
+                plt.plot(timeline[ipsp_place], plot_data[electr, ipsp_place] + (add_it + max_all) * electr, 'bo', ms = 5)
+                tex = ipsps['group']
+                plt.text(timeline[ipsp_place], plot_data[electr, ipsp_place] + (add_it + max_all) * electr, tex, fontsize=11, ha='center', va='top')
+            #plt.plot(timeline[])
+        plt.vlines(shift, -(add_it + max_all), (add_it + max_all) * 8 + (add_it + max_all), 'r')
+        plt.title('ipsps: ' + str(len(np.unique(spw_used['group']))))
+        plt.show()
+        #import pdb; pdb.set_trace()
     
 def update_fill_gap_between_ipsp_groups(save_folder, save_file, spw_file, data_file):
     """ takes all the groups of the spws and IPSPs and fills the electrode which

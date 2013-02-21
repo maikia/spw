@@ -2406,6 +2406,11 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     from scipy.stats import nanmean
     win = [-5, 80] #ms
     
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close() 
+    
     npzfile         = np.load(save_folder + induc_spont)
     spontaneous      = npzfile['spontaneous'] # spikes_all
     initiated      = npzfile['initiated'] # spikes_all
@@ -2417,10 +2422,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     npzfile.close() 
      
     
-    npzfile        = np.load(save_folder + data_file)
-    data = npzfile['data']
-    fs = npzfile['fs']
-    npzfile.close() 
+
     
     npzfile        = np.load(save_folder + intra_spikes)
     intra_spikes = npzfile['spikes_first']
@@ -2547,7 +2549,8 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
         fig_fname = save_fold + save_plots + titles[idx] + str(win[0]) + '_' + str(win[1]) + ext
         logging.info("saving figure %s" % fig_fname)
         fig.savefig(fig_fname,dpi=600)    
-        #logging.info("saving figure %s" % fig_fname)       
+        #logging.info("saving figure %s" % fig_fname)   
+        plt.show()    
         plt.close() 
         
     

@@ -298,6 +298,14 @@ def up_remove_with_to_few_ipsps(save_folder, save_file, spw_file, to_remove, rea
         print 'Initiated SPWs were already saved'    
     gc.collect()      
 
+def up_display_SPWs(save_folder, data_file, spw_file, reanalize = False):
+
+    # load the data        
+    ispw.up_display_SPWs(save_folder = save_folder, data_file = data_file, spw_file = spw_file)
+
+    gc.collect()  
+    
+
 def up_fill_gap_between_ipsp_groups(save_folder, save_file, spw_file, data_file, reanalize = False):
     fold_mng.create_folder(save_folder)
     
