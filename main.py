@@ -141,16 +141,16 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if run_all_functions:
             updater.up_add_missing_electrodes_SPW(save_folder, SPWs_missing_link, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
 
-        if run_all_functions:
-            updater.up_display_SPWs(save_folder, data_file = raw_baselined, spw_file = SPWs_all_IPSPs, reanalize = False)   
+        if not run_all_functions:
+            updater.up_display_SPWs(save_folder, data_file = raw_baselined, spw_file = SPWs_missing_link, reanalize = False)   
 
         SPWs_merged = 'SPWs_merged.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.up_merge_close_groups(save_folder, SPWs_merged, SPWs_missing_link, data_file = raw_baselined, reanalize = reanalize)
         
             
         SPWs_ipsps_corrected2 = 'SPWs_ipsps_corrected.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected2, SPWs_merged, data_file = raw_baselined, reanalize = reanalize)
         
 

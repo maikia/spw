@@ -1042,8 +1042,19 @@ def update_merge_close_groups(save_folder, save_file, spw_file, data_file):
 #    min_ipsp_height = 15
     
             
-    
-    
+def calculate_min_hight(ipsps_number_til_now):
+    """ given number of IPSPs calculates what should be minimal hight of this
+    SPW"""
+    min_height_first_ipsp = 50
+    min_height_alowed = min_height_first_ipsp
+    add_value = min_height_alowed
+    percent_each_next = 0.4 
+    for idx in range(ipsps_number_til_now - 1):
+        add_value = add_value * percent_each_next
+        min_height_alowed = min_height_alowed + add_value
+        #import pdb; pdb.set_trace()
+    return min_height_alowed
+        
 def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_file):
     """ it checks if in neighbouring groups there are no ipsps 
     from the group already detected; it also adds location of maximum
@@ -1057,23 +1068,23 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
     fs = npzfile['fs']
     npzfile.close()  
     
-    
-    separate_if_ipsps_further = 13 # ms
-    ipsp_len = 10
+    separate_if_ipsps_further = 15 # ms - absolute max length
+    ipsp_len = 10 # required but still soft ipsp length
+    ipsp_min_len = 3 # if IPSP is longer than this, the check for rise is made
     ipsp_size_pts = ms2pts(ipsp_len, fs).astype('i4')
     win = [-20, 100]
     ipsp_allowed_error = 0.5
     min_len_ipsp = 1
     min_len_ipsp_pts = ms2pts(min_len_ipsp, fs).astype('i4')
     ipsp_ae_pts = ms2pts(ipsp_allowed_error, fs).astype('i4') # allowed error in points
-    plot_it = True
-    all_new_ipsps = []
+    plot_it = False
+    new_ones = []
     time_if_no_ipsp = 10 #ms
     time_if_no_ipsp_pts = ms2pts(time_if_no_ipsp, fs).astype('i4')
     min_ipsp_height = 15
     
     for spw_no in np.unique(spws['spw_no']):
-        
+        all_new_ipsps = []
         spw_used =  spws[spws['spw_no'] == spw_no]   
         groups = np.unique(spw_used['group'])
         
@@ -1100,9 +1111,49 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
         group_times = group_times[group_order]
         groups = groups[group_order]
         
-        if sum(np.diff(group_times) > separate_if_ipsps_further) > 1:
-            'this spw must be separated into two! (induc_SPW)'
-            import pdb; pdb.set_trace()
+        if sum(np.diff(group_times) > ipsp_min_len) > 1:
+            'this IPSPs are far from each other and possibly should be cut'
+            idx_used_far, = np.where(np.diff(group_times) > ipsp_min_len)
+            remove_after_this = False
+            print ''
+            for idx_far in idx_used_far:
+                print idx_far
+                # calculate he hight of this SPW until this IPSP, 
+                # if the hight is not high enough cut this SPW before next IPSP
+                # it it's correct let it go
+                if np.diff(group_times)[idx_far] > separate_if_ipsps_further:
+                    # remove the further IPSPs
+                    remove_after_this = True
+                else:
+                    #import pdb; pdb.set_trace()
+                    time_in_pts = ms2pts(group_times[idx_far + 1], fs)
+                    if idx_far + 1 == len(group_times) - 1:
+                        # it's the last IPSP
+                        end_til_now = time_in_pts  + ipsp_size_pts
+                    else:
+                        end_til_now = ms2pts(group_times[idx_far + 2], fs).astype('i4')
+                    ipsps_number_til_now = idx_far + 2
+                    min_hight = calculate_min_hight(ipsps_number_til_now)
+                    
+                    max_this_trace = np.max(data_trace[:,spw_start_pts:end_til_now])
+                    if max_this_trace < min_hight:
+                        # remove IPSPs from this one
+                        #import pdb; pdb.set_trace()
+                        remove_after_this = True
+                if remove_after_this:
+                    # remove after this IPSP all IPSPs and break for loop
+                    #import pdb; pdb.set_trace()
+                    spw_used = [spw_used[spw_used['group'] == groups[idx_right]] for idx_right in range(idx_far+1)]
+                    spw_used = np.concatenate(spw_used)
+                    #import pdb; pdb.set_trace()
+                    group_order = group_order[:idx_right + 1]
+                    group_times = group_times[:idx_right + 1]
+                    groups = groups[:idx_right + 1]
+                    
+                    #import pdb; pdb.set_trace()
+                    #print 'broke'
+                    #break
+            #calculate_min_amplitude
         
         all_electrodes = range(len(data_trace))
         
@@ -1141,6 +1192,7 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                 
                 # find index of smallest argument between the two IPSPs which also is changing it's sign on derivative
                 # check where to look for the min
+                
                 search_start = max(ipsp_start_previous, min(group_pts_all)-ipsp_ae_pts)
                 if ipsp_end_next == -1:
                     search_end = max(group_pts_all)+ipsp_ae_pts
@@ -1236,6 +1288,8 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                     new_ipsp['ipsp_start'] = new_ipsp_time
                     new_amplitude = max(max(data_next_ipsps) - np.min(potential_ipsp), 0)
                     new_ipsp['amplitude'] = new_amplitude
+                    #print new_ipsp
+                    #import pdb; pdb.set_trace()                  
                     
                     all_new_ipsps.append(new_ipsp)
                     if plot_it:
@@ -1244,7 +1298,26 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                 
             # find the max of each ipsp in each electrode
         
+        all_new_ipsps = np.concatenate([spw_used, all_new_ipsps])
+        # remove the group with only one IPSP
+        for gr in np.unique(all_new_ipsps['group']):
+            if len(all_new_ipsps[all_new_ipsps['group'] == gr]) == 1:
+                
+                all_new_ipsps = all_new_ipsps[all_new_ipsps['group'] != gr]
+                # if this group is the beginning of the spw, move the beginning of the spw
+                
+                if len(all_new_ipsps) > 0 and min(all_new_ipsps['ipsp_start']) > all_new_ipsps['spw_start'][0]:
+                    #import pdb; pdb.set_trace() 
+                    all_new_ipsps['spw_start'] = np.ones(len(all_new_ipsps))*all_new_ipsps['ipsp_start'][0]
+                #except:
+                #    import pdb; pdb.set_trace() 
+                    
+                
+        
+        new_ones.append(all_new_ipsps)
+        
         if plot_it:
+            #import pdb; pdb.set_trace() 
             data_used = data_trace[:,spw_start_pts:spw_end_pts]
             plt.figure()
             add_it = 150          
@@ -1253,8 +1326,8 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
             for electr in range(len(data_used)):
                 plt.plot(t, data_used[electr] + electr * add_it)
 
-                new_ones = np.concatenate([spw_used, plot_ipsp])
-                ipsps_used = new_ones[new_ones['electrode'] == electr]['ipsp_start']
+                new_ones_plot = np.concatenate([spw_used, plot_ipsp])
+                ipsps_used = new_ones_plot[new_ones_plot['electrode'] == electr]['ipsp_start']
                 ipsps_to_plot = ms2pts(ipsps_used - spw_start - win[0], fs).astype('i4')
                 plt.plot(t[ipsps_to_plot], data_used[electr, ipsps_to_plot] + electr * add_it, 'ro', ms = 3)
 
@@ -1265,7 +1338,7 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                 #import pdb; pdb.set_trace()
 
             plt.show()
-    new_ones = np.concatenate([spws, all_new_ipsps])           
+    new_ones = np.concatenate(new_ones)           
     
     np.savez(save_folder + save_file, spw_ipsps = new_ones)          
            
