@@ -1083,7 +1083,12 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
     time_if_no_ipsp_pts = ms2pts(time_if_no_ipsp, fs).astype('i4')
     min_ipsp_height = 15
     
-    for spw_no in np.unique(spws['spw_no']):
+    idx_spw = 0
+    while idx_spw < len(np.unique(spws['spw_no'])):
+        #import pdb; pdb.set_trace()
+        spw_no = np.unique(spws['spw_no'])[idx_spw]
+        idx_spw = idx_spw + 1
+    #for spw_no in np.unique(spws['spw_no']):
         all_new_ipsps = []
         spw_used =  spws[spws['spw_no'] == spw_no]   
         groups = np.unique(spw_used['group'])
@@ -1115,12 +1120,13 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
             'this IPSPs are far from each other and possibly should be cut'
             idx_used_far, = np.where(np.diff(group_times) > ipsp_min_len)
             remove_after_this = False
-            print ''
+            #print ''
             for idx_far in idx_used_far:
-                print idx_far
+                #print idx_far
                 # calculate he hight of this SPW until this IPSP, 
                 # if the hight is not high enough cut this SPW before next IPSP
                 # it it's correct let it go
+                #import pdb; pdb.set_trace()
                 if np.diff(group_times)[idx_far] > separate_if_ipsps_further:
                     # remove the further IPSPs
                     remove_after_this = True
@@ -1134,8 +1140,8 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                         end_til_now = ms2pts(group_times[idx_far + 2], fs).astype('i4')
                     ipsps_number_til_now = idx_far + 2
                     min_hight = calculate_min_hight(ipsps_number_til_now)
-                    
-                    max_this_trace = np.max(data_trace[:,spw_start_pts:end_til_now])
+                    #import pdb; pdb.set_trace()
+                    max_this_trace = np.max(data_trace[:, ms2pts(spw_start, fs):end_til_now])
                     if max_this_trace < min_hight:
                         # remove IPSPs from this one
                         #import pdb; pdb.set_trace()
@@ -1143,6 +1149,13 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                 if remove_after_this:
                     # remove after this IPSP all IPSPs and break for loop
                     #import pdb; pdb.set_trace()
+                    spw_not_used = [spw_used[spw_used['group'] == groups[idx_right]] for idx_right in range(idx_far+1, len(groups))]
+                    #import pdb; pdb.set_trace()
+                    spw_not_used = np.concatenate(spw_not_used)
+                    spw_not_used['spw_no'] = np.ones(len(spw_not_used)) * max(spws['spw_no']) + 1
+                    spw_not_used['spw_start'] = np.ones(len(spw_not_used)) * min(spw_not_used['ipsp_start'])
+                    spws = np.concatenate([spws, spw_not_used])
+                    
                     spw_used = [spw_used[spw_used['group'] == groups[idx_right]] for idx_right in range(idx_far+1)]
                     spw_used = np.concatenate(spw_used)
                     #import pdb; pdb.set_trace()
@@ -1150,11 +1163,9 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
                     group_times = group_times[:idx_right + 1]
                     groups = groups[:idx_right + 1]
                     
-                    #import pdb; pdb.set_trace()
-                    #print 'broke'
-                    #break
+                    break
             #calculate_min_amplitude
-        
+        spw_used['spw_start'] = np.ones(len(spw_used)) * min(spw_used['ipsp_start'])
         all_electrodes = range(len(data_trace))
         
         # analyze every group
@@ -1339,7 +1350,19 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
 
             plt.show()
     new_ones = np.concatenate(new_ones)           
+    #import pdb; pdb.set_trace()
     
+    # renumber spws, so that the order of numbers is in the order of the spw appearance
+    new_spw_no = 0
+    for trace in np.unique(new_ones['trace']):
+        for spw_start_old in np.unique(new_ones[new_ones['trace'] == trace]['spw_start']):
+            temp_spw = new_ones['spw_no'][(new_ones['trace'] == trace) & (new_ones['spw_start'] == spw_start_old)]
+            len_temp_spw = len(temp_spw)
+            new_ones['spw_no'][(new_ones['trace'] == trace) & (new_ones['spw_start'] == spw_start_old)] = (np.ones(len_temp_spw) * new_spw_no).astype('i4')
+            new_spw_no = new_spw_no + 1
+    #import pdb; pdb.set_trace()  
+    
+    #assert len(np.unique(new_ones[['trace','spw_start']])) == len(np.unique(new_ones['spw_no']))       
     np.savez(save_folder + save_file, spw_ipsps = new_ones)          
            
 
@@ -2092,6 +2115,7 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
     spws = spws[i]
 
     ipsp_length = 10 # ms
+    
     spw_no_all = np.unique(spws['spw_no'])
     
     plot_it = False
@@ -2141,7 +2165,10 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
         
         data_trace = data[:, trace, spw_start_pts: spw_end_pts]
         
-        max_spw = np.max(data_trace,1)
+        try:
+            max_spw = np.max(data_trace,1)
+        except:
+            import pdb; pdb.set_trace()
         max_arg = np.argmax(data_trace,1)
         max_idx = np.argmax(max_spw)
         max_spw = max_spw[max_idx]
@@ -2275,7 +2302,7 @@ def update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, s
     distanse_from_point = 5 # ms - length of IPSP
     shift_ipsp = 2.5 # ms
     min_electr_first = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    expected_min_ipsp_ampl = 25 # microV
+    expected_min_ipsp_ampl = 50 # microV
     shift_spike= 1 #ms
     plot_it = False
     all_ipsps = []
@@ -2713,11 +2740,11 @@ def update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwss
     #import pdb; pdb.set_trace()
     shift_ipsp = 1.2 # maximal possible shift of IPSP
     min_electr = 2 # on how many electrodes IPSP should be detected for the first ipsp (beginning of SPW)
-    expected_min_ipsp_ampl = 0 # microV, min allowed IPSP amplitude
+    expected_min_ipsp_ampl = 50 # microV, min allowed IPSP amplitude
     expected_total_min = 3
     min_length_ipsp = 2 # minimum length of iPSP
     max_length_ipsp = 13 # maximum length of IPSP
-    expected_min_ipsp_rise = 15 # minimim rise of ipsp (compared to the height of next IPSP start
+    #expected_min_ipsp_rise = 15 # minimim rise of ipsp (compared to the height of next IPSP start
     all_traces= np.unique(spw_ipsps['trace'])
     
     n= 5. # factor by which to downsample the data
