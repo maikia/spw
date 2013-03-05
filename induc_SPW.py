@@ -2165,36 +2165,38 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
         
         data_trace = data[:, trace, spw_start_pts: spw_end_pts]
         
-        try:
-            max_spw = np.max(data_trace,1)
-        except:
-            import pdb; pdb.set_trace()
-        max_arg = np.argmax(data_trace,1)
-        max_idx = np.argmax(max_spw)
-        max_spw = max_spw[max_idx]
-        max_arg = [max_idx, max_arg[max_idx]]
-        #import pdb; pdb.set_trace()
-        
-        if max_spw >= min_ampl:
-            # save this spw and assign new spw_no to it
-            spw_used['spw_no'] = np.ones(len(spw_used['spw_no'])) * new_spw_no
-            new_spws.append(spw_used)
-            new_spw_no = new_spw_no + 1
-        
-        # plot it if necessary
-        if plot_it and max_spw >= min_ampl:
-            plt.figure()
-            add_it = 150
-            t = dat.get_timeline(data_trace[0, :], fs, 'ms')
-            for electr in range(len(data_trace)):
-                plt.plot(t, data_trace[electr, :] + electr * add_it)
-                
-                if electr == max_arg[0]:
-                    #import pdb; pdb.set_trace()
-                    plt.plot(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, 'ro', ms = 8)
-                    plt.text(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, str(max_spw))
-                
-            plt.show()
+        if spw_start_pts < spw_end_pts +2:
+            # if there is error in this SPW, remove it
+            try:
+                max_spw = np.max(data_trace,1)
+            except:
+                import pdb; pdb.set_trace()
+            max_arg = np.argmax(data_trace,1)
+            max_idx = np.argmax(max_spw)
+            max_spw = max_spw[max_idx]
+            max_arg = [max_idx, max_arg[max_idx]]
+            #import pdb; pdb.set_trace()
+            
+            if max_spw >= min_ampl:
+                # save this spw and assign new spw_no to it
+                spw_used['spw_no'] = np.ones(len(spw_used['spw_no'])) * new_spw_no
+                new_spws.append(spw_used)
+                new_spw_no = new_spw_no + 1
+            
+            # plot it if necessary
+            if plot_it and max_spw >= min_ampl:
+                plt.figure()
+                add_it = 150
+                t = dat.get_timeline(data_trace[0, :], fs, 'ms')
+                for electr in range(len(data_trace)):
+                    plt.plot(t, data_trace[electr, :] + electr * add_it)
+                    
+                    if electr == max_arg[0]:
+                        #import pdb; pdb.set_trace()
+                        plt.plot(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, 'ro', ms = 8)
+                        plt.text(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, str(max_spw))
+                    
+                plt.show()
         
     new_spws = np.concatenate(new_spws)
     np.savez(save_folder + save_file, spw_ipsps = new_spws)    
