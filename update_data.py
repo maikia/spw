@@ -178,7 +178,7 @@ def up_divide_to_groups(load_datafile, load_spwsipsp, save_folder, save_file, re
         ispw.divide_to_groups(load_datafile, load_spwsipsp, save_folder, save_file)  
     gc.collect()
   
-def up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf'): 
+def up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf', expected_min_ipsp_ampl= 30): 
     """analyse the beginning of each SPW - finds the beginnings - time and location"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -189,7 +189,7 @@ def up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', l
         fig_fold_name = 'SPW_IPSPs/'
         fold_mng.create_folder(save_folder + fig_fold_name)
           
-        ispw.update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, fig_fold_name + save_fig, save_file, ext)  
+        ispw.update_spws_beg(load_datafile, load_spwsipsp, load_spwsspike, save_folder, fig_fold_name + save_fig, save_file, ext, expected_min_ipsp_ampl = expected_min_ipsp_ampl)  
     gc.collect()
         
 def up_group_ipsps(save_folder, ipsps_groups, load_spwsipsp, load_datafile, save_file, reanalize):
@@ -206,7 +206,7 @@ def up_group_ipsps(save_folder, ipsps_groups, load_spwsipsp, load_datafile, save
     gc.collect()
     
                
-def up_spws_ipsp_beg(save_folder, filter_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf'):       
+def up_spws_ipsp_beg(save_folder, filter_folder, save_fig = 'spw_ipsp', save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', load_spwsspike = 'spw_spike.npz', reanalize = False, ext = '.pdf', expected_min_ipsp_ampl = 30):       
     """analyse the ipsps in each SPWs - finds the beginnings, and removes those which are not correct"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -217,7 +217,7 @@ def up_spws_ipsp_beg(save_folder, filter_folder, save_fig = 'spw_ipsp', save_fil
         fig_fold_name = 'SPW_IPSPs/'
         fold_mng.create_folder(save_folder + fig_fold_name)
         # load the data   (save_folder, ipsps_groups, load_spwsipsp, load_datafile, save_file)
-        ispw.update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwsspike, save_folder, fig_fold_name + save_fig, save_file, ext)  
+        ispw.update_spws_ipsp_beg(load_datafile, filter_folder, load_spwsipsp, load_spwsspike, save_folder, fig_fold_name + save_fig, save_file, ext, expected_min_ipsp_ampl)  
     gc.collect()
             
 #def up_spws_ipsp_ampl(save_folder, save_file = 'save_it.npz', load_datafile = 'data.npz', load_spwsipsp = 'spws.npz', reanalize = False):       
@@ -272,7 +272,7 @@ def up_merge_close_groups(save_folder, save_file, spw_file, data_file, reanalize
         print 'Initiated SPWs were already saved'    
     gc.collect()    
     
-def up_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_file, reanalize = False):
+def up_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_file, reanalize = False, expected_min_ipsp_ampl = 30):
     fold_mng.create_folder(save_folder)
     
     # check if this file already exists

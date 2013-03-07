@@ -825,8 +825,8 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         #import pdb; pdb.set_trace()
         create_scatter_synch(ampl_group, synch_group, group_group, names[group], plot_folder +plot_file, ext)
         #spw_nos_group = spw_nos_group + len(ampl)
-    np.savetxt(plot_folder + 'all_synch_transposed.txt', np.transpose(all_synch),delimiter='\t')  
-    np.savetxt(plot_folder + 'all_ampl_transposed.txt', np.transpose(all_ampl),delimiter='\t')   
+    #np.savetxt(plot_folder + 'all_synch_transposed.txt', np.transpose(all_synch),delimiter='\t')  
+    #np.savetxt(plot_folder + 'all_ampl_transposed.txt', np.transpose(all_ampl),delimiter='\t')   
     #import pdb; pdb.set_trace()
     all_ampl = np.concatenate(all_ampl)
     all_synch = np.concatenate(all_synch)
@@ -1005,7 +1005,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     fold_mng.create_folder(save_fold)
     save_base = save_fold + plot_file
     
-    window_to_plot = [0, 5] #win
+    window_to_plot = [0, 10] #win
     win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
     size_win_pts = win_pts[1] - win_pts[0] + 1
      
@@ -1088,9 +1088,11 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                     # if the SPW amplitude is larger than 200 and it's single, plot it
                     #import pdb; pdb.set_trace()
                     
-                    if len(np.unique(spw_used['group'])) == 1:
+                    # plot the SPW
+                    #if False: #len(np.unique(spw_used['group'])) == 1:
+                    if True:
                         print ampls
-                        if ampls > 200:
+                        if ampls < 20: #> 200:
                             #print 'got in'
                             add_it = 300
                             t = dat.get_timeline(data_spw[0, :], fs, 'ms')
@@ -1105,9 +1107,11 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     #            for spi
                                 else:
                                     plt.plot(t, data_spw[electr, :] + add_it * electr, 'k')
-                            
+                            #import pdb; pdb.set_trace()        
+                            #plt.plot(t[spw_used['ipsp_start']])
                             #import pdb; pdb.set_trace() 
                             plt.title('IPSPs: ' + str(len(np.unique(spw_used['group']))) + ',  electrodes: ' + str(len(np.unique(spw_used['electrode']))))
+                            
                             plt.show()
                     if ampls < 0:
                         print 1

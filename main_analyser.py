@@ -23,7 +23,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     #================files which were previously analysed =======================
     names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_'] # depending on max number of IPSPs used it should be added before
      # name of the file: spws_file, distances, equal_init_spont
-    name_used = names[1]
+    name_used = names[2]
     
     spws_file = name_used + 'SPWs_ipsps_final.npz'
     distances = name_used + 'spw_dist2first.npz'
@@ -98,9 +98,9 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
                             spike_data = spike_file, spw_data = equal_init_spont, 
                             ext = ext, win = win)
             
-        
+        #import pdb; pdb.set_trace()
         group_per_isps_all = name_used + 'group_per_isps_all.npz'
-        if not run_all_functions:
+        if run_all_functions:
             analyser.plot_spw_ipsps_no_groups_all(save_folder, save_file = group_per_isps_all, data_file = raw_data, 
                                               spw_data = equal_init_spont, ext = ext)#
 
@@ -159,14 +159,14 @@ if __name__=='__main__':
     # (cell_no, between_electr, and_electr) 
     
     update = 1
-    sum_up_all = 0
+    sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        #for nex in [1, 2, 4, 5, 11, 13, 14, 15, 16, 17, 18]
-        for nex in [15]: #range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(14, len(all)):
+        #for nex in [15]: #range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):
