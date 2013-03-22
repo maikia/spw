@@ -144,23 +144,23 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
     
     #    # ----> check if the group does not exist on other electrodes
         SPWs_missing_link = 'SPWs_missing_link.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_add_missing_electrodes_SPW(save_folder, SPWs_missing_link, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
 
   
 
         SPWs_merged = 'SPWs_merged.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_merge_close_groups(save_folder, SPWs_merged, SPWs_missing_link, data_file = raw_baselined, reanalize = reanalize)
         
             
         SPWs_ipsps_corrected2 = 'SPWs_ipsps_corrected.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected2, SPWs_merged, data_file = raw_baselined, reanalize = reanalize)
         
 
         too_small_removed = 'too_small_removed.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_remove_too_small_spws(save_folder, save_file = too_small_removed, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected2, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
               
 
@@ -176,9 +176,9 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         # 3 IPSPS to any number
         # any number of IPSPS 
         #min_no_ipsps_used = [[-1, 2], [3, -1], [-1, -1], [2, -1], [-1, 1]]
-        min_no_ipsps_used = [[-1, -1]]
+        min_no_ipsps_used = [[3, -1]]
         #names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_']
-        names = ['all_']
+        names = ['min_3_']
         
         if not run_all_functions:
             updater.up_display_SPWs(save_folder, data_file = raw_baselined, spw_file = too_small_removed, reanalize = False) 
@@ -288,7 +288,7 @@ if __name__=='__main__':
     if update == 1:
 
         #for nex in [18]:
-        for nex in range(len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(18, len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):

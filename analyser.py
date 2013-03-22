@@ -852,7 +852,7 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         all_synch = synch_to_use[ampl_to_use >= 0]
         group_to_use = group_to_use[ampl_to_use >= 0]
         
-        create_scatter_synch(all_ampl, all_synch, group_to_use, 'other', plot_folder +plot_file, ext, colorb = False)
+        create_scatter_synch(all_ampl, all_synch, group_to_use, 'other', plot_folder +plot_file, ext, colorb = True)
         file_save = plot_folder +plot_file        
         #import pdb; pdb.set_trace()
         #plt.figure()
@@ -879,11 +879,12 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
                 label = '3 or more'
                 col = 'r'
                 guess_vars = [0.85, 30]
+            #col = False
             #try:
             plot_fit(fitfunc, ampls_used, synch_used, guess_values = guess_vars, save_name = '_exp_non_zero_' + str(g_group), save_file = file_save, ext = ext, label = label, color = col)
             #except:
             #import pdb; pdb.set_trace()
-        plt.legend()
+        
         plt.show()
         
         #import pdb; pdb.set_trace()
@@ -959,6 +960,7 @@ def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False
     name = inspect.getsource(fitfunc)
     plt.title(name + 'p = ' + str(p1))
     #plt.show()     
+    plt.legend()
     if save_file != False: 
         #import pdb; pdb.set_trace()
         save_name = save_file + save_name + ext
@@ -2287,7 +2289,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, save_name_max_el
     plot_imshow_origin(difference, window,save_name, title, electrs, vrange = [-max_value, max_value])   
     plt.close('all')
     #import pdb; pdb.set_trace()
-    #plt.show()
+    plt.show()
 
 def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 'data.npz', spike_data = 'spikes.npz', spw_data = 'spw.npz', spikes_filter = [], ext = '.pdf', win = [-20, 20], filt = 600.0):
     """ plots every spw separately (in all electrodes)"""
