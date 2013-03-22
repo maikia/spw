@@ -36,15 +36,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             # reads the raw data from the file
             updater.up_datafile(filename, save_folder = save_folder, save_file = raw_data, ext_electrodes = ext_electrodes, intr_electrode = 1, reanalize = reanalize)
     
-    # - slvaro
-    #    s_f = '/home/maja/PhDProject/dokumenty/Alvaro/'
-    #    s_file = 'data.npz'
-    #    if not run_all_functions:
-    #        # reads the raw data from the file
-    #        updater.up_datafile(filename, save_folder = s_f, save_file = s_file, ext_electrodes = [3], intr_electrode = 0, reanalize = reanalize)    
-    #    if run_all_functions:
-    #        analyser.display_data_no_electrode(s_f, '', 'trace1', s_file, part = 'all', ext = ext)
-        
+
         plot_folder = 'full_data/'
         save_plots = 'data'
         if not run_all_functions:
@@ -76,7 +68,6 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
          
         SPWs_potential  = 'potential_SPWs.npz'
         if not run_all_functions:
-            
             updater.up_highWaves(save_folder, save_file = SPWs_potential, load_datafile = raw_baselined,reanalize = reanalize)
      
         SPWs_potential_numb  = 'potential_SPWs_numbered.npz'
@@ -104,7 +95,6 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if not run_all_functions:
             # finding properly each of the IPSP
             # it combines information on Waves/Ipsps and spikes to find the beginning of the SPW 
-            
             updater.up_spws_beg(save_folder, save_fig = 'spw_ipsp', save_file = SPWs_ipsps_beg, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext, expected_min_ipsp_ampl = min_ipsp_ampl)
     
         ipsps_groups = 'ipsps_grouped.npz'
@@ -175,10 +165,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         # [-1, 2] - all to two IPSPS
         # 3 IPSPS to any number
         # any number of IPSPS 
-        #min_no_ipsps_used = [[-1, 2], [3, -1], [-1, -1], [2, -1], [-1, 1]]
-        min_no_ipsps_used = [[3, -1]]
-        #names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_']
-        names = ['min_3_']
+        min_no_ipsps_used = [[-1, 2], [3, -1], [-1, -1], [2, -1], [-1, 1]]
+        #min_no_ipsps_used = [[2, -1]]
+        names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_']
+        #names = ['min_2']
         
         if not run_all_functions:
             updater.up_display_SPWs(save_folder, data_file = raw_baselined, spw_file = too_small_removed, reanalize = False) 
@@ -288,7 +278,7 @@ if __name__=='__main__':
     if update == 1:
 
         #for nex in [18]:
-        for nex in range(18, len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):

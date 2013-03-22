@@ -59,7 +59,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         dist_spw2psike = 'dist_spw2spike'
         save_plot_in = plots_folder+dist_spw2psike + '/'
         if not run_all_functions:
-            """ it plots histogram showing number of SPWs distant from spike"""
+            """ plots relation between distance from the spike and number of ipsp groups in a SPW"""
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_dist_spw2spike(save_folder, save_plot_in, save_plots = dist_spw2psike, dist_file = distances, ext = ext)
 
