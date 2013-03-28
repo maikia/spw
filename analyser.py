@@ -2427,8 +2427,9 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     fs = npzfile['fs']
     npzfile.close() 
      
-    
-
+    remove_baseline = True
+    win_base = [-3, -1]
+    win_base_pts = [ispw.ms2pts(win_base[0], fs),ispw.ms2pts(win_base[1], fs)]
     
     npzfile        = np.load(save_folder + intra_spikes)
     intra_spikes = npzfile['spikes_first']
@@ -2453,6 +2454,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     spws_all = [initiated, spontaneous]
     all_data_traces = []
     all_in_spikes = []
+    
     
     #import pdb; pdb.set_trace() 
     add_nans = np.ones([np.size(data, 0), np.size(data,1), after_pts - before_pts]) * np.nan  
@@ -2487,17 +2489,25 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             spw_start_pts = ispw.ms2pts(spw_start, fs).astype(int)
             trace = spws_used[spws_used['spw_no'] == spw_n]['trace'][0]
             
-            base = data[:, trace, spw_start_pts + win_base_pts[0]: spw_start_pts + win_base_pts[1]]
-            base = np.mean(base, axis = 1)
+            #base = data[:, trace, spw_start_pts + win_base_pts[0]: spw_start_pts + win_base_pts[1]]
+            #base = np.mean(base, axis = 1)
             
-            #data_spw = np.transpose(data_spw) - base
-            #data_spw = np.transpose(data_spw)
+            
+            
+            if remove_baseline:
+                spw_end_pts = spw_start_pts + after_pts
+                data_temp = data[:, trace, spw_start_pts + before_pts: spw_end_pts]
+                data_used = data[:,trace,:]
+                base_start = spw_start_pts + win_base_pts[0]
+                base_end = spw_start_pts + win_base_pts[1]
+                data_temp = ispw.remove_baseline_spw(data_used, data_temp, base_start, base_end)            
+            
 
             
-            data_temp = data[:, trace, spw_start_pts + before_pts: spw_start_pts + after_pts]
+            #data_temp = data_trace[:, spw_start_pts + before_pts: spw_start_pts + after_pts]
             
-            data_temp = np.transpose(data_temp) - base
-            data_temp = np.transpose(data_temp)
+            #data_temp = np.transpose(data_temp) - base
+            #data_temp = np.transpose(data_temp)
             try:
                 spw_traces[1:, spw_idx, :] = data_temp
             except:

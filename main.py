@@ -148,11 +148,11 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if not run_all_functions:
             updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected2, SPWs_merged, data_file = raw_baselined, reanalize = reanalize)
         
-
+        min_amplitude_of_spw = 80
         too_small_removed = 'too_small_removed.npz'
-        if not run_all_functions:
+        if run_all_functions:
             updater.up_remove_too_small_spws(save_folder, save_file = too_small_removed, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected2, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
-              
+            
 
     #    #if run_all_functions:
 #    #    #    updater.separate
@@ -215,7 +215,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                 updater.up_dist_SpwfromSpike(save_folder, save_file = dist_spw_inspikes, load_intrafile = intra_spikes, load_spwfile = SPWs_ipsps_final, spikes = 'first', reanalize = reanalize)
             
             induc_spont_spw = names[idx] + 'induc_spont_spw.npz'
-            max_dist = [-1.0, 5] # ms
+            max_dist = [0, 5] # ms
             if run_all_functions:
                 # checks which SPWs are induced and which are spontaneous (if it's further than max_dist[1] it is spontaneous)
                 # if any error is being allowed it should be given in max_idst[0], e.g. -0.5 (half milisecond before intra spike
@@ -278,7 +278,7 @@ if __name__=='__main__':
     if update == 1:
 
         #for nex in [18]:
-        for nex in range(len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in range(18,len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):

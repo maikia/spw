@@ -2167,7 +2167,7 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
     
     
     for idx, spw_no in enumerate(spw_no_all):
-        print spw_no
+        print spw_no,
         
         # get parameters for this spw
         spw_used = spws[spws['spw_no'] == spw_no]
@@ -2203,7 +2203,12 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
         spw_end = max(spw_used['ipsp_start']) + add_to_end        
         
         spw_start_pts = ms2pts(spw_start, fs).astype('i4')
-        spw_end_pts = ms2pts(spw_end, fs).astype('i4')
+        # use if you want end to be the calculated value
+        # spw_end_pts = ms2pts(spw_end, fs).astype('i4')
+        # use if you want end to be predefined value
+        max_must_be_until = 15 # ms from the beginning
+        spw_end_pts = ms2pts(spw_start + max_must_be_until, fs).astype('i4')
+        
         data_trace = data[:, trace, spw_start_pts: spw_end_pts]
         
         if remove_baseline:
@@ -2214,16 +2219,20 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
         
         
         
-        if spw_start_pts < spw_end_pts +2:
+        if spw_start_pts < spw_end_pts + 2:
             # if there is error in this SPW, remove it
             try:
                 max_spw = np.max(data_trace,1)
+                max_spw = np.max(data_trace)
             except:
                 import pdb; pdb.set_trace()
-            max_arg = np.argmax(data_trace,1)
-            max_idx = np.argmax(max_spw)
-            max_spw = max_spw[max_idx]
-            max_arg = [max_idx, max_arg[max_idx]]
+            
+            
+            
+            #max_arg = np.argmax(data_trace,1)
+            #max_idx = np.argmax(max_spw)
+            #max_spw = max_spw[max_idx]
+            #max_arg = [max_idx, max_arg[max_idx]]
             
             #max(np.max(spw_selected, 1))
             #import pdb; pdb.set_trace()
@@ -2235,7 +2244,7 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
                 new_spw_no = new_spw_no + 1
             
             # plot it if necessary
-            if plot_it and max_spw >= min_ampl:
+            if plot_it and len(np.unique(spw_used['group'])) > 2 and max_spw >= min_ampl:
                 plt.figure()
                 add_it = 150
                 t = dat.get_timeline(data_trace[0, :], fs, 'ms')
@@ -2246,7 +2255,8 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
                         #import pdb; pdb.set_trace()
                         plt.plot(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, 'ro', ms = 8)
                         plt.text(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, str(max_spw))
-                    
+                #import pdb; pdb.set_trace()        
+                plt.title('No of IPSPs: ' + str(len(np.unique(spw_used['group']))))
                 plt.show()
         
     new_spws = np.concatenate(new_spws)
