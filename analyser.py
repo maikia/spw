@@ -2174,8 +2174,9 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, save_name_max_el
         numb_spikes = numb_spikes * 1.0
         all_spikes.append(numb_spikes)
         # for_histogram - only those dist_electrode from considered_bin
-        for_histogram = np.array(for_histogram)
         
+        for_histogram = np.array(for_histogram)
+        import pdb; pdb.set_trace()
         # same as for_histogram, but will not be normalized - used for chi-sqare later
         for_p_distribution = for_histogram.copy()
         
@@ -2435,8 +2436,8 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     intra_spikes = npzfile['spikes_first']
     npzfile.close() 
       
-    win_base = [-10, -5]
-    win_base_pts = [ispw.ms2pts(win_base[0], fs),ispw.ms2pts(win_base[1], fs)]  
+    #win_base = [-10, -5]
+    #win_base_pts = [ispw.ms2pts(win_base[0], fs),ispw.ms2pts(win_base[1], fs)]  
     
     
     before_pts = ispw.ms2pts(win[0], fs)
@@ -2529,6 +2530,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     titles = ['Induced', 'Spontaneous']
     #import pdb; pdb.set_trace() 
     add_it = 1100
+    #add_it = 200
     t = dat.get_timeline(data_temp[0], fs, 'ms') + win[0]
     #in_spikes = np.concatenate(in_spikes).astype(int)
     for idx, data_spw in enumerate(all_data_traces): 

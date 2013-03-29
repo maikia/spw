@@ -19,7 +19,7 @@ import logging
 # to select the settings go to induc_SPW
 def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], intr_electrode = 1, data_part = 'all'):
     """ work on given data file"""
-    ext = '.png'
+    ext = '.eps'
     #================files which were previously analysed =======================
     names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_'] # depending on max number of IPSPs used it should be added before
      # name of the file: spws_file, distances, equal_init_spont
@@ -82,7 +82,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
 
         alignedSPWs = 'aligned_SPWs'
         save_plot_in = plots_folder+ alignedSPWs + '/'
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_alignedSPW(save_folder, save_plot_in, save_plots = alignedSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = '.eps')
 
@@ -91,7 +91,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         hist_spike_bins = name_used + 'all_dists_hist.npz'
         save_name_max_electr = name_used + 'max_electr_origin.npz'
         save_plot_in = plots_folder+ spikePerElectrode + '/'
-        if not run_all_functions: 
+        if run_all_functions: 
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_spike(save_folder, save_plot_in, save_plots = spikePerElectrode, 
                             save_file = hist_spike_bins, save_name_max_electr = save_name_max_electr, 
@@ -165,7 +165,7 @@ if __name__=='__main__':
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        for nex in range(15, len(all)):
+        for nex in [11, 15]: #range(11, len(all)):
         #for nex in [15]: #range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
