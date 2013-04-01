@@ -79,10 +79,13 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
                                       plot_file = firing_rate_and_spws, intra_spikes = intra_spike_file, dist_file = distances,
                                       spike_data = spike_file , ext = ext)
 
-
+        separateSPWs = 'separate_SPWs'
+        if run_all_functions:
+            analyser.plot_different_SPWs(save_folder, save_plot_in, save_plots = separateSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = '.png')
+        
         alignedSPWs = 'aligned_SPWs'
         save_plot_in = plots_folder+ alignedSPWs + '/'
-        if not run_all_functions:
+        if run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_alignedSPW(save_folder, save_plot_in, save_plots = alignedSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = '.eps')
 
@@ -165,7 +168,7 @@ if __name__=='__main__':
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        for nex in [11, 15]: #range(11, len(all)):
+        for nex in [15]: #range(11, len(all)):
         #for nex in [15]: #range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)

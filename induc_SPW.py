@@ -1116,7 +1116,7 @@ def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_fil
         
         #import pdb; pdb.set_trace()
         plot_ipsp = []
-        # order the IPSPs
+        # order the IPSPs 
         group_order = np.argsort(group_times)
         group_times = group_times[group_order]
         groups = groups[group_order]

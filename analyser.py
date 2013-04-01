@@ -2176,7 +2176,7 @@ def plot_spike(save_folder, plot_folder, save_plots, save_file, save_name_max_el
         # for_histogram - only those dist_electrode from considered_bin
         
         for_histogram = np.array(for_histogram)
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         # same as for_histogram, but will not be normalized - used for chi-sqare later
         for_p_distribution = for_histogram.copy()
         
@@ -2528,8 +2528,8 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     
             
     titles = ['Induced', 'Spontaneous']
-    #import pdb; pdb.set_trace() 
-    add_it = 1100
+    
+    add_it = 300
     #add_it = 200
     t = dat.get_timeline(data_temp[0], fs, 'ms') + win[0]
     #in_spikes = np.concatenate(in_spikes).astype(int)
@@ -2571,6 +2571,168 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
         plt.show()    
         plt.close() 
         
+ 
+ 
+def plot_different_SPWs(save_folder, plot_folder, save_plots, data_file, intra_data_file, induc_spont, intra_spikes, ext):
+    
+    from scipy.stats import nanmean
+    win = [-5, 50] #ms
+    
+    npzfile        = np.load(save_folder + data_file)
+    data = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close() 
+    
+    npzfile         = np.load(save_folder + induc_spont)
+    spontaneous      = npzfile['spontaneous'] # spikes_all
+    initiated      = npzfile['initiated'] # spikes_all
+    npzfile.close()    
+
+    npzfile        = np.load(save_folder + intra_data_file)
+    data_intra = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close() 
+     
+    remove_baseline = True
+    win_base = [-3, -1]
+    win_base_pts = [ispw.ms2pts(win_base[0], fs),ispw.ms2pts(win_base[1], fs)]
+    
+    npzfile        = np.load(save_folder + intra_spikes)
+    intra_spikes = npzfile['spikes_first']
+    npzfile.close() 
+      
+    #win_base = [-10, -5]
+    #win_base_pts = [ispw.ms2pts(win_base[0], fs),ispw.ms2pts(win_base[1], fs)]  
+    
+    
+    before_pts = ispw.ms2pts(win[0], fs)
+    after_pts = ispw.ms2pts(win[1], fs)
+    
+    #initiated_no = distances[distances['distance'] <= min_dist]['spw_no']
+    #spont_no = distances[distances['distance'] > min_dist]['spw_no']
+    
+    #import pdb; pdb.set_trace() 
+    #init_set = np.in1d(ipsps['spw_no'], initiated_no, assume_unique= False)
+    #initiated = ipsps[init_set]
+    #spont_set = np.in1d(ipsps['spw_no'], spont_no, assume_unique=False)
+    #spontaneous = ipsps[spont_set]
+    #import pdb; pdb.set_trace() 
+    spws_all = [initiated, spontaneous]
+    all_data_traces = []
+    all_in_spikes = []
+    
+    
+    #import pdb; pdb.set_trace() 
+    add_nans = np.ones([np.size(data, 0), np.size(data,1), after_pts - before_pts]) * np.nan  
+    all_data = np.zeros([np.size(data, 0), np.size(data,1), np.size(data,2) + np.size(add_nans, 2)])
+    #all_data[:, :, 0:np.size(add_nans, 2)] = add_nans
+    all_data[:, :, 0:-np.size(add_nans, 2)] = data
+    all_data[:, :, -np.size(add_nans, 2):] = add_nans
+    temp_len = np.size(data,2)
+    data = all_data
+    del all_data
+    
+    save_fold = save_folder + plot_folder
+    fold_mng.create_folder(save_fold)
+    
+    all_data_intra = np.zeros([np.size(data_intra, 0), np.size(data_intra,1), np.size(data_intra,2) + np.size(add_nans, 2)])
+    all_data_intra[:, :, 0:-np.size(add_nans, 2)] = data_intra
+    all_data_intra[:, :, -np.size(add_nans, 2):] = add_nans[0,:,:]
+    data_intra = all_data_intra
+    del all_data_intra
+    for spws in spws_all:
+        # take out those spws which are too early or too late (don't fit in the data size)
+        #used = ispw.ms2pts(spws['spw_start'], fs).astype(int)
+        #spws_used = spws[(used > -before_pts) & (used + after_pts < np.size(data,2))]
+        
+        spws_used = spws
+        spw = np.unique(spws_used['spw_no'])
+        spw_traces = np.zeros([np.size(data,0) + 1, len(spw), after_pts - before_pts])
+        in_spikes = []
+
+        for spw_idx, spw_n in enumerate(spw):
+            spw_start = spws_used[spws_used['spw_no'] == spw_n]['spw_start'][0]
+            spw_start_pts = ispw.ms2pts(spw_start, fs).astype(int)
+            trace = spws_used[spws_used['spw_no'] == spw_n]['trace'][0]
+
+            
+            if remove_baseline:
+                spw_end_pts = spw_start_pts + after_pts
+                data_temp = data[:, trace, spw_start_pts + before_pts: spw_end_pts]
+                data_used = data[:,trace,:]
+                base_start = spw_start_pts + win_base_pts[0]
+                base_end = spw_start_pts + win_base_pts[1]
+                data_temp = ispw.remove_baseline_spw(data_used, data_temp, base_start, base_end)            
+            
+            try:
+                spw_traces[1:, spw_idx, :] = data_temp
+            except:
+                import pdb; pdb.set_trace() 
+            data_temp_intra = data_intra[:, trace, spw_start_pts + before_pts: spw_start_pts + after_pts]
+            try:
+                spw_traces[0, spw_idx, :] = data_temp_intra
+            except:
+                import pdb; pdb.set_trace() 
+            
+            spikes_detected = intra_spikes[(intra_spikes['time'] < spw_start + win[1]) & (intra_spikes['time'] > spw_start + win[0])]['time']
+            
+            spikes_detected = (ispw.ms2pts(spikes_detected, fs) - spw_start_pts - before_pts).astype(int)
+            in_spikes.append(spikes_detected)
+        all_in_spikes.append(in_spikes)    
+        all_data_traces.append(spw_traces)
+    
+            
+    titles = ['Induced', 'Spontaneous']
+    
+    add_it = 1000
+    #add_it = 200
+    t = dat.get_timeline(data_temp[0], fs, 'ms') + win[0]
+    #in_spikes = np.concatenate(in_spikes).astype(int)
+    
+    for idx, data_spw_temp in enumerate(all_data_traces): 
+        
+        #print 'tak'
+        #for idx_spw, data_spw in enumerate(data_spw_temp):
+        for idx_spw in range(np.size(data_spw_temp,1)):
+            data_spw = data_spw_temp[:,idx_spw,:]
+            #
+            fig = plt.figure()
+            in_spikes = all_in_spikes[idx]
+            for electr in range(len(data_spw)):
+                
+                data_used = data_spw[electr,:]
+                
+                #for s in range(len(data_used)):
+                if electr == 0:
+                    plt.plot(t, data_used * 10 + electr * add_it, 'b')
+                else:
+                    plt.plot(t, data_used + electr * add_it, 'b')
+                   
+                #if electr == 0:
+
+                #    #import pdb; pdb.set_trace()
+                #    plt.plot(t[in_spikes], data_used[s, in_spikes[s]] + electr * add_it - 200, 'r.')
+                    
+                    
+
+                if electr == 1:
+                    plt.xlim([t[0], t[-1]])
+                    fig_fname = save_fold + save_plots + titles[idx] + 'electr_0' + ext
+                    fig.savefig(fig_fname,dpi=600)   
+            #
+            #import pdb; pdb.set_trace()
+            plt.title(titles[idx] + ', spws: ' + str(len(data_used)))     
+    
+            fig_fname = save_fold + save_plots + titles[idx] + str(win[0]) + '_' + str(win[1]) + ext
+            logging.info("saving figure %s" % fig_fname)
+            fig.savefig(fig_fname,dpi=600)    
+            #logging.info("saving figure %s" % fig_fname)   
+            plt.show()    
+            plt.close() 
+ 
+ 
+ 
+ 
     
 #---------------------------old -----------------------------
 def define_colors(no_colors = 8, type = 'color'):

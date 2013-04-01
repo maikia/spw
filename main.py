@@ -150,7 +150,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         
         min_amplitude_of_spw = 50
         too_small_removed = 'too_small_removed.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_remove_too_small_spws(save_folder, save_file = too_small_removed, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected2, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
             
 
