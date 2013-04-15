@@ -1053,6 +1053,7 @@ def calculate_min_hight(ipsps_number_til_now):
         add_value = add_value * percent_each_next
         min_height_alowed = min_height_alowed + add_value
         #import pdb; pdb.set_trace()
+        
     return min_height_alowed
         
 def update_add_missing_electrodes_SPW(save_folder, save_file, spw_file, data_file):

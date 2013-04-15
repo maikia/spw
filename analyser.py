@@ -727,18 +727,18 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png', colo
     
     #groups_for_colors = np.array([1, 1, 2, 2, 3, 3, 4, 4]) # less groups, no 1 IPSP
     #ticks_labels = ['2-3 IPSPs','4-5 IPSPs', '6-7 IPSPs', '8 or more'] # less groups, no 1 IPSP
-    
+    #import pdb; pdb.set_trace() 
     #groups_for_colors = np.array([1, 2, 2, 3, 3, 4, 4, 5, 5]) # less groups, with 1 IPSP
     #ticks_labels = ['1 IPSPs','2-3 IPSPs','4-5 IPSPs', '6-7 IPSPs', '8 or more'] # less groups, with 1 IPSP
     
     #groups_for_colors = np.array([2, 3, 4, 5, 6, 7, 8]) # more groups, no 1 IPSP
     #ticks_labels = ['2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
     
-    #groups_for_colors = np.array([1, 2, 3, 4, 5, 6, 7, 8]) # more groups, with 1 IPSP
-    #ticks_labels = ['1 IPSP', '2 IPSPs','3 IPSPs', '4 IPSPs', '5 IPSPs','6 IPSPs', '7 IPSPs', '8 or more']
+    groups_for_colors = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) # more groups, with 1 IPSP
+    ticks_labels = ['1', '2','3', '4', '5','6', '7', '8', '9', '10']
     
-    groups_for_colors = np.array([1, 0, 2]) # only either 1 IPSP or 3 or more
-    ticks_labels = ['1 IPSP', '3 or more', ]
+    #groups_for_colors = np.array([1, 0, 2]) # only either 1 IPSP or 3 or more
+    #ticks_labels = ['1 IPSP', '3 or more', ]
 
     # if any of the groups == 0, remove it
     idx, = np.where(groups_for_colors == 0)
@@ -753,8 +753,9 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png', colo
     max_color = max(groups_for_colors) * 1.0
     groups_for_colors = groups_for_colors / max_color
     
+    max_group = len(groups_for_colors)
     # assign all the higher numbered groups to the last defined group
-    group[group > max_color] = max_color #len(groups_for_colors) - 1
+    group[group > max_group] = max_group #len(groups_for_colors) - 1
     #import pdb; pdb.set_trace() 
     colors_group = groups_for_colors[group-1]     
     
@@ -769,7 +770,7 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png', colo
     #import pdb; pdb.set_trace() 
     #plt.scatter(ampl, synch, c = colors_group, s = marker_size, cmap=mpl.cm.gray)
     if colorb:
-        plt.scatter(ampl, synch, c = colors_group, s = marker_size) #, alpha = 0.2)
+        plt.scatter(ampl, synch, c = colors_group, lw = 0, s = marker_size) #, alpha = 0.2)
     
         cbar = plt.colorbar()
         cbar.set_ticks(ticks)
@@ -834,25 +835,25 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     #import pdb; pdb.set_trace()
     
     create_scatter_synch(all_ampl.copy(), all_synch.copy(), all_group.copy(), 'spont_init_', plot_folder + plot_file, ext)
-    plt.close()
+    #plt.close()
     
     if fit_by_group:
         #import pdb; pdb.set_trace()
         group_to_use = group_group
         synch_to_use = synch_group
         ampl_to_use = ampl_group
-        
-        synch_to_use = synch_to_use[group_to_use != 2] 
-        ampl_to_use = ampl_to_use[group_to_use != 2] 
-        group_to_use[group_to_use > 3] = 3
-        group_to_use = group_to_use[group_to_use != 2]   
+        #import pdb; pdb.set_trace()
+        #synch_to_use = synch_to_use[group_to_use != 2] 
+        #ampl_to_use = ampl_to_use[group_to_use != 2] 
+        #group_to_use[group_to_use > 3] = 3
+        #group_to_use = group_to_use[group_to_use != 2]   
         
         #import pdb; pdb.set_trace()
-        all_ampl = ampl_to_use[ampl_to_use >= 0 ]
-        all_synch = synch_to_use[ampl_to_use >= 0]
-        group_to_use = group_to_use[ampl_to_use >= 0]
+        all_ampl = ampl_to_use #[ampl_to_use >= 0 ]
+        all_synch = synch_to_use #[ampl_to_use >= 0]
+        group_to_use[group_to_use >2] = 2 #[ampl_to_use >= 0]
         
-        create_scatter_synch(all_ampl, all_synch, group_to_use, 'other', plot_folder +plot_file, ext, colorb = True)
+        #create_scatter_synch(all_ampl, all_synch, group_to_use, 'other', plot_folder +plot_file, ext, colorb = True)
         file_save = plot_folder +plot_file        
         #import pdb; pdb.set_trace()
         #plt.figure()
@@ -867,13 +868,24 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
 
             #fitfunc = lambda p, x: p[0] - np.exp(-x/p[1])
             #fitfunc = lambda p, x: x * p[0]
+            temp = np.zeros(len(synch_used) + 1)
+            temp[:len(synch_used)] = synch_used
+            synch_used = temp.copy()
+            #ampls_used = ampls_used#[ampls_used <=200]
+            temp[:len(ampls_used)] = ampls_used
+            ampls_used = temp.copy()
+            del temp
+            
             if g_group == 1:
                 fitfunc = lambda p, x: x * p[0]
                 label = "1"
                 col = 'b'
                 guess_vars = [0.0043]
-                synch_used = synch_used[ampls_used <=200]
-                ampls_used = ampls_used[ampls_used <=200]
+                #import pdb; pdb.set_trace()
+                # adding 0 data point so that the plot is drawn through the whole plane
+                # it does not change fit function since it is force to go through [0,0] anwyay
+                #synch_used = synch_used +#[ampls_used <=200]
+
             else:
                 fitfunc = lambda p, x: p[0]*np.exp(-p[1]/x)
                 label = '3 or more'
@@ -881,7 +893,7 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
                 guess_vars = [0.85, 30]
             #col = False
             #try:
-            plot_fit(fitfunc, ampls_used, synch_used, guess_values = guess_vars, save_name = '_exp_non_zero_' + str(g_group), save_file = file_save, ext = ext, label = label, color = col)
+            plot_fit(fitfunc, ampls_used, synch_used, guess_values = guess_vars, save_name = '_exp_non_zero_' + str(g_group), save_file = file_save, ext = ext, label = False, color = col)
             #except:
             #import pdb; pdb.set_trace()
         
@@ -948,12 +960,13 @@ def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False
     #import pdb; pdb.set_trace()
     if label != False:
         if color != False:
-            plt.plot(x_data, fitfunc(p1, x_data), color, lw = 4, label = label)
+            plt.plot(x_data, fitfunc(p1, x_data), color, lw = 0, label = label)
         else:
-            plt.plot(x_data, fitfunc(p1, x_data), lw = 4, label = label)
+            plt.plot(x_data, fitfunc(p1, x_data), lw = 0, label = label)
     else:
-        plt.plot(x_data, y_data, "ro")
-        plt.plot(x_data, fitfunc(p1, x_data), 'b-', lw = 4)
+        #pass
+        #plt.plot(x_data, y_data, "ro")
+        plt.plot(x_data, fitfunc(p1, x_data), color + '-', lw = 4)
     plt.ylim([0, 1.1])
     plt.xlim([0, 1200])
     import inspect
@@ -974,9 +987,10 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     fs = npzfile['fs']
     npzfile.close() 
     
-    plot_it = False
+    plot_it = True
     
     npzfile = np.load(save_folder + spw_details)
+    
     try:
         
         spws = npzfile['spw_ipsps']
@@ -998,7 +1012,8 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
         group2 = npzfile['group2']
         groups = [group1, group2]
         names = npzfile['names']
-    npzfile.close()       
+    npzfile.close() 
+    #import pdb; pdb.set_trace()
     # go through every type possible
     remove_baseline = True
     win_base = [-3, -1]
@@ -1011,7 +1026,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
     size_win_pts = win_pts[1] - win_pts[0] + 1
      
-     
+    #import pdb; pdb.set_trace() 
     #no_of_colors = 5
     #groups_for_colors = np.array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
     #cols = np.array(define_colors(no_colors = no_of_colors + 1, type = 'grey'))
@@ -1068,7 +1083,8 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                 end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
                 
                 data_spw = data_used[:, start_trace_pts: end_trace_pts]
-                if end_trace_pts <= len(data_used[0,:]) and start_trace_pts >= 0:
+                #if end_trace_pts <= len(data_used[0,:]) and start_trace_pts >= 0:
+                if True:
                     # don't use this trace for calculations
                 
                     if remove_baseline:
@@ -1131,8 +1147,9 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                     all_sync.append(sync)
                     all_group.append(no_group_ipsp)
                     #import pdb; pdb.set_trace() 
-            
-            #import pdb; pdb.set_trace()
+                else:
+                    
+                    import pdb; pdb.set_trace()
             #group_group = np.copy(all_group)
             #group_group[group_group > len(groups_for_colors) -1] = len(groups_for_colors) -1
             #colors_group = groups_for_colors[group_group]
@@ -1149,7 +1166,8 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
         all_syncs.append(np.concatenate(np.array(temp_syncs)))
         all_ampls.append(np.concatenate(np.array(temp_ampls)))
         all_groups.append(np.concatenate(np.array(temp_groups)))
-        #import pdb; pdb.set_trace() 
+    if len(all_groups[0]) != len(all_groups[1]):  
+        import pdb; pdb.set_trace() 
         #fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)   
         #plt.savefig(save_file + name + ext, dpi=600) 
     if plot_it: 
@@ -2718,16 +2736,17 @@ def plot_different_SPWs(save_folder, plot_folder, save_plots, data_file, intra_d
                 if electr == 1:
                     plt.xlim([t[0], t[-1]])
                     fig_fname = save_fold + save_plots + titles[idx] + 'electr_0' + ext
-                    fig.savefig(fig_fname,dpi=600)   
+                    fig.savefig(fig_fname,dpi=600) 
+                      
             #
-            #import pdb; pdb.set_trace()
-            plt.title(titles[idx] + ', spws: ' + str(len(data_used)))     
-    
-            fig_fname = save_fold + save_plots + titles[idx] + str(win[0]) + '_' + str(win[1]) + ext
-            logging.info("saving figure %s" % fig_fname)
-            fig.savefig(fig_fname,dpi=600)    
-            #logging.info("saving figure %s" % fig_fname)   
-            plt.show()    
+                #import pdb; pdb.set_trace()
+                plt.title(titles[idx] + ', spws: ' + str(len(data_used)))     
+        
+                fig_fname = save_fold + save_plots + titles[idx] + str(win[0]) + '_' + str(win[1]) + ext
+                logging.info("saving figure %s" % fig_fname)
+                fig.savefig(fig_fname,dpi=600)    
+                #logging.info("saving figure %s" % fig_fname)   
+                plt.show()    
             plt.close() 
  
  
