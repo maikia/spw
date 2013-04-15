@@ -62,7 +62,7 @@ def up_databas(save_folder, save_file = "data_dspl.npz", load_file = 'data.npz',
         print 'raw data was already moved to the baseline'    
     gc.collect()
 
-def up_highWaves(save_folder, save_file = "data_movavg.npz", load_datafile = 'data.npz', reanalize = False):
+def up_highWaves(save_folder, filter_folder, save_file = "data_movavg.npz", load_datafile = 'data.npz', reanalize = False):
     """ it subtracts moving average from the data"""
     # check if folder already exists
     fold_mng.create_folder(save_folder)
@@ -71,7 +71,7 @@ def up_highWaves(save_folder, save_file = "data_movavg.npz", load_datafile = 'da
     exists = fold_mng.file_exists(save_folder, save_file)
     if reanalize or not exists:
         # load the data       
-        ispw.update_highWaves(load_datafile, save_folder, data_file = save_file, atten_len = 25)
+        ispw.update_highWaves(load_datafile, filter_folder, save_folder, data_file = save_file, atten_len = 25)
     else:
         print 'raw data was already moved to the baseline' 
     gc.collect()
@@ -396,6 +396,11 @@ def up_extraspikes(save_folder, filter_folder,  save_file = "ex_spikes", load_fi
     else:
         print 'spikes were already found'
     gc.collect()
+    
+def up_create_sup_fig(save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw):
+    ispw.create_sup_fig(save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw)
+
+
 
 def up_spws(save_folder, save_file = 'spw_data.npz', load_file = 'spw_data.npz', reanalize = False):
     """ updates details of the spws"""

@@ -365,6 +365,186 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
         
     return data_filt, fs
 
+def create_sup_fig(save_folder, data_load, filter_folder, spike_file,  spikes_raw, spikes_largest, final_Ipsp_spw, save_filter = 'fast_data_', save_mov = 'moving_avg_'):
+    #use_trace = 13
+    start_no = 10
+    use_trace = 0
+    use_range = [20000, 60000] # in data ms
+    use_electrodes = [4, 5,6,7]
+    main_electrode = 5 #starting from 1
+    #spw_zoom = [160, 240]
+    
+    add_it = 400
+    freq_fast = 600.
+    
+    line_width = 1
+    main_line_color = 'k'
+    fast_line_color = 'g'
+    slow_line_color = 'r'
+    mult_fast_line = 5
+    fast_alpha = 0.7
+    
+    subplot_number = 3
+    row_number = 2
+    npzfile = np.load(save_folder + data_load)
+    data = npzfile['data']
+    fs = npzfile['fs'] 
+    npzfile.close()
+    scale = 'ms'
+    data_trace = data[:, use_trace, :]
+    del data
+    main_electrode = main_electrode -1
+    filter_folder = save_folder + filter_folder
+    use_range_pts = [ms2pts(use_range[0], fs), ms2pts(use_range[1], fs)]
+    
+    
+    plt.figure()
+    #-------- first subplot
+    plt.subplot(subplot_number, row_number, 1)
+    data_main = data_trace[main_electrode, use_range_pts[0]: use_range_pts[1]]
+    t = dat.get_timeline(data_main, fs, scale) + use_range[0]
+    plt.plot(t, data_main, lw = line_width, c = main_line_color, alpha = 0.3)
+    
+    filename_save = save_mov + 'moving_avg_'  + '_'+ str(main_electrode) + "_" + str(use_trace)
+    npzfile = np.load(filter_folder + filename_save + '.npz')
+    data_filt = npzfile['data']
+    fs = npzfile['fs']
+    starts = npzfile['starts']
+    ends = npzfile['ends']
+    npzfile.close()
+    
+    
+    #import pdb; pdb.set_trace()
+    #np.where((starts > t[0]) & (starts < t[-1]))
+    #import pdb; pdb.set_trace()
+    starts = starts[(starts > use_range[0]) & (starts < use_range[1])]
+    
+    ends = ends[(ends > use_range[0]) & (ends < use_range[1])]
+
+    spw_zoom = [starts[start_no], ends[start_no]]
+    starts = ms2pts(starts - use_range[0],fs).astype('i4')
+    ends = ms2pts(ends - use_range[0],fs).astype('i4')
+    data_base = data_filt[use_range_pts[0]: use_range_pts[1]]
+    plt.plot(t, data_base, lw = line_width, c = slow_line_color, alpha = fast_alpha)
+    #import pdb; pdb.set_trace()
+    plt.plot(t[starts], data_base[starts], slow_line_color + 'o')
+    plt.plot(t[ends], data_base[ends], slow_line_color + 'o')
+    
+    for idx, st in enumerate(starts):
+        plt.plot(t[st:ends[idx]], data_main[st:ends[idx]], lw = line_width, c = main_line_color)
+    
+    plt.xlim([t[0], t[-1]])
+    del data_filt, starts
+    spw_zoom_pts = [ms2pts(spw_zoom[0], fs), ms2pts(spw_zoom[1], fs)]
+    
+    
+    
+    #-------- second subplot - angle + spike trace
+    plt.subplot(subplot_number, row_number, 3)
+    data_main_zoom = data_trace[main_electrode, spw_zoom_pts[0]: spw_zoom_pts[1]]
+    t_zoom = dat.get_timeline(data_main_zoom, fs, scale) + spw_zoom[0]
+    plt.plot(t_zoom, data_main_zoom, lw = line_width, c = main_line_color)
+    
+    
+    filename_save = save_filter + str(freq_fast) + '_'+ str(main_electrode) + "_" + str(use_trace)
+    npzfile = np.load(filter_folder + filename_save + '.npz')
+    data_filt = npzfile['data']
+    fs = npzfile['fs']
+    npzfile.close()
+    
+    
+    data_filt_zoom = data_filt[spw_zoom_pts[0]: spw_zoom_pts[1]]
+    data_fast_mult = data_filt_zoom * mult_fast_line
+    plt.plot(t_zoom, data_fast_mult, lw = line_width, c = fast_line_color, alpha = fast_alpha)
+    del data_filt, data_filt_zoom
+    
+    npzfile = np.load(save_folder + spikes_raw)
+    #import pdb; pdb.set_trace()
+    spike_raw = npzfile['spike_idx']
+    fs = npzfile['fs'] 
+    npzfile.close()
+    
+    spike_raw = spike_raw[(spike_raw['trace'] == use_trace) & (spike_raw['time'] >= spw_zoom[0]) & (spike_raw['time'] <= spw_zoom[1])]
+    spike_raw_electr = spike_raw[spike_raw['electrode'] == main_electrode]
+    spike_raw_pts = ms2pts(spike_raw_electr['time'] - spw_zoom[0], fs).astype('i4')
+    plt.plot(t_zoom[spike_raw_pts], data_main_zoom[spike_raw_pts] - 20, fast_line_color + '^', lw = line_width, ms = 5)
+    #import pdb; pdb.set_trace()
+    plt.xlim([t_zoom[0], t_zoom[-1]]) 
+    
+    
+    
+    # -------- third subplot
+    plt.subplot(subplot_number, row_number, 5)
+    npzfile = np.load(save_folder + spikes_largest)
+    #import pdb; pdb.set_trace()
+    spikes_largest = npzfile['spike_idx']
+    fs = npzfile['fs'] 
+    npzfile.close()
+    spikes_largest = spikes_largest[(spikes_largest['trace'] == use_trace) & (spikes_largest['time'] >= spw_zoom[0]) & (spikes_largest['time'] <= spw_zoom[1])]
+    
+    data_electr = np.zeros([len(use_electrodes), len(t_zoom)])
+    for idx, electr in enumerate(use_electrodes):
+        #import pdb; pdb.set_trace()
+        data_electr[idx, :] = data_trace[electr-1, spw_zoom_pts[0]: spw_zoom_pts[1]]
+        plt.plot(t_zoom, data_electr[idx, :] + add_it * idx, lw = 1, c = main_line_color)
+        
+        spike_raw_electr = spike_raw[spike_raw['electrode'] == electr]
+        spike_raw_pts = ms2pts(spike_raw_electr['time'] - spw_zoom[0], fs).astype('i4')
+        plt.plot(t_zoom[spike_raw_pts], data_electr[idx, spike_raw_pts]  - 20 + add_it * idx, fast_line_color + '^', lw = line_width, ms = 5)
+        
+        
+        spikes_largest_electr = spikes_largest[spikes_largest['electrode'] == electr]
+        spike_largestpts = ms2pts(spikes_largest_electr['time'] - spw_zoom[0], fs).astype('i4')
+        plt.plot(t_zoom[spike_largestpts], data_electr[idx, spike_largestpts]  - 10 + add_it * idx, 'r^', lw = line_width, ms = 5)
+    plt.xlim([t_zoom[0], t_zoom[-1]])     
+    
+    
+    # ------- fourth subplot - all electrodes - all data
+    npzfile = np.load(save_folder + final_Ipsp_spw)
+    #import pdb; pdb.set_trace()
+    spw_ipsps = npzfile['spw_ipsps']
+    npzfile.close()
+    
+
+    spw_ipsps = spw_ipsps[(spw_ipsps['trace'] ==  use_trace) & (spw_ipsps['spw_start'] >= spw_zoom[0]) & (spw_ipsps['spw_start'] <= spw_zoom[1])]
+    
+    data_electr = np.zeros([len(data_trace), len(t_zoom)])
+    plt.subplot(1, row_number, 2)
+    for electr in range(1, len(data_trace) + 1):
+        idx = electr - 1
+        #import pdb; pdb.set_trace()
+        data_electr[idx, :] = data_trace[electr-1, spw_zoom_pts[0]: spw_zoom_pts[1]]
+        plt.plot(t_zoom, data_electr[idx, :] + add_it * idx, lw = 1, c = 'k')
+        
+    # plot start of SPW
+    #import pdb; pdb.set_trace()
+
+    
+    # plot IPSPs
+    for ipsp_no in np.unique(spw_ipsps['ipsp_no']):
+        #import pdb; pdb.set_trace()    
+        ipsp_run = spw_ipsps[spw_ipsps['ipsp_no'] == ipsp_no]
+        min_electr = min(ipsp_run['electrode'])
+        max_electr = max(ipsp_run['electrode'])
+        min_pt = add_it * min_electr
+        max_pt = add_it * max_electr + add_it * 0.5
+        ipsp_time = ipsp_run['ipsp_start'][0]
+        #ipsp_pts = ms2pts(ipsp_time - spw_zoom[0], fs).astype('i4')
+        plt.vlines(ipsp_time, min_pt, max_pt, 'b')
+        #import pdb; pdb.set_trace()
+        #plt.plot(t_zoom[], data_electr[idx, :] + add_it * idx, lw = 1, c = 'k')
+        
+    # plot start of SPW
+    min_plot = 0 - add_it * 0.5
+    max_plot = len(data_trace) * add_it + add_it* 0.25
+    spw_start = spw_ipsps['spw_start'][0]
+    spw_end = max(spw_ipsps['ipsp_start'])+ 30
+    plt.vlines(spw_start, min_plot, max_plot, 'r', lw = 2) 
+    plt.ylim([ min_plot, max_plot])
+    #plt.xlim([spw_start - 20, spw_end]) 
+    plt.xlim([t_zoom[0],spw_end - 10])   
+    plt.show()
+    
 
 def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_spikes", save_filter = 'fast_data_'):
     """ finds and updates the detection of extracellular spikes"""
@@ -385,12 +565,13 @@ def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_sp
     
     for electr in range(np.size(data,0)):
         print electr,  
-
+        #import pdb; pdb.set_trace()
         if len(data[electr]) > 1:
             N = 100
         for trace in range(np.size(data,1)):
+            
             data_used = data[electr, trace, :]
-            filename_fast = save_filter +str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
+            filename_fast = save_filter + str(freq_fast) + '_'+ str(electr) + "_" + str(trace)
             data_fast, fs = load_create(folder_name, filename_fast, freq_fast, fs, data_used, N)
             spike_ampl, spike_idxs = fes.find_extra_spikes(data_used, data_fast, fs) 
             del data_fast
@@ -595,7 +776,7 @@ def find_nearest(array,value):
 
 
 
-def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
+def update_highWaves(load_datafile, filter_folder, save_folder, data_file, atten_len = 25, save_filter = 'moving_avg_'):
     """ performs moving average and based on this calculates probable beginning and end of the wave"""
     npzfile = np.load(save_folder + load_datafile)
     data = npzfile['data']
@@ -610,6 +791,8 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
     spws_starts = []
     spws_ends = []
     plot_it = False
+    
+    folder_name = save_folder + filter_folder
     
     for electr in range(np.size(data,0)): 
         print electr,
@@ -679,6 +862,9 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
             spws_ends.append(np.rec.fromarrays([electrodes, traces, spw_ends], names='electrode,trace,time'))
             #import pdb; pdb.set_trace() 
             
+            filename_ase = save_filter + 'moving_avg_' + '_'+ str(electr) + "_" + str(trace)
+            np.savez(folder_name + filename_ase, data = moved_avg, fs = fs, starts = spw_starts, ends = spw_ends)
+            
             if plot_it:
                 
                 add_it = 100
@@ -692,10 +878,11 @@ def update_highWaves(load_datafile, save_folder, data_file, atten_len = 25):
                 #import pdb; pdb.set_trace() 
                 plt.plot(t[spw_pts], data_used[spw_pts] + add_it * electr, '*r', ms = 10)
 
-            #plt.show()
+            plt.show()
              
     spws_starts = np.concatenate(spws_starts)    
     spws_ends = np.concatenate(spws_ends)    
+    
     
     np.savez(save_folder + data_file, starts = spws_starts, ends = spws_ends, fs = fs)   
     del data
@@ -1013,9 +1200,29 @@ def update_merge_close_groups(save_folder, save_file, spw_file, data_file):
             curr_group_time = [min(curr_spw['ipsp_start']), max(curr_spw['ipsp_start'])]
             
             if curr_group_time[0] - prev_group_time[1] <= min_distance_allowed:
-                #import pdb; pdb.set_trace()
+                
+                electr_used = spws_used['electrode'][spws_used['group'] ==  all_groups[idx-1]]
+                #sps = []
+                
+                for sp in spws_used[spws_used['group'] == group]:
+                    
+                    temp, = np.where(sp['electrode'] == electr_used)
+                    
+                    if len(temp) == 0:
+
+                        spws_used['group'][(spws_used['group'] == group) & (spws_used['electrode'] == sp['electrode'])] = all_groups[idx-1]
+                        
+                        sp['group'] = all_groups[idx-1]
+                        #sps.append(sp) 
+                
+
+                spws_used = spws_used[spws_used['group'] != group]
+
+                #spws_used['group'][spws_used['group'] == group]
+                
                 # the two groups are too close
-                spws_used = merge_ipsps(spws_used, all_groups[idx-1], group, data, fs)
+                #spws_used = 
+                #spws_used = merge_ipsps(spws_used, all_groups[idx-1], group, data, fs)
                  
             prev_group_time = curr_group_time
                 
@@ -3523,7 +3730,6 @@ def update_highWaves_numb(load_spwsfile, save_folder, data_file):
         # add spw no to already existing 'electrode', 'trace', and 'time' 
         # of a SPW
         new_spw_trace = add_rec_field(selected_spw_trace, groups_ordered, ['spw_no'])
-        
         
         all_spw_traces.append(new_spw_trace)
         #if trace == 2:

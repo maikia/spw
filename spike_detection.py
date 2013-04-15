@@ -44,31 +44,32 @@ def find_extra_spikes(data, fast_data, fs): #, fast_freq = 750.):
     """ finds spikes in the extracellular data, of fs sampling frequency
     it will first highpass filter the data above vfast_freq to detect the spikes
     """
-
+    plot_it = False
     allow_error = 0.2 # ms
     alerr_pts = ms2pts(allow_error,fs)
     
     # find spikes 
     spike_data = fast_data * (-1)
     #spike_data[spike_data < 0] = 0
-    thres = np.std(spike_data)*5 # use thres as 6 * standard deviation
+    thres = np.std(spike_data)*4 # use thres as 6 * standard deviation
     
     waves = dw.find_above(spike_data, thres)
     starts, ends = dw.find_startend(waves) # finds all the peaks above threshold
     
     mins, min_idxs = dw.max_waves(data*(-1), starts-int(alerr_pts), ends+int(alerr_pts)) # finds mins of each wave    
     amplitudes = np.mean(fast_data) - fast_data[min_idxs]
-    
-#    scale = 'ms'
-#
-#    t = dat.get_timeline(data, fs, scale)    
-#    py.plot(t, data)
-#    py.plot(t, spike_data)
-#    py.plot(t[min_idxs], spike_data[min_idxs], 'o')
-#    for m in range(len(min_idxs)):
-#        py.text(t[min_idxs[m]], spike_data[min_idxs[m]], str(amplitudes[m]))
-#    py.xlim([0,10000])
-#    py.show()
+    #import pdb; pdb.set_trace()
+    if plot_it:
+        scale = 'ms'
+
+        t = dat.get_timeline(data, fs, scale)    
+        py.plot(t, data)
+        py.plot(t, spike_data)
+        py.plot(t[min_idxs], spike_data[min_idxs], 'o')
+        for m in range(len(min_idxs)):
+            py.text(t[min_idxs[m]], spike_data[min_idxs[m]], str(amplitudes[m]))
+        py.xlim([0,t[-1]])
+        py.show()
     return amplitudes, min_idxs
     
 #
