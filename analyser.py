@@ -986,7 +986,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     data = npzfile['data']
     fs = npzfile['fs']
     npzfile.close() 
-    
+    max_must_be_until = 10 # ms from the beginning
     plot_it = True
     
     npzfile = np.load(save_folder + spw_details)
@@ -1080,7 +1080,9 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                 end_trace = last_ipsp + window_to_plot[1]
 
                 start_trace_pts = ispw.ms2pts(start_trace, fs).astype('i4')
-                end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
+                #end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
+                
+                end_trace_pts = ispw.ms2pts(spw_start + max_must_be_until, fs).astype('i4')
                 
                 data_spw = data_used[:, start_trace_pts: end_trace_pts]
                 #if end_trace_pts <= len(data_used[0,:]) and start_trace_pts >= 0:
@@ -1088,10 +1090,15 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                     # don't use this trace for calculations
                 
                     if remove_baseline:
-                        base = data_used[:, start_trace_pts + win_base_pts[0]: start_trace_pts + win_base_pts[1]]
-                        base = np.mean(base, axis = 1)
-                        data_spw = np.transpose(data_spw) - base
-                        data_spw = np.transpose(data_spw)
+                        data_used = data[:,trace,:]
+                        #import pdb; pdb.set_trace()    
+                        base_start = start_trace_pts + win_base_pts[0]
+                        base_end = start_trace_pts + win_base_pts[1]
+                        data_spw = ispw.remove_baseline_spw(data_used, data_spw, base_start, base_end)
+#                        base = data_used[:, start_trace_pts + win_base_pts[0]: start_trace_pts + win_base_pts[1]]
+#                        base = np.mean(base, axis = 1)
+#                        data_spw = np.transpose(data_spw) - base
+#                        data_spw = np.transpose(data_spw)
                         
                     #import pdb; pdb.set_trace()
                     #print 'before: ' + str(np.max(spw_used['amplitude'])) + ' after: ' + str(max(np.max(data_spw, 1)))
@@ -1110,8 +1117,9 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                     #if False: #len(np.unique(spw_used['group'])) == 1:
                     if True:
                         print ampls
-                        if ampls < 20: #> 200:
+                        if ampls < 50: #> 200 :
                             #print 'got in'
+                            #import pdb; pdb.set_trace()
                             add_it = 300
                             t = dat.get_timeline(data_spw[0, :], fs, 'ms')
                             max_electrode = np.argmax(np.max(spw_selected, 1))

@@ -544,7 +544,6 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     #plt.xlim([spw_start - 20, spw_end]) 
     plt.xlim([t_zoom[0],spw_end - 10])   
     plt.show()
-    import pdb; pdb.set_trace()
     plt.savefig(save_fig_name, dpi=600)   
     #import pdb; pdb.set_trace()
 
@@ -2369,7 +2368,8 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
     # order spws according first to trace, and then to their start
     i = np.argsort(spws, order=['trace', 'spw_start'])
     spws = spws[i]
-
+    max_must_be_until = 10 # ms from the beginning
+    
     ipsp_length = 10 # ms
     
     spw_no_all = np.unique(spws['spw_no'])
@@ -2424,13 +2424,14 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
         # use if you want end to be the calculated value
         # spw_end_pts = ms2pts(spw_end, fs).astype('i4')
         # use if you want end to be predefined value
-        max_must_be_until = 15 # ms from the beginning
+        
         spw_end_pts = ms2pts(spw_start + max_must_be_until, fs).astype('i4')
         
         data_trace = data[:, trace, spw_start_pts: spw_end_pts]
         
         if remove_baseline:
             data_used = data[:,trace,:]
+            #import pdb; pdb.set_trace()    
             base_start = spw_start_pts + win_base_pts[0]
             base_end = spw_start_pts + win_base_pts[1]
             data_trace = remove_baseline_spw(data_used, data_trace, base_start, base_end)

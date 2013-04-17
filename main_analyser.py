@@ -161,7 +161,7 @@ if __name__=='__main__':
                         '11': (1, 2)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 0
+    update = 1
     sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)

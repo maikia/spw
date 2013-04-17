@@ -124,7 +124,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected2, SPWs_missing_link, data_file = raw_baselined, reanalize = reanalize)
         
         SPWs_merged = 'SPWs_merged.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_merge_close_groups(save_folder, SPWs_merged, SPWs_ipsps_corrected2, data_file = raw_baselined, reanalize = reanalize)
         
         min_amplitude_of_spw = 50
