@@ -133,7 +133,9 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             updater.up_remove_too_small_spws(save_folder, save_file = too_small_removed, load_datafile = raw_baselined, load_spwsipsp = SPWs_merged, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
         
         if run_all_functions:
-            updater.up_create_sup_fig(save_folder, data_file = raw_data, filter_folder = filter_folder, 
+            my_name = 'cell7'
+            save_fig_name = '/home/maja/PhDProject/SPWs/SPWs/saved_data/solutions/all_/' + my_name + '.png'
+            updater.up_create_sup_fig(save_fig_name, save_folder, data_file = raw_data, filter_folder = filter_folder, 
                                       spike_file = spikes_raw, spikes_raw = spikes_raw, spikes_largest = spikes_largest,
                                       final_Ipsp_spw = too_small_removed)            
 

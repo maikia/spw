@@ -397,8 +397,8 @@ def up_extraspikes(save_folder, filter_folder,  save_file = "ex_spikes", load_fi
         print 'spikes were already found'
     gc.collect()
     
-def up_create_sup_fig(save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw):
-    ispw.create_sup_fig(save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw)
+def up_create_sup_fig(save_fig_name, save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw):
+    ispw.create_sup_fig(save_fig_name, save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw)
 
 
 

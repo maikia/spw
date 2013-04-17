@@ -365,7 +365,7 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
         
     return data_filt, fs
 
-def create_sup_fig(save_folder, data_load, filter_folder, spike_file,  spikes_raw, spikes_largest, final_Ipsp_spw, save_filter = 'fast_data_', save_mov = 'moving_avg_'):
+def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_file,  spikes_raw, spikes_largest, final_Ipsp_spw, save_filter = 'fast_data_', save_mov = 'moving_avg_'):
     #use_trace = 13
     start_no = 28
     use_trace = 0
@@ -545,6 +545,8 @@ def create_sup_fig(save_folder, data_load, filter_folder, spike_file,  spikes_ra
     plt.xlim([t_zoom[0],spw_end - 10])   
     plt.show()
     import pdb; pdb.set_trace()
+    plt.savefig(save_fig_name, dpi=600)   
+    #import pdb; pdb.set_trace()
 
 def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_spikes", save_filter = 'fast_data_'):
     """ finds and updates the detection of extracellular spikes"""
@@ -587,6 +589,7 @@ def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_sp
     idx_all = np.concatenate(idx_all)            
     
     #np.savez(save_folder + save_file, spike_idx = idx_all, spike_ampl = ampl_all, fs = fs)
+    import pdb; pdb.set_trace()
     np.savez(save_folder + save_file, spike_idx = idx_all, fs = fs)
     del data, idx_all, ampl_all, fs
 
