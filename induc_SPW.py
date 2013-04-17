@@ -367,7 +367,7 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
 
 def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_file,  spikes_raw, spikes_largest, final_Ipsp_spw, save_filter = 'fast_data_', save_mov = 'moving_avg_'):
     #use_trace = 13
-    start_no = 7
+    start_no = 21
     use_trace = 0
     use_range = [20000, 60000] # in data ms
     use_electrodes = [4, 5,6,7]
@@ -502,6 +502,11 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     
     
     # -------- third subplot
+    npzfile = np.load(save_folder + final_Ipsp_spw)
+    #import pdb; pdb.set_trace()
+    spw_ipsps = npzfile['spw_ipsps']
+    npzfile.close()
+    
     plt.subplot(subplot_number, row_number, 5)
     npzfile = np.load(save_folder + spikes_largest)
     #import pdb; pdb.set_trace()
@@ -509,29 +514,35 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     fs = npzfile['fs'] 
     npzfile.close()
     spikes_largest = spikes_largest[(spikes_largest['trace'] == use_trace) & (spikes_largest['time'] >= spw_zoom[0]) & (spikes_largest['time'] <= spw_zoom[1])]
+    spw_ipsps = spw_ipsps[(spw_ipsps['trace'] == use_trace) & (spw_ipsps['ipsp_start'] >= spw_zoom[0]) & (spw_ipsps['ipsp_start'] <= spw_zoom[1])]
     
     data_electr = np.zeros([len(use_electrodes), len(t_zoom)])
     for idx, electr in enumerate(use_electrodes):
         #import pdb; pdb.set_trace()
         data_electr[idx, :] = data_trace[electr-1, spw_zoom_pts[0]: spw_zoom_pts[1]]
         plt.plot(t_zoom, data_electr[idx, :] + add_it * idx, lw = 1, c = main_line_color)
+        #import pdb; pdb.set_trace()
         
-        spike_raw_electr = spike_raw[spike_raw['electrode'] == electr]
-        spike_raw_pts = ms2pts(spike_raw_electr['time'] - spw_zoom[0], fs).astype('i4')
-        plt.plot(t_zoom[spike_raw_pts], data_electr[idx, spike_raw_pts]  - 20 + add_it * idx, fast_line_color + '^', lw = line_width, ms = 5)
+        ipsp_raw_electr = spw_ipsps[spw_ipsps['electrode'] == electr]
+        #import pdb; pdb.set_trace()
+        ipsp_raw_pts = ms2pts(ipsp_raw_electr['ipsp_start'] - spw_zoom[0], fs).astype('i4')
+        #plt.plot(t_zoom[ipsp_raw_pts], data_electr[idx, ipsp_raw_pts]  - 40 + add_it * idx, 'k' + '<', lw = line_width, ms = 5)
+        plt.plot(t_zoom[ipsp_raw_pts], data_electr[idx, ipsp_raw_pts]  - 40 + add_it * idx, 'k' + 'D', lw = line_width, ms = 5)
+        
+        #spike_raw_electr = spike_raw[spike_raw['electrode'] == electr]
+        #spike_raw_pts = ms2pts(spike_raw_electr['time'] - spw_zoom[0], fs).astype('i4')
+        #plt.plot(t_zoom[spike_raw_pts], data_electr[idx, spike_raw_pts]  - 20 + add_it * idx, fast_line_color + '^', lw = line_width, ms = 5)
+        
         
         
         spikes_largest_electr = spikes_largest[spikes_largest['electrode'] == electr]
         spike_largestpts = ms2pts(spikes_largest_electr['time'] - spw_zoom[0], fs).astype('i4')
-        plt.plot(t_zoom[spike_largestpts], data_electr[idx, spike_largestpts]  - 10 + add_it * idx, 'r^', lw = line_width, ms = 5)
+        plt.plot(t_zoom[spike_largestpts], data_electr[idx, spike_largestpts]  - 20 + add_it * idx, 'r^', lw = line_width, ms = 5)
     plt.xlim([t_zoom[0], t_zoom[-1]])     
     
     
     # ------- fourth subplot - all electrodes - all data
-    npzfile = np.load(save_folder + final_Ipsp_spw)
-    #import pdb; pdb.set_trace()
-    spw_ipsps = npzfile['spw_ipsps']
-    npzfile.close()
+
     
 
     spw_ipsps = spw_ipsps[(spw_ipsps['trace'] ==  use_trace) & (spw_ipsps['spw_start'] >= spw_zoom[0]) & (spw_ipsps['spw_start'] <= spw_zoom[1])]
@@ -571,7 +582,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     plt.ylim([ min_plot, max_plot])
     #plt.xlim([spw_start - 20, spw_end]) 
     plt.xlim([t_zoom[0],spw_end - 10])   
-    plt.show()
+    #plt.show()
     plt.savefig(save_fig_name, dpi=600)   
     #import pdb; pdb.set_trace()
 
