@@ -367,7 +367,7 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
 
 def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_file,  spikes_raw, spikes_largest, final_Ipsp_spw, save_filter = 'fast_data_', save_mov = 'moving_avg_'):
     #use_trace = 13
-    start_no = 28
+    start_no = 7
     use_trace = 0
     use_range = [20000, 60000] # in data ms
     use_electrodes = [4, 5,6,7]
@@ -399,8 +399,9 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     
     
     plt.figure()
-    #-------- first subplot
-    plt.subplot(subplot_number, row_number, 1)
+    #-------- first subplot]
+    # subplot 1 a
+    plt.subplot(3, 3, 1)
     data_main = data_trace[main_electrode, use_range_pts[0]: use_range_pts[1]]
     t = dat.get_timeline(data_main, fs, scale) + use_range[0]
     plt.plot(t, data_main, lw = line_width, c = main_line_color, alpha = 0.3)
@@ -413,36 +414,63 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     ends = npzfile['ends']
     npzfile.close()
     
-    
-    #import pdb; pdb.set_trace()
-    #np.where((starts > t[0]) & (starts < t[-1]))
-    #import pdb; pdb.set_trace()
     starts = starts[(starts > use_range[0]) & (starts < use_range[1])]
-    
     ends = ends[(ends > use_range[0]) & (ends < use_range[1])]
-
+    
+    
+    
     spw_zoom = [starts[start_no], ends[start_no]]
     starts = ms2pts(starts - use_range[0],fs).astype('i4')
     ends = ms2pts(ends - use_range[0],fs).astype('i4')
+    thres_level = np.std(data_filt) * 0.5
     data_base = data_filt[use_range_pts[0]: use_range_pts[1]]
-    plt.plot(t, data_base, lw = line_width, c = slow_line_color, alpha = fast_alpha)
+
     #import pdb; pdb.set_trace()
-    plt.plot(t[starts], data_base[starts], slow_line_color + 'o')
-    plt.plot(t[ends], data_base[ends], slow_line_color + 'o')
+    plt.plot(t, data_base, lw = line_width, c = slow_line_color, alpha = fast_alpha)
+    plt.hlines(thres_level, t[0], t[-1], slow_line_color)
+
+    plt.plot(t[starts], data_base[starts], slow_line_color + '.')
+    plt.plot(t[ends], data_base[ends], slow_line_color + '.')
+    max_spw = max(data_main[starts[start_no]:ends[start_no]])
+    plt.plot(t[starts[start_no]], data_base[starts[start_no]]+max_spw+50, slow_line_color + '*', ms = 10)
     
     for idx, st in enumerate(starts):
         plt.plot(t[st:ends[idx]], data_main[st:ends[idx]], lw = line_width, c = main_line_color)
     
     plt.xlim([t[0], t[-1]])
+    #import pdb; pdb.set_trace()
+    
+    #import pdb; pdb.set_trace()
+    
+    # subplot 1 b
+    plt.subplot(3, 6, 3)
+    range_pic_1b = 10
+    range_pic_1b_pts = ms2pts(range_pic_1b, fs).astype('i4')
+    spw_range_pts = [ms2pts(spw_zoom[0] - range_pic_1b, fs).astype('i4'), ms2pts(spw_zoom[1] + range_pic_1b, fs).astype('i4')]
+
+    
+    data_main = data_trace[main_electrode, spw_range_pts[0]: spw_range_pts[1]]
+    t = dat.get_timeline(data_main, fs, scale) + spw_zoom[0]
+    plt.plot(t, data_main, lw = line_width, c = main_line_color, alpha = 0.3)
+    starts = range_pic_1b_pts
+    ends = len(t) - range_pic_1b_pts
+    
+    data_base = data_filt[spw_range_pts[0]: spw_range_pts[1]]
+    plt.plot(t, data_base, lw = line_width, c = slow_line_color, alpha = fast_alpha)
+    plt.hlines(thres_level, t[0], t[-1], slow_line_color)
+    plt.plot(t[starts:ends], data_main[starts:ends], lw = line_width, c = main_line_color)
+    plt.xlim([t[0], t[-1]])
+    
+    #import pdb; pdb.set_trace()
+    plt.plot(t[starts], data_base[starts], slow_line_color + '.')
+    plt.plot(t[ends], data_base[ends], slow_line_color + '.')    
     del data_filt, starts
-    spw_zoom_pts = [ms2pts(spw_zoom[0], fs), ms2pts(spw_zoom[1], fs)]
-    
-    
-    
     #-------- second subplot - angle + spike trace
+    spw_zoom_pts = [ms2pts(spw_zoom[0], fs).astype('i4'), ms2pts(spw_zoom[1], fs).astype('i4')]
     plt.subplot(subplot_number, row_number, 3)
-    data_main_zoom = data_trace[main_electrode, spw_zoom_pts[0]: spw_zoom_pts[1]]
+    data_main_zoom = data_trace[main_electrode, spw_zoom_pts[0]: spw_zoom_pts[1]] # for second subplot
     t_zoom = dat.get_timeline(data_main_zoom, fs, scale) + spw_zoom[0]
+    
     plt.plot(t_zoom, data_main_zoom, lw = line_width, c = main_line_color)
     
     
