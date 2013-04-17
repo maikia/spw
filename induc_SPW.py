@@ -367,7 +367,7 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
 
 def create_sup_fig(save_folder, data_load, filter_folder, spike_file,  spikes_raw, spikes_largest, final_Ipsp_spw, save_filter = 'fast_data_', save_mov = 'moving_avg_'):
     #use_trace = 13
-    start_no = 10
+    start_no = 28
     use_trace = 0
     use_range = [20000, 60000] # in data ms
     use_electrodes = [4, 5,6,7]
@@ -521,13 +521,13 @@ def create_sup_fig(save_folder, data_load, filter_folder, spike_file,  spikes_ra
 
     
     # plot IPSPs
-    for ipsp_no in np.unique(spw_ipsps['ipsp_no']):
+    for ipsp_no in np.unique(spw_ipsps['group']):
         #import pdb; pdb.set_trace()    
-        ipsp_run = spw_ipsps[spw_ipsps['ipsp_no'] == ipsp_no]
+        ipsp_run = spw_ipsps[spw_ipsps['group'] == ipsp_no]
         min_electr = min(ipsp_run['electrode'])
         max_electr = max(ipsp_run['electrode'])
         min_pt = add_it * min_electr
-        max_pt = add_it * max_electr + add_it * 0.5
+        max_pt = add_it * max_electr + add_it
         ipsp_time = ipsp_run['ipsp_start'][0]
         #ipsp_pts = ms2pts(ipsp_time - spw_zoom[0], fs).astype('i4')
         plt.vlines(ipsp_time, min_pt, max_pt, 'b')
@@ -544,7 +544,7 @@ def create_sup_fig(save_folder, data_load, filter_folder, spike_file,  spikes_ra
     #plt.xlim([spw_start - 20, spw_end]) 
     plt.xlim([t_zoom[0],spw_end - 10])   
     plt.show()
-    
+    import pdb; pdb.set_trace()
 
 def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_spikes", save_filter = 'fast_data_'):
     """ finds and updates the detection of extracellular spikes"""
@@ -1192,32 +1192,39 @@ def update_merge_close_groups(save_folder, save_file, spw_file, data_file):
         
         prev_group_time = [-5, -5]
         all_groups, gr_idx = np.unique(spws_used['group'], return_index = True)
+        
         order_groups = np.argsort(gr_idx)
         all_groups = all_groups[order_groups]
         for idx, group in enumerate(all_groups):
             
             curr_spw = spws_used[spws_used['group'] == all_groups[idx]]
             curr_group_time = [min(curr_spw['ipsp_start']), max(curr_spw['ipsp_start'])]
-            
+
             if curr_group_time[0] - prev_group_time[1] <= min_distance_allowed:
-                
+                 
                 electr_used = spws_used['electrode'][spws_used['group'] ==  all_groups[idx-1]]
-                #sps = []
                 
                 for sp in spws_used[spws_used['group'] == group]:
-                    
+                    #import pdb; pdb.set_trace() 
                     temp, = np.where(sp['electrode'] == electr_used)
                     
                     if len(temp) == 0:
-
+                        # check which amplitude is lower
                         spws_used['group'][(spws_used['group'] == group) & (spws_used['electrode'] == sp['electrode'])] = all_groups[idx-1]
-                        
-                        sp['group'] = all_groups[idx-1]
-                        #sps.append(sp) 
+                        sp['group'] = all_groups[idx-1] 
+                    else:
+                        # check which amplitude is lower - and keep this one
+                        ampl_group_curr = spws_used['amplitude'][(spws_used['group'] == group) & (spws_used['electrode'] == sp['electrode'])] 
+                        ampl_group_prev = spws_used['amplitude'][(spws_used['group'] == all_groups[idx-1]) & (spws_used['electrode'] == sp['electrode'])] 
+                        if ampl_group_curr > ampl_group_prev:
+                            spws_used['amplitude'][(spws_used['group'] == all_groups[idx-1]) & (spws_used['electrode'] == sp['electrode'])] = ampl_group_curr
+                            start_curr = spws_used['ipsp_start'][(spws_used['group'] == group) & (spws_used['electrode'] == sp['electrode'])] 
+                            spws_used['ipsp_start'][(spws_used['group'] == all_groups[idx-1]) & (spws_used['electrode'] == sp['electrode'])] = start_curr
                 
-
                 spws_used = spws_used[spws_used['group'] != group]
-
+                curr_spw = spws_used[spws_used['group'] == all_groups[idx-1]]
+                curr_group_time = [min(curr_spw['ipsp_start']), max(curr_spw['ipsp_start'])]
+                
                 #spws_used['group'][spws_used['group'] == group]
                 
                 # the two groups are too close

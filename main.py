@@ -111,26 +111,6 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if not run_all_functions:
             
             updater.up_spws_ipsp_beg(save_folder, filter_folder, save_fig = 'spw_ipsp', save_file = SPWs_all_IPSPs, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext, expected_min_ipsp_ampl = min_ipsp_ampl)
-
-
-
-    #    SPWs_ipsps_first_max = 'SPWs_ipsps_first_max.npz'
-    #    if run_all_functions:
-    #        updater.up_spws_first_max(save_folder, save_file = SPWs_ipsps_first_max, spws = SPWs_ipsps_beg, datafile = raw_baselined, reanalize = reanalize)
-    
-        #display_group_data(spws, spw_used[subgroups == sub], data, fs, tit = group_name)
-        
-    
-        
-        # not done yet!
-    #    if not run_all_functions:
-    #        updater.up_add_missing_ipsps(save_folder, SPWs_ipsps_corrected, SPWs_ipsps_corrected, data_file = raw_baselined, reanalize = reanalize)
-    #    spikes_inSPWs = 'spikes_inSpw.npz'
-    #    if run_all_functions:
-    #        # uses previously selected largest spikes
-    #        updater.up_spikes_in_spw(save_folder, save_file =spikes_inSPWs, load_spike_file = spikes_largest, load_spw_file = SPWs_ipsps_beg, reanalize = reanalize, win = win)
-    
- 
     
     
     #    # ----> check if the group does not exist on other electrodes
@@ -138,11 +118,9 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if not run_all_functions:
             updater.up_add_missing_electrodes_SPW(save_folder, SPWs_missing_link, SPWs_all_IPSPs, data_file = raw_baselined, reanalize = reanalize)
 
-  
-        
-            
+
         SPWs_ipsps_corrected2 = 'SPWs_ipsps_corrected.npz'
-        if run_all_functions:
+        if not run_all_functions:
             updater.up_fill_gap_between_ipsp_groups(save_folder, SPWs_ipsps_corrected2, SPWs_missing_link, data_file = raw_baselined, reanalize = reanalize)
         
         SPWs_merged = 'SPWs_merged.npz'
@@ -152,20 +130,13 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         min_amplitude_of_spw = 50
         too_small_removed = 'too_small_removed.npz'
         if run_all_functions:
-            updater.up_remove_too_small_spws(save_folder, save_file = too_small_removed, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected2, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
+            updater.up_remove_too_small_spws(save_folder, save_file = too_small_removed, load_datafile = raw_baselined, load_spwsipsp = SPWs_merged, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
         
         if run_all_functions:
             updater.up_create_sup_fig(save_folder, data_file = raw_data, filter_folder = filter_folder, 
                                       spike_file = spikes_raw, spikes_raw = spikes_raw, spikes_largest = spikes_largest,
                                       final_Ipsp_spw = too_small_removed)            
 
-    #    #if run_all_functions:
-#    #    #    updater.separate
-#        spws_large_enough2 = 'spw_large_enough2.npz'
-#        min_amplitude_of_spw = 80 #microV SPW in any point, in any electrode has to be at least this amplitude
-#        if run_all_functions:
-#            updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough2, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps_corrected2, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
-        
         # use different number of ipsps, 
         # [-1, 2] - all to two IPSPS
         # 3 IPSPS to any number
@@ -207,7 +178,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                 updater.up_intraSpikes(save_folder, save_file = intra_spikes, load_file = data_intra_base, reanalize = reanalize)
             
             ##SPWs_ipsps_corrected2 = SPWs_ipsps_final 
-            if not run_all_functions:
+            if run_all_functions:
                 # it makes the plot to exactly analyse each SPW
                 analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_final  , 
                                                load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
