@@ -722,7 +722,7 @@ def plot_all_cum_change_var(plot_folder, plot_file,
  
 def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png', colorb = True):
     # plots the scatter plot
-    
+    plt.figure()
     # define variables
     
     #groups_for_colors = np.array([1, 1, 2, 2, 3, 3, 4, 4]) # less groups, no 1 IPSP
@@ -824,7 +824,7 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
         #import pdb; pdb.set_trace()
         all_group.append(group_group.copy()) 
         #import pdb; pdb.set_trace()
-        create_scatter_synch(ampl_group, synch_group, group_group, names[group], plot_folder +plot_file, ext)
+        #----> this one! create_scatter_synch(ampl_group, synch_group, group_group, names[group], plot_folder +plot_file, ext)
         #spw_nos_group = spw_nos_group + len(ampl)
     #np.savetxt(plot_folder + 'all_synch_transposed.txt', np.transpose(all_synch),delimiter='\t')  
     #np.savetxt(plot_folder + 'all_ampl_transposed.txt', np.transpose(all_ampl),delimiter='\t')   
@@ -986,7 +986,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     data = npzfile['data']
     fs = npzfile['fs']
     npzfile.close() 
-    max_must_be_until = 10 # ms from the beginning
+    max_must_be_until = 15 # ms from the beginning
     plot_it = True
     
     npzfile = np.load(save_folder + spw_details)
@@ -1080,9 +1080,9 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                 end_trace = last_ipsp + window_to_plot[1]
 
                 start_trace_pts = ispw.ms2pts(start_trace, fs).astype('i4')
-                #end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
+                end_trace_pts = ispw.ms2pts(end_trace, fs).astype('i4')
                 
-                end_trace_pts = ispw.ms2pts(spw_start + max_must_be_until, fs).astype('i4')
+                #end_trace_pts = ispw.ms2pts(spw_start + max_must_be_until, fs).astype('i4')
                 
                 data_spw = data_used[:, start_trace_pts: end_trace_pts]
                 #if end_trace_pts <= len(data_used[0,:]) and start_trace_pts >= 0:
@@ -1117,7 +1117,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                     #if False: #len(np.unique(spw_used['group'])) == 1:
                     if True:
                         print ampls
-                        if ampls < 50: #> 200 :
+                        if ampls < 10: #> 200 :
                             #print 'got in'
                             #import pdb; pdb.set_trace()
                             add_it = 300
@@ -1396,6 +1396,8 @@ def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups,
             # go through every spw used in this group
             for idx, spw_no in enumerate(spw_nos_used):
                 spw_used = spw_type[spw_type['spw_no'] == spw_no]
+                import pdb; pdb.set_trace() 
+                
                 spw_start = spw_used['spw_start'][0]
                 trace = spw_used['trace'][0]
                 data_used = data[:,trace,:]

@@ -403,7 +403,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     # subplot 1 a
     plt.subplot(3, 3, 1)
     data_main = data_trace[main_electrode, use_range_pts[0]: use_range_pts[1]]
-    t = dat.get_timeline(data_main, fs, scale) + use_range[0]
+    t = dat.get_timeline(data_main, fs, 'sec') # + use_range[0]
     plt.plot(t, data_main, lw = line_width, c = main_line_color, alpha = 0.3)
     
     filename_save = save_mov + 'moving_avg_'  + '_'+ str(main_electrode) + "_" + str(use_trace)
@@ -450,7 +450,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
 
     
     data_main = data_trace[main_electrode, spw_range_pts[0]: spw_range_pts[1]]
-    t = dat.get_timeline(data_main, fs, scale) + spw_zoom[0]
+    t = dat.get_timeline(data_main, fs, scale)# + spw_zoom[0]
     plt.plot(t, data_main, lw = line_width, c = main_line_color, alpha = 0.3)
     starts = range_pic_1b_pts
     ends = len(t) - range_pic_1b_pts
@@ -499,6 +499,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     #import pdb; pdb.set_trace()
     plt.xlim([t_zoom[0], t_zoom[-1]]) 
     
+    plt.show()
     
     
     # -------- third subplot
@@ -527,7 +528,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
         #import pdb; pdb.set_trace()
         ipsp_raw_pts = ms2pts(ipsp_raw_electr['ipsp_start'] - spw_zoom[0], fs).astype('i4')
         #plt.plot(t_zoom[ipsp_raw_pts], data_electr[idx, ipsp_raw_pts]  - 40 + add_it * idx, 'k' + '<', lw = line_width, ms = 5)
-        plt.plot(t_zoom[ipsp_raw_pts], data_electr[idx, ipsp_raw_pts]  - 40 + add_it * idx, 'k' + 'D', lw = line_width, ms = 5)
+        plt.plot(t_zoom[ipsp_raw_pts], data_electr[idx, ipsp_raw_pts]  - 40 + add_it * idx, 'b' + '^', lw = line_width, ms = 5)
         
         #spike_raw_electr = spike_raw[spike_raw['electrode'] == electr]
         #spike_raw_pts = ms2pts(spike_raw_electr['time'] - spw_zoom[0], fs).astype('i4')
@@ -537,7 +538,9 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
         
         spikes_largest_electr = spikes_largest[spikes_largest['electrode'] == electr]
         spike_largestpts = ms2pts(spikes_largest_electr['time'] - spw_zoom[0], fs).astype('i4')
-        plt.plot(t_zoom[spike_largestpts], data_electr[idx, spike_largestpts]  - 20 + add_it * idx, 'r^', lw = line_width, ms = 5)
+        plt.plot(t_zoom[spike_largestpts], np.ones(len(spike_largestpts))*-200, 'r|', lw = 2, ms = 5)
+        plt.ylim([-300, 1700])
+        #plt.plot(t_zoom[spike_largestpts], data_electr[idx, spike_largestpts]  - 20 + add_it * idx, 'r^', lw = line_width, ms = 5)
     plt.xlim([t_zoom[0], t_zoom[-1]])     
     
     
@@ -2407,7 +2410,7 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
     # order spws according first to trace, and then to their start
     i = np.argsort(spws, order=['trace', 'spw_start'])
     spws = spws[i]
-    max_must_be_until = 10 # ms from the beginning
+    max_must_be_until = 15 # ms from the beginning
     
     ipsp_length = 10 # ms
     
