@@ -400,8 +400,6 @@ def up_extraspikes(save_folder, filter_folder,  save_file = "ex_spikes", load_fi
 def up_create_sup_fig(save_fig_name, save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw):
     ispw.create_sup_fig(save_fig_name, save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw)
 
-
-
 def up_spws(save_folder, save_file = 'spw_data.npz', load_file = 'spw_data.npz', reanalize = False):
     """ updates details of the spws"""
     # check if folder already exists

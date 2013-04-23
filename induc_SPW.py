@@ -1828,9 +1828,10 @@ def update_fill_gap_between_ipsp_groups(save_folder, save_file, spw_file, data_f
     
 def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distances):
     """ it takes the same number of both induc and spontaneous spws"""
-    npzfile    = np.load(save_folder + load_distances)
-    distances      = npzfile['dist_spwspike'] 
-    npzfile.close()     
+    #npzfile    = np.load(save_folder + load_distances)
+    #distances      = npzfile['dist_spwspike'] 
+    #npzfile.close()     
+    choose_by = "max_value" #"set_number" #"minimum"
     
     npzfile    = np.load(save_folder + induc_spont)
     spont = npzfile['spontaneous']
@@ -1841,42 +1842,49 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
     print 'setting the same number or spontaneous and induced spws'
     if way == 'random':
         # take randomly from both groups the number of elements equal smaller group
-        
-        no_elements = min(len(np.unique(spont['spw_no'])), len(np.unique(init['spw_no'])))
+        if choose_by == "minimum":
+            no_elements = min(len(np.unique(spont['spw_no'])), len(np.unique(init['spw_no'])))
+        elif choose_by == "set_number":
+            no_elements = 50
+        elif choose_by == "max_value":
+            import pdb; pdb.set_trace()
+            
         #import pdb; pdb.set_trace()
         # choose init elements
         
-        if len(np.unique(spont['spw_no'])) == no_elements:
+        #if len(np.unique(spont['spw_no'])) == no_elements:
             # there is less spontaneous events
-            to_correct = init            
-        else:
+        #    to_correct = init            
+        #else:
             # there is less induced events
-            to_correct = spont
+        #    to_correct = spont
+        all_selected= []
+        for to_correct in [init, spont]:  
+            selected_ones = []
+            chosen_ones = take_random_elements(np.unique(to_correct['spw_no']), no_elements)
+            chosen_ones = np.sort(chosen_ones)
             
-        chosen_ones = take_random_elements(np.unique(to_correct['spw_no']), no_elements)
-        chosen_ones = np.sort(chosen_ones)
-        selected_ones = []
-        #import pdb; pdb.set_trace()
-        for spw_no in chosen_ones:
-            selected_ones.append(to_correct[to_correct['spw_no'] == spw_no])
-            
-        if len(np.unique(spont['spw_no'])) == no_elements:
-            try:
-                selected_init = np.concatenate(selected_ones)
-            except:
-                import pdb; pdb.set_trace()
-            selected_spont = spont
-        else:
-            # there is less induced events       
-            try:
-                selected_spont = np.concatenate(selected_ones)
-            except:
-                import pdb; pdb.set_trace()
-            
-            selected_init = init
-#    elif way == 'closest':
-        
-    
+            #import pdb; pdb.set_trace()
+            for spw_no in chosen_ones:
+                selected_ones.append(to_correct[to_correct['spw_no'] == spw_no])
+            all_selected.append(selected_ones)    
+            #if len(np.unique(spont['spw_no'])) == no_elements:
+            #    try:
+            #selected_init = np.concatenate(selected_ones)
+            #    except:
+            #        import pdb; pdb.set_trace()
+            #    selected_spont = spont
+            #else:
+            #    # there is less induced events       
+            #    try:
+            #        selected_spont = np.concatenate(selected_ones)
+            #    except:
+            #        import pdb; pdb.set_trace()
+                
+            #    selected_init = init        
+    selected_init = np.concatenate(all_selected[0])
+    selected_spont = np.concatenate(all_selected[1])
+    #import pdb; pdb.set_trace()
     np.savez(save_folder + save_file, initiated = selected_init, spontaneous = selected_spont)
     
 def update_induc_spont_spw(save_folder, save_file, load_distances, load_spwfile, max_dist, ext):
@@ -2459,8 +2467,8 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
         else:
             # use ipsp_length
             add_to_end = ipsp_length
-        #import pdb; pdb.set_trace()      
-        spw_end = max(spw_used['ipsp_start']) + add_to_end        
+            
+        # spw_end = max(spw_used['ipsp_start']) + add_to_end        
         
         spw_start_pts = ms2pts(spw_start, fs).astype('i4')
         # use if you want end to be the calculated value
@@ -2479,7 +2487,7 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
             data_trace = remove_baseline_spw(data_used, data_trace, base_start, base_end)
         
         
-        
+
         if spw_start_pts < spw_end_pts + 2:
             # if there is error in this SPW, remove it
             try:
@@ -2488,7 +2496,7 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
             except:
                 import pdb; pdb.set_trace()
             
-            
+
             
             #max_arg = np.argmax(data_trace,1)
             #max_idx = np.argmax(max_spw)
@@ -2501,24 +2509,36 @@ def update_remove_too_small_spws(load_datafile, load_spwsipsp, min_ampl, save_fo
             if max_spw >= min_ampl:
                 # save this spw and assign new spw_no to it
                 spw_used['spw_no'] = np.ones(len(spw_used['spw_no'])) * new_spw_no
+                
+                
+                #import pdb; pdb.set_trace()  
+                # check overall amplitude of the SPW     
+                spw_end = max(spw_used['ipsp_start']) + add_to_end             
+                spw_end_pts = ms2pts(spw_end, fs).astype('i4')
+                data_trace = data[:, trace, spw_start_pts: spw_end_pts]
+                data_trace = remove_baseline_spw(data_used, data_trace, base_start, base_end)
+                new_ampl = np.max(data_trace[:])
+                spw_used['amplitude'] = np.ones(len(spw_used['spw_no'])) * new_ampl
+                
                 new_spws.append(spw_used)
                 new_spw_no = new_spw_no + 1
             
-            # plot it if necessary
-            if plot_it and len(np.unique(spw_used['group'])) > 2 and max_spw >= min_ampl:
-                plt.figure()
-                add_it = 150
-                t = dat.get_timeline(data_trace[0, :], fs, 'ms')
-                for electr in range(len(data_trace)):
-                    plt.plot(t, data_trace[electr, :] + electr * add_it)
-                    
-                    if electr == max_arg[0]:
-                        #import pdb; pdb.set_trace()
-                        plt.plot(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, 'ro', ms = 8)
-                        plt.text(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, str(max_spw))
-                #import pdb; pdb.set_trace()        
-                plt.title('No of IPSPs: ' + str(len(np.unique(spw_used['group']))))
-                plt.show()
+            
+#            # plot it if necessary
+#            if plot_it and len(np.unique(spw_used['group'])) > 2 and max_spw >= min_ampl:
+#                plt.figure()
+#                add_it = 150
+#                t = dat.get_timeline(data_trace[0, :], fs, 'ms')
+#                for electr in range(len(data_trace)):
+#                    plt.plot(t, data_trace[electr, :] + electr * add_it)
+#                    
+#                    if electr == max_arg[0]:
+#                        #import pdb; pdb.set_trace()
+#                        plt.plot(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, 'ro', ms = 8)
+#                        plt.text(t[max_arg[1]], data_trace[electr, max_arg[1]] + electr * add_it, str(max_spw))
+#                #import pdb; pdb.set_trace()        
+#                plt.title('No of IPSPs: ' + str(len(np.unique(spw_used['group']))))
+#                plt.show()
         
     new_spws = np.concatenate(new_spws)
     np.savez(save_folder + save_file, spw_ipsps = new_spws)    

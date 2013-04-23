@@ -2437,9 +2437,13 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
         
 def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_file, induc_spont, intra_spikes, ext):
     """ it divides SPWs to two groups - close and far from the spike and alignes them, and plots together"""
-    
+    align_on_peak = True
     from scipy.stats import nanmean
-    win = [-5, 80] #ms
+    
+    if align_on_peak:
+        win = [-40, 40] #ms
+    else:
+        win = [-5, 80] #ms
     
     npzfile        = np.load(save_folder + data_file)
     data = npzfile['data']
@@ -2510,25 +2514,37 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
         
         spws_used = spws
         spw = np.unique(spws_used['spw_no'])
-        spw_traces = np.zeros([np.size(data,0) + 1, len(spw), after_pts - before_pts])
+        spw_traces = np.ones([np.size(data,0) + 1, len(spw), after_pts - before_pts])*np.nan  
         in_spikes = []
 
         for spw_idx, spw_n in enumerate(spw):
+
             spw_start = spws_used[spws_used['spw_no'] == spw_n]['spw_start'][0]
             spw_start_pts = ispw.ms2pts(spw_start, fs).astype(int)
             trace = spws_used[spws_used['spw_no'] == spw_n]['trace'][0]
+            spw_end_pts = spw_start_pts + after_pts
             
             #base = data[:, trace, spw_start_pts + win_base_pts[0]: spw_start_pts + win_base_pts[1]]
-            #base = np.mean(base, axis = 1)
-            
-            
+            #base = np.mean(base, axis = 1)            
             
             if remove_baseline:
-                spw_end_pts = spw_start_pts + after_pts
-                data_temp = data[:, trace, spw_start_pts + before_pts: spw_end_pts]
+                data_temp = data[:, trace, spw_start_pts: spw_end_pts]
                 data_used = data[:,trace,:]
                 base_start = spw_start_pts + win_base_pts[0]
                 base_end = spw_start_pts + win_base_pts[1]
+                if align_on_peak:
+                    
+                    try:
+                        start_add = np.argmax(data_temp[np.argmax(np.max(data_temp,1)),:])
+                    except:
+                        import pdb; pdb.set_trace()
+                    
+                    spw_start_pts += start_add
+                    spw_end_pts += start_add
+                    spw_start = ispw.pts2ms(spw_start_pts, fs)
+                    data_temp = data[:, trace, max(spw_start_pts + before_pts,0): spw_end_pts]
+                else:
+                    data_temp = data[:, trace, max(spw_start_pts + before_pts,0): spw_end_pts]    
                 data_temp = ispw.remove_baseline_spw(data_used, data_temp, base_start, base_end)            
             
 
@@ -2538,12 +2554,12 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             #data_temp = np.transpose(data_temp) - base
             #data_temp = np.transpose(data_temp)
             try:
-                spw_traces[1:, spw_idx, :] = data_temp
+                spw_traces[1:, spw_idx, max((spw_start_pts + before_pts)*(-1), 0):] = data_temp
             except:
                 import pdb; pdb.set_trace() 
-            data_temp_intra = data_intra[:, trace, spw_start_pts + before_pts: spw_start_pts + after_pts]
+            data_temp_intra = data_intra[:, trace, max(spw_start_pts + before_pts, 0): spw_start_pts + after_pts]
             try:
-                spw_traces[0, spw_idx, :] = data_temp_intra
+                spw_traces[0, spw_idx, max((spw_start_pts + before_pts)*(-1), 0):] = data_temp_intra
             except:
                 import pdb; pdb.set_trace() 
             
@@ -2557,7 +2573,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             
     titles = ['Induced', 'Spontaneous']
     
-    add_it = 300
+    add_it = 500
     #add_it = 200
     t = dat.get_timeline(data_temp[0], fs, 'ms') + win[0]
     #in_spikes = np.concatenate(in_spikes).astype(int)
@@ -2570,14 +2586,16 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             data_used = data_spw[electr,:]
             for s in range(len(data_used)):
                 if electr == 0:
-                    plt.plot(t, data_used[s] * 10 + electr * add_it, 'b', alpha=0.2)
+                    pass
+                    #plt.plot(t, data_used[s] * 10 + electr * add_it, 'b', alpha=0.2)
                 else:
                     plt.plot(t, data_used[s] + electr * add_it, 'b', alpha=0.2)
                 
                 if electr == 0:
                     print s
+                    pass
                     #import pdb; pdb.set_trace()
-                    plt.plot(t[in_spikes[s]], data_used[s, in_spikes[s]] + electr * add_it - 200, 'r.')
+                    #plt.plot(t[in_spikes[s]], data_used[s, in_spikes[s]] + electr * add_it - 200, 'r.')
                 
                 
             if electr != 0:
@@ -2594,7 +2612,8 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
 
         fig_fname = save_fold + save_plots + titles[idx] + str(win[0]) + '_' + str(win[1]) + ext
         logging.info("saving figure %s" % fig_fname)
-        fig.savefig(fig_fname,dpi=600)    
+        fig.savefig(fig_fname,dpi=600)   
+        print fig_fname 
         #logging.info("saving figure %s" % fig_fname)   
         plt.show()    
         plt.close() 
