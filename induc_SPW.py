@@ -1831,8 +1831,10 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
     #npzfile    = np.load(save_folder + load_distances)
     #distances      = npzfile['dist_spwspike'] 
     #npzfile.close()     
-    choose_by = "max_value" #"set_number" #"minimum"
-    
+    choose_by = "take_smaller" #set_number" #"minimum"
+    max_amplitude = True
+    choose_elements = 50
+    no_smaller_than = 150
     npzfile    = np.load(save_folder + induc_spont)
     spont = npzfile['spontaneous']
     init = npzfile['initiated']
@@ -1841,13 +1843,31 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
     way = 'random' # 'random', 'closest', 
     print 'setting the same number or spontaneous and induced spws'
     if way == 'random':
-        # take randomly from both groups the number of elements equal smaller group
+        
+        if max_amplitude:
+            #import pdb; pdb.set_trace()
+            
+            init_temp = init[init['amplitude'] >= no_smaller_than]
+            spont_temp = spont[spont['amplitude'] >= no_smaller_than]
+            while (len(np.unique(spont_temp['spw_no'])) <= choose_elements or 
+                   len(np.unique(init_temp['spw_no'])) <= choose_elements) and (no_smaller_than > 0):
+                no_smaller_than = no_smaller_than - 10
+                init_temp = init[init['amplitude'] >= no_smaller_than]
+                spont_temp = spont[spont['amplitude'] >= no_smaller_than]   
+            #import pdb; pdb.set_trace()
+            init = init_temp
+            spont = spont_temp             
+            print "Amplitude used: " + str(no_smaller_than)
+                 
         if choose_by == "minimum":
             no_elements = min(len(np.unique(spont['spw_no'])), len(np.unique(init['spw_no'])))
         elif choose_by == "set_number":
-            no_elements = 50
-        elif choose_by == "max_value":
-            import pdb; pdb.set_trace()
+            no_elements = choose_elements 
+        elif choose_by == "take_smaller":
+            min_numb = min(len(np.unique(spont['spw_no'])), len(np.unique(init['spw_no'])))
+            no_elements = min(min_numb, choose_elements)
+            #if no_elements < 20
+            #import pdb; pdb.set_trace()
             
         #import pdb; pdb.set_trace()
         # choose init elements
@@ -1860,9 +1880,13 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
         #    to_correct = spont
         all_selected= []
         for to_correct in [init, spont]:  
+            # take randomly from both groups the number of elements equal smaller group
             selected_ones = []
-            chosen_ones = take_random_elements(np.unique(to_correct['spw_no']), no_elements)
-            chosen_ones = np.sort(chosen_ones)
+            try:
+                chosen_ones = take_random_elements(np.unique(to_correct['spw_no']), no_elements)
+                chosen_ones = np.sort(chosen_ones)
+            except:
+                import pdb; pdb.set_trace()
             
             #import pdb; pdb.set_trace()
             for spw_no in chosen_ones:

@@ -123,7 +123,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         cumulative_plot = 'cumulative_plot'
         save_plot_in = plots_folder+ cumulative_plot + '/'
         save_file = name_used + 'cum_change_variance.npz'
-        if not run_all_functions:
+        if run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.cum_distribution_funct(save_folder, save_file, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
                                       spw_details = equal_init_spont,
@@ -168,7 +168,7 @@ if __name__=='__main__':
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        for nex in range(14, len(all)):
+        for nex in range(len(all)):
         #for nex in [15]: #range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
@@ -186,8 +186,8 @@ if __name__=='__main__':
         
 
         spike = False
-        ampl_synch = True
-        cum_change_var = False
+        ampl_synch = False
+        cum_change_var = True
         
         solutions_folder = get_save_folder() + 'solutions/'
         fold_mng.create_folder(solutions_folder)

@@ -1325,7 +1325,7 @@ def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_
     
     np.savez(save_folder + save_file, cum_change_spont = nanmean(all_cums[:, 0, :]), cum_change_init = nanmean(all_cums[:, 1, :]), timeline = t, fs = fs) 
     
-    #plt.show()
+    plt.show()
     #import pdb; pdb.set_trace() 
     plt.close()    
     del all_root_meaned, all_root_means
@@ -2547,8 +2547,6 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
                     data_temp = data[:, trace, max(spw_start_pts + before_pts,0): spw_end_pts]    
                 data_temp = ispw.remove_baseline_spw(data_used, data_temp, base_start, base_end)            
             
-
-            
             #data_temp = data_trace[:, spw_start_pts + before_pts: spw_start_pts + after_pts]
             
             #data_temp = np.transpose(data_temp) - base
@@ -2570,9 +2568,9 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
         all_in_spikes.append(in_spikes)    
         all_data_traces.append(spw_traces)
     
-            
+    #np.savez(save_folder + save_file, initiated = selected_init, spontaneous = selected_spont)
     titles = ['Induced', 'Spontaneous']
-    
+    import pdb; pdb.set_trace() 
     add_it = 500
     #add_it = 200
     t = dat.get_timeline(data_temp[0], fs, 'ms') + win[0]
@@ -2615,8 +2613,8 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
         fig.savefig(fig_fname,dpi=600)   
         print fig_fname 
         #logging.info("saving figure %s" % fig_fname)   
-        plt.show()    
-        plt.close() 
+    plt.show()    
+    plt.close() 
         
  
  
