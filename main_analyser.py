@@ -84,10 +84,11 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
             analyser.plot_different_SPWs(save_folder, save_plot_in, save_plots = separateSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = '.png')
         
         alignedSPWs = 'aligned_SPWs'
+        highest_peak = 'highest_peak.npz'
         save_plot_in = plots_folder+ alignedSPWs + '/'
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
-            analyser.plot_alignedSPW(save_folder, save_plot_in, save_plots = alignedSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = '.pdf')
+            analyser.plot_alignedSPW(save_folder, save_file = highest_peak, plot_folder = save_plot_in, save_plots = alignedSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = '.eps')
 
         
         spikePerElectrode = name_used + 'spike_per_electrode'
@@ -123,11 +124,12 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         cumulative_plot = 'cumulative_plot'
         save_plot_in = plots_folder+ cumulative_plot + '/'
         save_file = name_used + 'cum_change_variance.npz'
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.cum_distribution_funct(save_folder, save_file, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
                                       spw_details = equal_init_spont,
-                                      ext = ext, win = win)
+                                      #spw_details = highest_peak,
+                                      ext = '.png', win = win)
         
         #import pdb; pdb.set_trace() 
 #
@@ -161,14 +163,14 @@ if __name__=='__main__':
                         '11': (1, 2)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 1
-    sum_up_all = 0
+    update = 0
+    sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        for nex in range(len(all)):
+        for nex in [11]: #range(14, len(all)):
         #for nex in [15]: #range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
@@ -186,8 +188,8 @@ if __name__=='__main__':
         
 
         spike = False
-        ampl_synch = False
-        cum_change_var = True
+        ampl_synch = True
+        cum_change_var = False
         
         solutions_folder = get_save_folder() + 'solutions/'
         fold_mng.create_folder(solutions_folder)

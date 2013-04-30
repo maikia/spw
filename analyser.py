@@ -720,7 +720,7 @@ def plot_all_cum_change_var(plot_folder, plot_file,
 
     
  
-def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png', colorb = True):
+def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png', colorb = True, plot_colors_separate = False):
     # plots the scatter plot
     plt.figure()
     # define variables
@@ -769,25 +769,48 @@ def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png', colo
     
     #import pdb; pdb.set_trace() 
     #plt.scatter(ampl, synch, c = colors_group, s = marker_size, cmap=mpl.cm.gray)
-    if colorb:
-        plt.scatter(ampl, synch, c = colors_group, lw = 0, s = marker_size) #, alpha = 0.2)
+    if not plot_colors_separate:
+        if colorb:
+            plt.scatter(ampl, synch, c = colors_group, lw = 0, s = marker_size) #, alpha = 0.2)
+        
+            cbar = plt.colorbar()
+            cbar.set_ticks(ticks)
+            cbar.set_ticklabels(ticks_labels)
+        else:
+            plt.scatter(ampl, synch, c = colors_group, s = marker_size, alpha = 0.8)
     
-        cbar = plt.colorbar()
-        cbar.set_ticks(ticks)
-        cbar.set_ticklabels(ticks_labels)
+        plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
+        plt.xlabel('amplitude [micro V]')
+        plt.title(name + ' ,no of SPWs: ' + str(len(ampl)))
+        #import pdb; pdb.set_trace()      
+        #fig.colorbar(im)       
+        plt.ylim([0,1.05])
+        plt.xlim([0,1200])
+        plt.savefig(save_file + name + ext, dpi=600) 
     else:
-        plt.scatter(ampl, synch, c = colors_group, s = marker_size, alpha = 0.8)
-
-    plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
-    plt.xlabel('amplitude [micro V]')
-    plt.title(name + ' ,no of SPWs: ' + str(len(ampl)))
-    #import pdb; pdb.set_trace()      
-    #fig.colorbar(im)       
-    plt.ylim([0,1.05])
-    plt.xlim([0,1200])
-    plt.savefig(save_file + name + ext, dpi=600) 
-    
-     
+        # plot every single color separately
+        #import pdb; pdb.set_trace()    
+        for idx, ipsp_numb in enumerate(ticks_labels):
+            
+            group_used = [group == idx+1]
+            color_used = np.ones(len(ampl[group_used])) * groups_for_colors[idx] * 100
+            #import pdb; pdb.set_trace()
+            plt.scatter(ampl[group_used], synch[group_used], c = color_used, lw = 0, s = marker_size) #, alpha = 0.2)
+            
+            #cbar = plt.colorbar()
+            #cbar.set_ticks(ticks)
+            #cbar.set_ticklabels(ticks_labels)  
+            plt.ylabel('synchrony [(no_ipsps all together)/(no_of_electrodes * no_group_ipsp)]')
+            plt.xlabel('amplitude [micro V]')
+            plt.title(name + 'group' + ipsp_numb + ' ,no of SPWs: ' + str(len(ampl[group_used])))
+            #import pdb; pdb.set_trace()      
+            #fig.colorbar(im)       
+            plt.ylim([0,1.05])
+            plt.xlim([0,1200])
+            #plt.show()
+            plt.savefig(save_file + name + 'group_' + ipsp_numb + ext, dpi=600) 
+            plt.figure()
+            
     
 def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells, 
                                                  amplitudes, synchronise, 
@@ -834,7 +857,7 @@ def plot_amplitude_vs_synchrony_all(plot_folder, plot_file, cells,
     all_group = np.concatenate(all_group)
     #import pdb; pdb.set_trace()
     
-    create_scatter_synch(all_ampl.copy(), all_synch.copy(), all_group.copy(), 'spont_init_', plot_folder + plot_file, ext)
+    create_scatter_synch(all_ampl.copy(), all_synch.copy(), all_group.copy(), 'spont_init_', plot_folder + plot_file, ext, plot_colors_separate = True)
     #plt.close()
     
     if fit_by_group:
@@ -1200,7 +1223,7 @@ def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_
     types = ['spontaneous', 'initiated']
     spws = [spont, init]     
     npzfile.close()    
-    
+    #import pdb; pdb.set_trace() 
     # make sure that there is equal number of spontaneous and initiated SPWs
     assert len(np.unique(init['spw_no'])) == len(np.unique(spont['spw_no']))
     
@@ -1213,6 +1236,7 @@ def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_
     fold_mng.create_folder(save_fold)
     save_base = save_fold + plot_file
     
+    #window_to_plot = [-40, 40] #win
     window_to_plot = [0, 70] #win
     win_pts = [ispw.ms2pts(window_to_plot[0], fs), ispw.ms2pts(window_to_plot[1], fs)]
     size_win_pts = win_pts[1] - win_pts[0]
@@ -1322,7 +1346,7 @@ def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_
     else:
         plt.title('No of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
         fig.savefig(save_base + '_all_'+ ext, dpi=600) 
-    
+    print 'saving figure in: ' + save_base
     np.savez(save_folder + save_file, cum_change_spont = nanmean(all_cums[:, 0, :]), cum_change_init = nanmean(all_cums[:, 1, :]), timeline = t, fs = fs) 
     
     plt.show()
@@ -2435,16 +2459,16 @@ def plot_spikes4spw(save_folder, plot_folder, save_plots = 'saved', data_file = 
             plt.close()   
 
         
-def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_file, induc_spont, intra_spikes, ext):
+def plot_alignedSPW(save_folder, save_file, plot_folder, save_plots, data_file, intra_data_file, induc_spont, intra_spikes, ext):
     """ it divides SPWs to two groups - close and far from the spike and alignes them, and plots together"""
-    align_on_peak = True
+    align_on_peak = False
     from scipy.stats import nanmean
     
     if align_on_peak:
         win = [-40, 40] #ms
     else:
         win = [-5, 80] #ms
-    
+        #win = [-5, 15] #ms
     npzfile        = np.load(save_folder + data_file)
     data = npzfile['data']
     fs = npzfile['fs']
@@ -2506,6 +2530,8 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
     all_data_intra[:, :, 0:-np.size(add_nans, 2)] = data_intra
     all_data_intra[:, :, -np.size(add_nans, 2):] = add_nans[0,:,:]
     data_intra = all_data_intra
+    new_start_spws = []
+    
     del all_data_intra
     for spws in spws_all:
         # take out those spws which are too early or too late (don't fit in the data size)
@@ -2513,6 +2539,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
         #spws_used = spws[(used > -before_pts) & (used + after_pts < np.size(data,2))]
         
         spws_used = spws
+        spw_temp = spws.copy()
         spw = np.unique(spws_used['spw_no'])
         spw_traces = np.ones([np.size(data,0) + 1, len(spw), after_pts - before_pts])*np.nan  
         in_spikes = []
@@ -2543,6 +2570,8 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
                     spw_end_pts += start_add
                     spw_start = ispw.pts2ms(spw_start_pts, fs)
                     data_temp = data[:, trace, max(spw_start_pts + before_pts,0): spw_end_pts]
+                    #import pdb; pdb.set_trace()
+                    spw_temp['spw_start'][spw_temp['spw_no'] == spw_n] = np.ones(len(spw_temp['spw_start'][spws_used['spw_no'] == spw_n])) * spw_start
                 else:
                     data_temp = data[:, trace, max(spw_start_pts + before_pts,0): spw_end_pts]    
                 data_temp = ispw.remove_baseline_spw(data_used, data_temp, base_start, base_end)            
@@ -2567,12 +2596,16 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             in_spikes.append(spikes_detected)
         all_in_spikes.append(in_spikes)    
         all_data_traces.append(spw_traces)
+        new_start_spws.append(spw_temp)
+    #import pdb; pdb.set_trace() 
+    [selected_init, selected_spont] = new_start_spws
+    # save the SPWs aligned on the highest peak
+    np.savez(save_folder + save_file, initiated = selected_init, spontaneous = selected_spont)
     
-    #np.savez(save_folder + save_file, initiated = selected_init, spontaneous = selected_spont)
     titles = ['Induced', 'Spontaneous']
-    import pdb; pdb.set_trace() 
-    add_it = 500
-    #add_it = 200
+    #import pdb; pdb.set_trace() 
+    add_it = 800
+    #add_it = 150
     t = dat.get_timeline(data_temp[0], fs, 'ms') + win[0]
     #in_spikes = np.concatenate(in_spikes).astype(int)
     for idx, data_spw in enumerate(all_data_traces): 
@@ -2584,8 +2617,8 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
             data_used = data_spw[electr,:]
             for s in range(len(data_used)):
                 if electr == 0:
-                    pass
-                    #plt.plot(t, data_used[s] * 10 + electr * add_it, 'b', alpha=0.2)
+                    #pass
+                    plt.plot(t, data_used[s] * 10 + electr * add_it, 'b', alpha=0.2)
                 else:
                     plt.plot(t, data_used[s] + electr * add_it, 'b', alpha=0.2)
                 
@@ -2593,7 +2626,7 @@ def plot_alignedSPW(save_folder, plot_folder, save_plots, data_file, intra_data_
                     print s
                     pass
                     #import pdb; pdb.set_trace()
-                    #plt.plot(t[in_spikes[s]], data_used[s, in_spikes[s]] + electr * add_it - 200, 'r.')
+                    plt.plot(t[in_spikes[s]], data_used[s, in_spikes[s]] + electr * add_it - 200, 'r.')
                 
                 
             if electr != 0:
