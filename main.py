@@ -86,10 +86,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             # correct the IPSPs (no matter if used for SPW start or for later
             updater.up_correct_ipsps(save_folder, save_fig = 'spw_ipsp', save_file = ipsps_corrected, load_datafile = raw_baselined, load_spwsipsp = SPWs_ipsps, load_spwsspike = spikes_largest, reanalize = reanalize, ext = ext)
         
-        spws_large_enough = 'spw_large_enough.npz'
-        min_amplitude_of_spw = 40 #microV SPW in any point, in any electrode has to be at least this amplitude
-        if not run_all_functions:
-            updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
+        #spws_large_enough = 'spw_large_enough.npz'
+        #min_amplitude_of_spw = 40 #microV SPW in any point, in any electrode has to be at least this amplitude
+        #if run_all_functions:
+        #    updater.up_remove_too_small_spws(save_folder, save_file = spws_large_enough, load_datafile = raw_baselined, load_spwsipsp = ipsps_corrected, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
         
         SPWs_ipsps_beg  = 'SPWs_ipsps_beg.npz'
         min_ipsp_ampl = 20
@@ -132,7 +132,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         if not run_all_functions:
             updater.up_remove_too_small_spws(save_folder, save_file = too_small_removed, load_datafile = raw_baselined, load_spwsipsp = SPWs_merged, min_ampl = min_amplitude_of_spw, reanalize = reanalize, ext = ext)
         
-        if not run_all_functions:
+        if run_all_functions:
             my_name = 'cell7'
             save_fig_name = '/home/maja/PhDProject/SPWs/SPWs/saved_data/solutions/all_/' + my_name + '.pdf'
             updater.up_create_sup_fig(save_fig_name, save_folder, data_file = raw_data, filter_folder = filter_folder, 
@@ -143,10 +143,10 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
         # [-1, 2] - all to two IPSPS
         # 3 IPSPS to any number
         # any number of IPSPS 
-        #min_no_ipsps_used = [[-1, 2], [3, -1], [-1, -1], [2, -1], [-1, 1]]
-        min_no_ipsps_used = [[3, -1]]
-        #names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_']
-        names = ['min_3_']
+        min_no_ipsps_used = [[-1, 2], [3, -1], [-1, -1], [2, -1], [-1, 1]]
+        #min_no_ipsps_used = [[3, -1]]
+        names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_']
+        #names = ['min_3_']
         
         if not run_all_functions:
             updater.up_display_SPWs(save_folder, data_file = raw_baselined, spw_file = too_small_removed, reanalize = False) 
@@ -155,7 +155,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 
             SPWs_ipsps_final = names[idx] + 'SPWs_ipsps_final.npz'
             #min_no_ipsps = 3
-            if run_all_functions:
+            if not run_all_functions:
                 updater.up_remove_with_to_few_ipsps(save_folder, SPWs_ipsps_final, too_small_removed, to_remove = min_no_ipsps, reanalize = reanalize)
         
             #print intr_electrode
@@ -194,13 +194,13 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             
             induc_spont_spw = names[idx] + 'induc_spont_spw.npz'
             max_dist = [0.0, 5] # ms
-            if run_all_functions:
+            if not run_all_functions:
                 # checks which SPWs are induced and which are spontaneous (if it's further than max_dist[1] it is spontaneous)
                 # if any error is being allowed it should be given in max_idst[0], e.g. -0.5 (half milisecond before intra spike
                 updater.up_induc_spont_spw(save_folder, save_file = induc_spont_spw, load_distances = dist_spw_inspikes, load_spwfile = SPWs_ipsps_final, max_init_dist = max_dist, reanalize = reanalize, ext = ext)
     #    
             induc_spont_equal = names[idx] + 'induc_spont_equal.npz'
-            if run_all_functions:
+            if not run_all_functions:
                 # counts spontaneous and initiated SPWs and it randomly choses set of SPWs from the bigger set so that there is equal number in both sets
                 updater.equalize_number_spws(save_folder, save_file = induc_spont_equal, induc_spont = induc_spont_spw, load_distances = dist_spw_inspikes, reanalize = reanalize)
 
@@ -261,7 +261,7 @@ if __name__=='__main__':
     if update == 1:
 
         #for nex in [18]:
-        for nex in range(len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
+        for nex in [11]: #range(len(all)): #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
         #for nex in [15, 17]: #range(1, 15):

@@ -1831,8 +1831,8 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
     #npzfile    = np.load(save_folder + load_distances)
     #distances      = npzfile['dist_spwspike'] 
     #npzfile.close()     
-    choose_by = "take_smaller" #set_number" #"minimum"
-    max_amplitude = True
+    choose_by = "take_smaller" #set_number" #
+    max_amplitude = False
     choose_elements = 50
     no_smaller_than = 150
     npzfile    = np.load(save_folder + induc_spont)
@@ -1860,6 +1860,7 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
             print "Amplitude used: " + str(no_smaller_than)
                  
         if choose_by == "minimum":
+            # takes the number of elements of the smaller set
             no_elements = min(len(np.unique(spont['spw_no'])), len(np.unique(init['spw_no'])))
         elif choose_by == "set_number":
             no_elements = choose_elements 

@@ -8,6 +8,7 @@ import pylab as plt
 import update_data as updater
 import induc_SPW as ispw
 import scipy.signal as signal
+from scipy import stats
 import b_analyser as ba
 from matplotlib.ticker import NullFormatter
 from mpl_toolkits.mplot3d import Axes3D
@@ -18,6 +19,7 @@ from matplotlib.path import Path
 import logging 
 import scipy.cluster as cluster
 import gc #garbage collector
+from matplotlib import transforms
 
 def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     """ plots the histogram of the distribution of spws from the spike"""
@@ -38,7 +40,7 @@ def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     plt.ylabel('Fraction of SPWs')
     plt.xlabel('Distance from spike (ms)')
     fig.savefig(save_folder + plot_folder + save_plots + ext,dpi=600)         
-    #plt.show() 
+    plt.show() 
     #plt.close()  
     
     
@@ -653,7 +655,7 @@ def plot_all_cum_change_var(plot_folder, plot_file,
                             all_var_spont, all_var_init, timeline, fs, 
                             ext = '.png'):
     plot_it = True
-
+    standard_plot = False
     # save the data in the txt files
     all_var_spont_array = [np.array(all_var_spont[var]) for var in range(len(all_var_spont))]
     all_var_init_array = [np.array(all_var_init[var]) for var in range(len(all_var_init))]
@@ -684,30 +686,40 @@ def plot_all_cum_change_var(plot_folder, plot_file,
     #plt.plot(np.transpose(all_var_init), 'g', label = 'initiated', alpha = 0.3, ms = 12)
     all_vars = [all_var_spont, all_var_init]
     names = ['spontaneous', 'initiated']
-    colors = ['b', 'g']
+    colors = ['b', 'r']
     line_widt = 4
     
     for idx, var in enumerate(all_vars):
         # every result separately
         #plt.plot(timeline, np.transpose(var), colors[idx], alpha =0.2, lw = 3)
         # all the mean
-        plt.plot(timeline, np.transpose(np.mean(var, 0)), colors[idx], label = names[idx], lw = line_widt)
-        box_pos = [10, 20, 30, 40, 50, 60]
-        vs = [var[:,int(ispw.ms2pts(mils, fs))] for mils in box_pos]
-        plt.boxplot(vs, positions=box_pos) 
+        if standard_plot:
+            plt.plot(timeline, np.transpose(np.mean(var, 0)), colors[idx], label = names[idx], lw = line_widt)
+            box_pos = [10, 20, 30, 40, 50, 60]
+            vs = [var[:,int(ispw.ms2pts(mils, fs))] for mils in box_pos]
+            plt.boxplot(vs, positions=box_pos) 
+        else:
+            y = np.transpose(np.mean(var, 0))
+            #import pdb; pdb.set_trace()
+            error = np.std(var,0)/np.sqrt(np.size(var,0)) #calculate Standard error
+            plt.fill_between(timeline, y-error, y+error, alpha=0.3, edgecolor=colors[idx], facecolor=colors[idx])#'#FF9848')
+            plt.plot(timeline, y, colors[idx], label = names[idx], lw = line_widt)
     plt.legend(loc=2)
     plt.xlim([min(timeline), max(timeline)])
     plt.xlabel('Time (ms)')
     plt.ylabel('Cumulative change of variance')
     #import pdb; pdb.set_trace()
     
+    pval = ttest(all_vars[0], all_vars[1])
+    plot_signif(timeline, pval)
+
     #plt.box
     #plt.boxplot(vs, positions=box_pos) 
     #plt.er
     #plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
     #if plot_it: 
     #    plt.show()
-    plt.savefig(plot_folder +plot_file + ext, dpi=600) 
+    plt.savefig(plot_folder +plot_file + 'mean_divided'+ ext, dpi=600) 
     if plot_it:
         plt.show()
      
@@ -716,10 +728,89 @@ def plot_all_cum_change_var(plot_folder, plot_file,
     gc.collect() 
 
     #import pdb; pdb.set_trace()
-
-
+def ttest(group1, group2):
+    t, p = stats.ttest_ind(group1, group2, axis=0)
+    return p
     
- 
+def bootstrap(group1, group2):
+    """ It takes two distributions of the two groups and calculates their mean separately and then 
+    their sum of squares of difference. Then it takes all the points together and
+    creates randomly two groups and repeats the process to get the sum of squares of difference
+    for the new distribution. This is repeated iter number of times so that the distribution
+    is built. Finally the first value is compared to see if it is significantly different
+    from the others or not """
+    iter = 1000
+    import random as random
+    calc_statistics = calc_pointwise_difference
+    
+    all_group = np.vstack((group1, group2))
+    rand_range = range(all_group.shape[0])
+    #rand_range =  np.resize(range(np.size(all_group,0)),(np.size(group1,1), np.size(all_group,0)))
+    #rand_range = np.transpose(rand_range)
+    half_len = len(rand_range)/2
+    #import pdb; pdb.set_trace()
+    generate_dist = []
+    for next in range(iter):
+        #import pdb; pdb.set_trace()
+        random.shuffle(rand_range)
+        #for columns in range(np.size(rand_range,1)):
+        #    random.shuffle(rand_range[:,columns])
+        rand_range = np.random.randint(0, 20, 20)
+        test_group1 = all_group[rand_range[:half_len],:]
+        test_group2 = all_group[rand_range[half_len:],:]
+        test_sum_squares = calc_statistics(test_group1, test_group2)
+        generate_dist.append(test_sum_squares)
+        
+    #import pdb; pdb.set_trace()    
+    generate_dist = np.array(generate_dist)
+    real_value = calc_statistics(group1, group2)
+    # find how many values are larger than the calculated real value
+    larger = np.sum(np.abs(generate_dist) > np.abs(real_value),0)
+    p_value = larger*1./iter
+    
+    return p_value
+
+def plot_signif(x, pvalues, pval=0.05):
+    ax = plt.gca()
+    trans = transforms.blended_transform_factory(ax.transData,
+                                                 ax.transAxes)
+    i, = np.where(pvalues<pval)
+    dx = x[1]-x[0]
+    
+    dxarr = np.array([-dx, dx])
+    xvals = x[i][:,None]+dxarr[None, :]
+    yvals = np.ones(xvals.shape)*0.
+    
+    ax.plot(xvals, yvals, 'k-', lw=10, transform=trans)
+    
+    
+    
+
+def calc_sum_of_squares_of_difference(group1, group2):
+    """ """
+    first_mean = np.mean(group1, 0) # calc mean, group1
+    second_mean = np.mean(group2, 0) # calc mean, group2
+    difference = first_mean - second_mean # calc difference
+    diff_square = difference **2 # calculate square
+    sum_of_squares = np.sum(diff_square) # calc sum of squares
+    return sum_of_squares
+
+def calc_max_difference(group1, group2):
+    """ """
+    first_mean = np.mean(group1, 0) # calc mean, group1
+    second_mean = np.mean(group2, 0) # calc mean, group2
+    difference = np.abs(first_mean - second_mean).max() # calc difference
+    
+    return difference
+
+def calc_pointwise_difference(group1, group2):
+    """ """
+    first_mean = np.mean(group1, 0) # calc mean, group1
+    second_mean = np.mean(group2, 0) # calc mean, group2
+    difference = np.abs(first_mean - second_mean) # calc difference
+    
+    return difference
+
 def create_scatter_synch(ampl, synch, group, name, save_file, ext = '.png', colorb = True, plot_colors_separate = False):
     # plots the scatter plot
     plt.figure()
@@ -1009,7 +1100,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     data = npzfile['data']
     fs = npzfile['fs']
     npzfile.close() 
-    max_must_be_until = 15 # ms from the beginning
+    #max_must_be_until = 15 # ms from the beginning
     plot_it = True
     
     npzfile = np.load(save_folder + spw_details)
@@ -1226,7 +1317,7 @@ def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_
     #import pdb; pdb.set_trace() 
     # make sure that there is equal number of spontaneous and initiated SPWs
     assert len(np.unique(init['spw_no'])) == len(np.unique(spont['spw_no']))
-    
+    plot_it = False
     remove_mean = True
     remove_baseline = True
     
@@ -1285,7 +1376,7 @@ def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_
             # normal equation
             #import pdb; pdb.set_trace() 
             if not remove_mean:
-                s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spq in this electrode
+                s_mean_across = nanmean(all_spws[:, electr, :], 0) # mean across all the spws in this electrode
                 variance = all_spws[:, electr, :] - s_mean_across[None, :] # subtracts mean from each SPW
                 squared = variance ** 2 # power of every point
                 meaned = nanmean(squared, 0) # calculate mean from the powers
@@ -1348,12 +1439,14 @@ def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_
         fig.savefig(save_base + '_all_'+ ext, dpi=600) 
     print 'saving figure in: ' + save_base
     np.savez(save_folder + save_file, cum_change_spont = nanmean(all_cums[:, 0, :]), cum_change_init = nanmean(all_cums[:, 1, :]), timeline = t, fs = fs) 
-    
-    plt.show()
+    if plot_it:
+        plt.show()
     #import pdb; pdb.set_trace() 
-    plt.close()    
+    plt.close('all')  
     del all_root_meaned, all_root_means
     gc.collect()   
+
+    
 
 def plot_groups_w_fr(save_folder, plot_folder, plot_file, data_file, spw_groups, spw_details, spike_data, ext, win):
     """ makes the plot of every given group and finds the firing rate for it"""
