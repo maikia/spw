@@ -163,7 +163,7 @@ if __name__=='__main__':
                         '11': (1, 2)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 1
+    update = 0
     sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
@@ -227,7 +227,7 @@ if __name__=='__main__':
             analyser.plot_all_cum_change_var(plot_folder = solutions_folder, 
                                                  plot_file = plot_cum, all_var_spont = all_var_spont, 
                                                  all_var_init = all_var_init, timeline = timeline, fs = fs,
-                                                 ext = '.png')
+                                                 ext = '.eps')
                     
                     
         if spike:

@@ -653,34 +653,21 @@ def plot_spikes(save_folder, save_name, distances, ext = '.png'):
 
 def plot_all_cum_change_var(plot_folder, plot_file, 
                             all_var_spont, all_var_init, timeline, fs, 
-                            ext = '.png'):
+                            ext = '.eps'):
     plot_it = True
     standard_plot = False
+    test_type = "bootstrap" # "ttest" #
     # save the data in the txt files
     all_var_spont_array = [np.array(all_var_spont[var]) for var in range(len(all_var_spont))]
     all_var_init_array = [np.array(all_var_init[var]) for var in range(len(all_var_init))]
     np.savetxt(plot_folder + 'cum_spontaneous.txt', np.array(all_var_spont_array),delimiter='\t')
     np.savetxt(plot_folder + 'cum_initiated.txt', np.array(all_var_init_array),delimiter='\t')
     
-    
-#    import csv
-#    
-#    #cum_spont= csv.writer(open(plot_folder + "MYFILE.csv", "wb"))
-#    #spamWriter.writerow([1,2,3])
-#    
-#    file = open(plot_folder + "MYFILE3.csv", "wb")
-#    #fileWriter = csv.writer(file , delimiter='\n',quotechar='|', quoting=csv.QUOTE_MINIMAL)
-#    #fileWriter.writerow([1,2,3])
-#    #spamWriter = csv.writer(file , delimiter=',',quotechar='|', quoting=csv.QUOTE_MINIMAL)
-#    spamWriter = csv.writer(file)
-#    for row in range(len(all_var_spont)):
-#    #spamWriter = csv.writer(file , delimiter=',',quotechar='|', quoting=csv.QUOTE_MINIMAL)
-#        import pdb; pdb.set_trace()
-#        spamWriter.writerow(all_var_spont[row].tolist())
-#    file.close()
-    
-    #temp = np.loadtxt(plot_folder + 'cum_spontaneous.txt')
 
+    if test_type == "bootstrap":
+        test_name = bootstrap
+    else:
+        test_name = ttest
     from scipy.stats import nanmean
     #plt.plot(np.transpose(all_var_spont), 'b', label = 'spontaneous', alpha = 0.3, ms = 12)
     #plt.plot(np.transpose(all_var_init), 'g', label = 'initiated', alpha = 0.3, ms = 12)
@@ -710,8 +697,18 @@ def plot_all_cum_change_var(plot_folder, plot_file,
     plt.ylabel('Cumulative change of variance')
     #import pdb; pdb.set_trace()
     
-    pval = ttest(all_vars[0], all_vars[1])
-    plot_signif(timeline, pval)
+    pval = test_name(all_vars[0], all_vars[1])
+    
+    if test_type == "bootstrap": 
+        import decimal
+        to_round = decimal.Decimal(pval)
+        pval = round(to_round,3)
+        p_text = "p = " + str(pval)
+    else:
+        pval_max=0.05
+        plot_signif(timeline, pval, pval_max=pval_max)
+        p_text = "p < " + str(pval_max)
+    #pval = bootstrap(all_vars[0], all_vars[1])
 
     #plt.box
     #plt.boxplot(vs, positions=box_pos) 
@@ -719,7 +716,9 @@ def plot_all_cum_change_var(plot_folder, plot_file,
     #plt.plot(t, nanmean(all_cums[:, typ, :], 0), colors[typ], label = types[typ])
     #if plot_it: 
     #    plt.show()
-    plt.savefig(plot_folder +plot_file + 'mean_divided'+ ext, dpi=600) 
+    
+    plt.text(40, 100, p_text,fontsize=20)
+    plt.savefig(plot_folder +plot_file + 'mean_divided'+ test_type + ext, dpi=600) 
     if plot_it:
         plt.show()
      
@@ -741,7 +740,7 @@ def bootstrap(group1, group2):
     from the others or not """
     iter = 1000
     import random as random
-    calc_statistics = calc_pointwise_difference
+    calc_statistics = calc_sum_of_squares_of_difference
     
     all_group = np.vstack((group1, group2))
     rand_range = range(all_group.shape[0])
@@ -770,11 +769,11 @@ def bootstrap(group1, group2):
     
     return p_value
 
-def plot_signif(x, pvalues, pval=0.05):
+def plot_signif(x, pvalues, pval_max=0.05):
     ax = plt.gca()
     trans = transforms.blended_transform_factory(ax.transData,
                                                  ax.transAxes)
-    i, = np.where(pvalues<pval)
+    i, = np.where(pvalues<pval_max)
     dx = x[1]-x[0]
     
     dxarr = np.array([-dx, dx])
