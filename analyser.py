@@ -29,7 +29,7 @@ def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     distance = dist['distance']
     npzfile.close()
     
-    xlim = [-3, 70]
+    xlim = [-3, 70] # [-3, 3] #
     no_bins = 200
     distance = distance[(distance > xlim[0]) & (distance < xlim[1])]
     #import pdb; pdb.set_trace() 
@@ -39,8 +39,21 @@ def plot_dist_spw2spike(save_folder, plot_folder, save_plots, dist_file, ext):
     plt.xlim(xlim)
     plt.ylabel('Fraction of SPWs')
     plt.xlabel('Distance from spike (ms)')
-    fig.savefig(save_folder + plot_folder + save_plots + ext,dpi=600)         
-    plt.show() 
+    fig.savefig(save_folder + plot_folder + save_plots + ext,dpi=600)  
+    #import pdb; pdb.set_trace() 
+    dist_round = [ round(elem, 3) for elem in list(distance) ]
+    print dist_round
+    #temp_doc = '/home/maja/phdProject/documents/distances.txt'
+    #file1 = open(temp_doc , "w")
+    #import pdb; pdb.set_trace()
+    #for numb in dist_round:
+    #    toFile = raw_input(numb)#
+
+    #    file1.write(toFile)
+
+    #file1.close()
+       
+    #plt.show() 
     #plt.close()  
     
     

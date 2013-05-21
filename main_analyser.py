@@ -58,7 +58,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
             analyser.plot_noIpsps2distance(save_folder,save_plot_in , save_plots = plot_name_ipsps_2_dist, spw_file = spws_file, dist_file = distances, ext = ext)
         
         dist_spw2psike = 'dist_spw2spike'
-        save_plot_in = plots_folder+dist_spw2psike + '/'
+        save_plot_in = plots_folder+ dist_spw2psike + '/'
         if run_all_functions:
             """ plots relation between distance from the spike and number of ipsp groups in a SPW"""
             fold_mng.create_folder(save_folder + save_plot_in)

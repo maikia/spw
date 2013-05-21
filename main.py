@@ -136,7 +136,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
             my_name = 'cell7'
             #save_fig_name = '/home/maja/PhDProject/SPWs/SPWs/saved_data/solutions/all_/' + my_name + '.pdf'
             save_fig_name = '/home/maja/phdProject/analysis/swp/solutions/all_/' + my_name
-            for numb in [19]:
+            for numb in [19]: #kom no 7 (11)
                 updater.up_create_sup_fig(save_fig_name, save_folder, data_file = raw_data, filter_folder = filter_folder, 
                                           spike_file = spikes_raw, spikes_raw = spikes_raw, spikes_largest = spikes_largest,
                                           final_Ipsp_spw = too_small_removed, ext = '.png', start_no = numb)      
@@ -158,7 +158,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
 
             SPWs_ipsps_final = names[idx] + 'SPWs_ipsps_final.npz'
             #min_no_ipsps = 3
-            if not run_all_functions:
+            if run_all_functions:
                 updater.up_remove_with_to_few_ipsps(save_folder, SPWs_ipsps_final, too_small_removed, to_remove = min_no_ipsps, reanalize = reanalize)
         
             #print intr_electrode
@@ -187,7 +187,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                 # it makes the plot to exactly analyse each SPW
                 analyser.plot_data_interactive(save_folder, load_datafile = raw_baselined, load_spw_ipsps = SPWs_ipsps_final  , 
                                                load_spikefile = spikes_largest, load_spikesall = spikes_raw, 
-                                               load_ipspsOld =  spws_large_enough, spw_base = SPWs_potential_numb,
+                                               load_ipspsOld =  SPWs_ipsps_beg, spw_base = SPWs_potential_numb,
                                                load_dataintrafile = data_intra_base, load_intraSpikes = intra_spikes)
     #    
             dist_spw_inspikes = names[idx] + 'spw_dist2first.npz'
@@ -203,7 +203,7 @@ def work_on_all(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], i
                 updater.up_induc_spont_spw(save_folder, save_file = induc_spont_spw, load_distances = dist_spw_inspikes, load_spwfile = SPWs_ipsps_final, max_init_dist = max_dist, reanalize = reanalize, ext = ext)
     #    
             induc_spont_equal = names[idx] + 'induc_spont_equal.npz'
-            if run_all_functions:
+            if not run_all_functions:
                 # counts spontaneous and initiated SPWs and it randomly choses set of SPWs from the bigger set so that there is equal number in both sets
                 updater.equalize_number_spws(save_folder, save_file = induc_spont_equal, induc_spont = induc_spont_spw, load_distances = dist_spw_inspikes, reanalize = reanalize)
 
