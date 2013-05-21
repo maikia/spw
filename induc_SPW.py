@@ -365,11 +365,11 @@ def load_create(folder_save, filename_save, freq, fs, data, N = 1000):
         
     return data_filt, fs
 
-def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_file,  spikes_raw, spikes_largest, final_Ipsp_spw, save_filter = 'fast_data_', save_mov = 'moving_avg_', ext = '.png'):
+def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_file,  spikes_raw, spikes_largest, final_Ipsp_spw, save_filter = 'fast_data_', save_mov = 'moving_avg_', ext = '.png', start_no = 11):
     #use_trace = 13
-    start_no = 21
+    
     use_trace = 0
-    use_range = [20000, 60000] # in data ms
+    use_range = [0,40000] # in data ms
     use_electrodes = [5]
     main_electrode = 5 #starting from 1
     #spw_zoom = [160, 240]
@@ -404,7 +404,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     plt.subplot(2, 2, 1)
     data_main = data_trace[main_electrode, use_range_pts[0]: use_range_pts[1]]
     t = dat.get_timeline(data_main, fs, 'sec') # + use_range[0]
-    plt.plot(t, data_main, lw = line_width, c = main_line_color, alpha = 0.3)
+    plt.plot(t, data_main, lw = line_width, c = main_line_color) #, alpha = 0.3)
     
     filename_save = save_mov + 'moving_avg_'  + '_'+ str(main_electrode) + "_" + str(use_trace)
     npzfile = np.load(filter_folder + filename_save + '.npz')
@@ -425,18 +425,19 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
 
     #import pdb; pdb.set_trace()
     #plt.plot(t, data_base, lw = line_width, c = slow_line_color, alpha = fast_alpha)
-    plt.hlines(thres_level, t[0], t[-1], slow_line_color)
     
-    for idx, st in enumerate(starts):
-        plt.plot(t[st:ends[idx]], data_main[st:ends[idx]], lw = line_width, c = main_line_color)
-    for peaks in range(len(starts)): 
+    
+    #for idx, st in enumerate(starts):
+    #    plt.plot(t[st:ends[idx]], data_main[st:ends[idx]], lw = line_width, c = main_line_color)
+    #for peaks in range(len(starts)): 
         #plt.plot(t[starts], data_base[starts], slow_line_color + '.')
         #plt.plot(t[ends], data_base[ends], slow_line_color + '.')
-        max_spw = max(data_main[starts[peaks]:ends[peaks]])
-        plt.plot(t[starts[peaks]], data_base[starts[peaks]]+max_spw+30, slow_line_color + '.', ms = 7)
+    #    max_spw = max(data_main[starts[peaks]:ends[peaks]])
+    #    plt.plot(t[starts[peaks]], data_base[starts[peaks]]+max_spw+30, slow_line_color + '.', ms = 7)
+    plt.plot(t[starts], np.ones(len(starts)) * (-80) , slow_line_color + '.', ms = 7)
     max_spw = max(data_main[starts[start_no]:ends[start_no]])
     plt.plot(t[starts[start_no]], data_base[starts[start_no]]+max_spw+30, slow_line_color + '*', ms = 10)
-    
+    plt.hlines(thres_level, t[0], t[-1], slow_line_color) #, lw = 10)
 
     
     plt.xlim([t[0], t[-1]])
@@ -491,7 +492,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     
     data_filt_zoom = data_filt[spw_zoom_pts[0]: spw_zoom_pts[1]]
     data_fast_mult = data_filt_zoom * mult_fast_line
-    plt.plot(t_zoom, data_fast_mult- 100, lw = line_width, c = fast_line_color, alpha = fast_alpha)
+    plt.plot(t_zoom, data_fast_mult- 170, lw = line_width, c = fast_line_color, alpha = fast_alpha)
     del data_filt, data_filt_zoom
     
     npzfile = np.load(save_folder + spikes_raw)
@@ -535,7 +536,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
         ipsp_raw_pts = ms2pts(ipsp_raw_electr['ipsp_start'] - spw_zoom[0], fs).astype('i4')
         #plt.plot(t_zoom[ipsp_raw_pts], data_electr[idx, ipsp_raw_pts]  - 40 + add_it * idx, 'k' + '<', lw = line_width, ms = 5)
         #plt.plot(t_zoom[ipsp_raw_pts], data_electr[idx, ipsp_raw_pts]  - 40 + add_it * idx, 'b' + '^', lw = line_width, ms = 5)
-        ipsp_line_place = -200
+        ipsp_line_place = -40
         plt.plot(t_zoom[ipsp_raw_pts], np.ones(len(ipsp_raw_pts))*  ipsp_line_place, 'b' + '^', lw = line_width, ms = 5)
         
         for lines in range(len(ipsp_raw_pts)):
@@ -564,7 +565,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     
     
     plt.subplot(1, row_number, 2)
-    move_start = 5
+    move_start = -3
     move_end = 0
     move_start_pts = ms2pts(move_start, fs).astype('i4')
     move_end_pts = ms2pts(move_end, fs).astype('i4')
@@ -624,8 +625,8 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
         max_pt = add_it * max_electr + np.max(data_trace[max_electr,ipsp_start:ipsp_end]) + 4
         plt.vlines(ipsp_time + move_ms, min_pt, max_pt, 'b')
         
-        plt.text(ipsp_time + move_ms - 0.4, max_pt + 10, str(numb_it))
-        
+       # plt.text(ipsp_time + move_ms - 0.4, max_pt + 10, str(numb_it))
+        plt.text(ipsp_time + move_ms - 0.4, 1050, str(numb_it))
         #import pdb; pdb.set_trace()
         #plt.plot(t_zoom[], data_electr[idx, :] + add_it * idx, lw = 1, c = 'k')
         
@@ -638,7 +639,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     plt.ylim([ min_plot, max_plot])
     #plt.xlim([spw_start - 20, spw_end]) 
     #plt.xlim([t_zoom[0],spw_end - 10])  
-    plt.xlim([t_zoom[0]-3, t_zoom[0] + 45]) 
+    plt.xlim([t_zoom[0]-4, t_zoom[0] + 65]) 
     #import pdb; pdb.set_trace()
     #from matplotlib import rc
     #os.environ['PATH'] = os.environ['PATH'] + ':/usr/texbin'
@@ -647,6 +648,7 @@ def create_sup_fig(save_fig_name, save_folder, data_load, filter_folder, spike_f
     #plt.title(r$\infty\frac{1}{electr}$)
     #           r"\TeX\ is Number $\displaystyle\sum_{n=1}^\infty\frac{-e^{i\pi}}{2^n}$!",
     #   fontsize=16, color='r')
+    plt.title(str(start_no))
     plt.savefig(save_fig_name + 'spw_' + str(start_no) + ext, dpi=600)   
     plt.show()
     #import pdb; pdb.set_trace()
@@ -692,7 +694,7 @@ def update_extraspikes(data_load, filter_folder, save_folder, save_file = "ex_sp
     idx_all = np.concatenate(idx_all)            
     
     #np.savez(save_folder + save_file, spike_idx = idx_all, spike_ampl = ampl_all, fs = fs)
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     np.savez(save_folder + save_file, spike_idx = idx_all, fs = fs)
     del data, idx_all, ampl_all, fs
 
@@ -1893,7 +1895,7 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
     #npzfile    = np.load(save_folder + load_distances)
     #distances      = npzfile['dist_spwspike'] 
     #npzfile.close()     
-    choose_by = "take_smaller" #set_number" #
+    choose_by = "minimum" #"take_smaller" #set_number" # "minimum"
     max_amplitude = False
     choose_elements = 50
     no_smaller_than = 150

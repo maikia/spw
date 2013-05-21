@@ -1299,7 +1299,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     gc.collect()    
     
     
-def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_file, spw_details, ext, win):
+def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_file, spw_details, ext, win, cell = 1):
     """ it calculate mean root mean square of each of the SPWs (separately for spontaneous and induced,
     and from this create comulative distribution function for each of the groups"""
     npzfile        = np.load(save_folder + data_file)
@@ -1429,13 +1429,15 @@ def cum_distribution_funct(save_folder, save_file, plot_folder, plot_file, data_
     plt.xlabel('Time (ms)')
     plt.legend()    
     plt.ylabel('Cumulative change of variance')  
+
     if remove_mean:
         plt.title('Corrected, no of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
         fig.savefig(save_base + '_corrected_all_'+ ext, dpi=600) 
-        
+        fig.savefig("/home/maja/phdProject/analysis/swp/solutions/min_3_/cum_dist/cell" + str(cell) + ext, dpi=600)
     else:
         plt.title('No of SPWs: ' + str(len(spw_nos_used)) + ', mean of all electrodes')
         fig.savefig(save_base + '_all_'+ ext, dpi=600) 
+        fig.savefig("/home/maja/phdProject/analysis/swp/solutions/min_3_/cum_dist/cell" + str(cell) + ext, dpi=600)
     print 'saving figure in: ' + save_base
     np.savez(save_folder + save_file, cum_change_spont = nanmean(all_cums[:, 0, :]), cum_change_init = nanmean(all_cums[:, 1, :]), timeline = t, fs = fs) 
     if plot_it:

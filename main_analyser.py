@@ -17,7 +17,7 @@ import logging
 
 # if new settings applied - it will rerun everything again
 # to select the settings go to induc_SPW
-def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], intr_electrode = 1, data_part = 'all'):
+def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], intr_electrode = 1, data_part = 'all', cell = 1):
     """ work on given data file"""
     ext = '.eps'
     #================files which were previously analysed =======================
@@ -58,7 +58,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         dist_spw2psike = 'dist_spw2spike'
         save_plot_in = plots_folder+dist_spw2psike + '/'
-        if not run_all_functions:
+        if run_all_functions:
             """ plots relation between distance from the spike and number of ipsp groups in a SPW"""
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_dist_spw2spike(save_folder, save_plot_in, save_plots = dist_spw2psike, dist_file = distances, ext = ext)
@@ -88,7 +88,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         save_plot_in = plots_folder+ alignedSPWs + '/'
         if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
-            analyser.plot_alignedSPW(save_folder, save_file = highest_peak, plot_folder = save_plot_in, save_plots = alignedSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = '.eps')
+            analyser.plot_alignedSPW(save_folder, save_file = highest_peak, plot_folder = save_plot_in, save_plots = alignedSPWs, data_file = raw_data, intra_data_file = intra_data, induc_spont = equal_init_spont, intra_spikes = intra_spike_file, ext = '.png')
 
         
         spikePerElectrode = name_used + 'spike_per_electrode'
@@ -124,12 +124,13 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         cumulative_plot = 'cumulative_plot'
         save_plot_in = plots_folder+ cumulative_plot + '/'
         save_file = name_used + 'cum_change_variance.npz'
-        if run_all_functions:
+        if not run_all_functions:
             fold_mng.create_folder(save_folder + save_plot_in)
+            #import pdb; pdb.set_trace()
             analyser.cum_distribution_funct(save_folder, save_file, plot_folder = save_plot_in, plot_file = cumulative_plot, data_file = raw_data, 
                                       spw_details = equal_init_spont,
                                       #spw_details = highest_peak,
-                                      ext = '.png', win = win)
+                                      ext = '.png', win = win, cell = cell)
         
         #import pdb; pdb.set_trace() 
 #
@@ -163,8 +164,8 @@ if __name__=='__main__':
                         '11': (1, 2)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 0
-    sum_up_all = 1
+    update = 1
+    sum_up_all = 0
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
@@ -179,7 +180,7 @@ if __name__=='__main__':
             
             ex_electr = range(intra, 8+intra)
             print 'intra ' + str(intra)
-            update_all_plots_one_cell(filename, save_folder, ex_electr, intra)
+            update_all_plots_one_cell(filename, save_folder, ex_electr, intra, cell = all[nex][0])
     
     if sum_up_all == 1:
         names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_'] # depending on max number of IPSPs used it should be added before

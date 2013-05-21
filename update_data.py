@@ -397,8 +397,8 @@ def up_extraspikes(save_folder, filter_folder,  save_file = "ex_spikes", load_fi
         print 'spikes were already found'
     gc.collect()
     
-def up_create_sup_fig(save_fig_name, save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw, ext = '.pdf'):
-    ispw.create_sup_fig(save_fig_name, save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw, ext = ext)
+def up_create_sup_fig(save_fig_name, save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw, ext = '.pdf', start_no = 11):
+    ispw.create_sup_fig(save_fig_name, save_folder, data_file, filter_folder, spike_file, spikes_raw, spikes_largest, final_Ipsp_spw, ext = ext, start_no = start_no)
 
 def up_spws(save_folder, save_file = 'spw_data.npz', load_file = 'spw_data.npz', reanalize = False):
     """ updates details of the spws"""
