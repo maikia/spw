@@ -1895,7 +1895,7 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
     #npzfile    = np.load(save_folder + load_distances)
     #distances      = npzfile['dist_spwspike'] 
     #npzfile.close()     
-    choose_by = "minimum" #"take_smaller" #set_number" # "minimum"
+    choose_by = "take_smaller" #"take_smaller" #set_number" # "minimum"
     max_amplitude = False
     choose_elements = 50
     no_smaller_than = 150
@@ -1974,7 +1974,7 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
     selected_init = np.concatenate(all_selected[0])
     selected_spont = np.concatenate(all_selected[1])
     #import pdb; pdb.set_trace()
-    np.savez(save_folder + save_file, initiated = selected_init, spontaneous = selected_spont)
+    np.savez(save_folder + choose_by + save_file, initiated = selected_init, spontaneous = selected_spont)
     
 def update_induc_spont_spw(save_folder, save_file, load_distances, load_spwfile, max_dist, ext):
     """ checks which spws are initiated and which are sponteneaus"""

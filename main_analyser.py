@@ -27,7 +27,8 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     
     spws_file = name_used + 'SPWs_ipsps_final.npz'
     distances = name_used + 'spw_dist2first.npz'
-    equal_init_spont = name_used + 'induc_spont_equal.npz'
+    type_of_choice = "take_smaller" #"take_smaller" #set_number" "minimum"
+    equal_init_spont = type_of_choice + name_used + 'induc_spont_equal.npz'
     raw_data = "data_bas.npz"
     intra_data = 'data_baseintra.npz'
     spike_file = 'spikes_largest.npz'
