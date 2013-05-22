@@ -23,11 +23,11 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     #================files which were previously analysed =======================
     names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_'] # depending on max number of IPSPs used it should be added before
      # name of the file: spws_file, distances, equal_init_spont
-    name_used = names[1]
+    name_used = names[2]
     
     spws_file = name_used + 'SPWs_ipsps_final.npz'
     distances = name_used + 'spw_dist2first.npz'
-    type_of_choice = "take_smaller" #"take_smaller" #set_number" "minimum"
+    type_of_choice = "minimum" #"take_smaller" #set_number" "minimum"
     equal_init_spont = type_of_choice + name_used + 'induc_spont_equal.npz'
     raw_data = "data_bas.npz"
     intra_data = 'data_baseintra.npz'
@@ -59,7 +59,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         
         dist_spw2psike = 'dist_spw2spike'
         save_plot_in = plots_folder+ dist_spw2psike + '/'
-        if run_all_functions:
+        if not run_all_functions:
             """ plots relation between distance from the spike and number of ipsp groups in a SPW"""
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_dist_spw2spike(save_folder, save_plot_in, save_plots = dist_spw2psike, dist_file = distances, ext = ext)
@@ -139,7 +139,7 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         plot_ampl_synch = 'ampl_synchrony'
         save_file = name_used + 'ampl_sync_dat'
         save_plot_in = plots_folder+ plot_ampl_synch + '/'
-        if not run_all_functions: # ok
+        if run_all_functions: # ok
             fold_mng.create_folder(save_folder + save_plot_in)
             analyser.plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder = save_plot_in, 
                                                  plot_file = plot_ampl_synch, data_file = raw_data,
@@ -165,14 +165,14 @@ if __name__=='__main__':
                         '11': (1, 2)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 1
-    sum_up_all = 0
+    update = 0
+    sum_up_all = 1
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        for nex in range(len(all)):
+        for nex in range(15, len(all)):
         #for nex in [15]: #range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)
@@ -186,12 +186,12 @@ if __name__=='__main__':
     if sum_up_all == 1:
         names = ['max_2_', 'min_3_', 'all_', 'min_2_', 'max_1_'] # depending on max number of IPSPs used it should be added before
         # name of the file: spws_file, distances, equal_init_spont
-        name_used = names[1]
+        name_used = names[2]
         
 
         spike = False
-        ampl_synch = False
-        cum_change_var = True
+        ampl_synch = True
+        cum_change_var = False
         
         solutions_folder = get_save_folder() + 'solutions/'
         fold_mng.create_folder(solutions_folder)
@@ -333,8 +333,20 @@ if __name__=='__main__':
             fold_mng.create_folder(plot_folder)
             plot_ampl_synch = 'ampl_synchrony'
             
+            amplitudes = [all_ampls1, all_ampls2]
+            synchronise= [all_syncs1, all_syncs2]
+            group_nos = [all_groups1, all_groups2]
+            #import pdb; pdb.set_trace()    
             analyser.plot_amplitude_vs_synchrony_all(plot_folder = plot_folder, 
                                                  plot_file = plot_ampl_synch, cells = all_cells, 
-                                                 amplitudes = [all_ampls1, all_ampls2], synchronise= [all_syncs1, all_syncs2], 
-                                                 group_nos = [all_groups1, all_groups2], names = groups, ext = '.png')
+                                                 amplitudes = amplitudes, synchronise= synchronise, 
+                                                 group_nos = group_nos, names = 'spont_init_', ext = '.png', groupno = 2)
+            analyser.plot_amplitude_vs_synchrony_all(plot_folder = plot_folder, 
+                                                 plot_file = plot_ampl_synch, cells = all_cells, 
+                                                 amplitudes = amplitudes[0], synchronise= synchronise[0], 
+                                                 group_nos = group_nos[0], names = groups[0], ext = '.png', groupno = 1)
+            analyser.plot_amplitude_vs_synchrony_all(plot_folder = plot_folder, 
+                                                 plot_file = plot_ampl_synch, cells = all_cells, 
+                                                 amplitudes = amplitudes[1], synchronise= synchronise[1], 
+                                                 group_nos = group_nos[1], names = groups[1], ext = '.png', groupno = 1)         
 

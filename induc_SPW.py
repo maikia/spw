@@ -1895,7 +1895,7 @@ def update_equalize_number_spws(save_folder, save_file, induc_spont, load_distan
     #npzfile    = np.load(save_folder + load_distances)
     #distances      = npzfile['dist_spwspike'] 
     #npzfile.close()     
-    choose_by = "take_smaller" #"take_smaller" #set_number" # "minimum"
+    choose_by = "minimum"#"take_smaller" #"take_smaller" #set_number" # "minimum"
     max_amplitude = False
     choose_elements = 50
     no_smaller_than = 150
