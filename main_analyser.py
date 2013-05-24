@@ -28,7 +28,9 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
     spws_file = name_used + 'SPWs_ipsps_final.npz'
     distances = name_used + 'spw_dist2first.npz'
     type_of_choice = "minimum" #"take_smaller" #set_number" "minimum"
-    equal_init_spont = type_of_choice + name_used + 'induc_spont_equal.npz'
+    #equal_init_spont = type_of_choice + name_used + 'induc_spont_equal.npz'
+    equal_init_spont = name_used + 'induc_spont_spw.npz'
+    
     raw_data = "data_bas.npz"
     intra_data = 'data_baseintra.npz'
     spike_file = 'spikes_largest.npz'
@@ -141,11 +143,13 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
         save_plot_in = plots_folder+ plot_ampl_synch + '/'
         if run_all_functions: # ok
             fold_mng.create_folder(save_folder + save_plot_in)
-            analyser.plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder = save_plot_in, 
-                                                 plot_file = plot_ampl_synch, data_file = raw_data,
-                                                 spw_groups = group_per_isps_all, spw_details = equal_init_spont, ext = ext) 
-
-
+            analyser.plot_amplitude_vs_synchrony(save_folder, save_file, 
+                                                 plot_folder = save_plot_in, 
+                                                 plot_file = plot_ampl_synch, 
+                                                 data_file = raw_data,
+                                                 spw_groups = group_per_isps_all, 
+                                                 spw_details = equal_init_spont, ext = ext) 
+                                                 
 def update_all_plots_all_cells(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], intr_electrode = 1, data_part = 'all'):
     pass
 
@@ -172,7 +176,7 @@ if __name__=='__main__':
     all_figures_folder = solutions_folder = 'plots/'
     if update == 1:
 
-        for nex in range(15, len(all)):
+        for nex in range(len(all)):
         #for nex in [15]: #range(len(all)): #[18]: #[5, 11, 13, 14, 15, 16, 17, 18]: #range(len(all)): #range(18, len(all)): # - 2, len(all)): #[5]: #range(12, len(all)):
 
         #t = importOdfSpreadsheet(file, sheet)

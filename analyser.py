@@ -1114,14 +1114,16 @@ def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False
         plt.savefig(save_name, dpi=600)   
     #return p1
 
-def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, data_file, spw_groups,spw_details, ext):
+def plot_amplitude_vs_synchrony(save_folder, save_file, 
+                                plot_folder,plot_file, data_file, spw_groups,
+                                spw_details, ext):
     
     npzfile        = np.load(save_folder + data_file)
     data = npzfile['data']
     fs = npzfile['fs']
     npzfile.close() 
     #max_must_be_until = 15 # ms from the beginning
-    plot_it = True
+    plot_it = False
     
     npzfile = np.load(save_folder + spw_details)
     
@@ -1140,12 +1142,13 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
         types = ['spontaneous', 'initiated']
         spws = [spont, init]     
         npzfile.close()
-
-        npzfile = np.load(save_folder + spw_groups)
-        group1 = npzfile['group1']
-        group2 = npzfile['group2']
-        groups = [group1, group2]
-        names = npzfile['names']
+        names = np.array(['spontaneous', 'initiated'])
+        #import pdb; pdb.set_trace()
+        #npzfile = np.load(save_folder + spw_groups)
+        #group1 = npzfile['group1']
+        #group2 = npzfile['group2']
+        #groups = [group1, group2]
+        #names = npzfile['names']
     npzfile.close() 
     #import pdb; pdb.set_trace()
     # go through every type possible
@@ -1173,26 +1176,30 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
     all_syncs = []
     all_groups = []
     for typ in range(len(names)):
-        spw_group_typ = groups[typ]
+        #spw_group_typ = groups[typ]
         #import pdb; pdb.set_trace() 
-        if spw_group_typ != 0:
-            group_nos = np.unique(spw_group_typ['group'])
-            spw_type = spws[typ]
-        else:
-            group_nos = [0]
-            spw_type = spws
+        #if spw_group_typ != 0:
+        #    group_nos = np.unique(spw_group_typ['group'])
+        #    spw_type = spws[typ]
+        #else:
+        #    group_nos = [0]
+        #    spw_type = spws
+        spw_type = spws[typ]
+        
         temp_ampls = []
         temp_syncs = []
         temp_groups = []
         plots_ipsp_no = np.array([1, 4, 8])
         plots_to_plot = np.array([False, False, False])
         # go through every group detected
-        for group_no in group_nos:    
+        for group_no in [0]:    
 
-            if spw_group_typ != 0:
-                spw_nos_used = spw_group_typ[spw_group_typ['group'] == group_no]['spw_no']
-            else:
-                spw_nos_used = np.unique(spws['spw_no'])
+            #if spw_group_typ != 0:
+            #    spw_nos_used = spw_group_typ[spw_group_typ['group'] == group_no]['spw_no']
+            #else:
+            #    spw_nos_used = np.unique(spws['spw_no'])
+            #import pdb; pdb.set_trace() 
+            spw_nos_used = np.unique(spw_type['spw_no'])
             hist_electr_all = []
             all_spws = np.zeros([len(spw_nos_used), np.size(data,0), size_win_pts])
             
@@ -1286,7 +1293,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                     all_electr = np.size(data, 0) * 1.0
                     no_group_ipsp = len(np.unique(spw_used['group']))
                     
-                    if no_ipsps in plots_ipsp_no:
+                    if False: #no_ipsps in plots_ipsp_no:
                         
                         sub_num, = np.where(plots_ipsp_no == no_ipsps)
                         if not plots_to_plot[sub_num]:
@@ -1311,7 +1318,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
                 else:
                     
                     import pdb; pdb.set_trace()
-            plt.show()
+
             #group_group = np.copy(all_group)
             #group_group[group_group > len(groups_for_colors) -1] = len(groups_for_colors) -1
             #colors_group = groups_for_colors[group_group]
@@ -1320,7 +1327,7 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
             name  = '_group_' + str(group_no) + '_' + types[typ]
             #import pdb; pdb.set_trace()
             create_scatter_synch(np.array(all_ampl), np.array(all_sync), np.array(all_group), name, save_base, ext = '.png')
-            
+            #plt.show()
             temp_ampls.append(all_ampl)
             temp_syncs.append(all_sync)
             temp_groups.append(all_group)
@@ -1328,8 +1335,8 @@ def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,plot_file, d
         all_syncs.append(np.concatenate(np.array(temp_syncs)))
         all_ampls.append(np.concatenate(np.array(temp_ampls)))
         all_groups.append(np.concatenate(np.array(temp_groups)))
-    if len(all_groups[0]) != len(all_groups[1]):  
-        import pdb; pdb.set_trace() 
+    #if len(all_groups[0]) != len(all_groups[1]):  
+    #    import pdb; pdb.set_trace() 
         #fig.savefig(save_base + '_group_' + str(group_no) + '_' + types[typ] + ext, dpi=600)   
         #plt.savefig(save_file + name + ext, dpi=600) 
     if plot_it: 
