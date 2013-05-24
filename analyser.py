@@ -1114,9 +1114,8 @@ def plot_fit(fitfunc, x_data, y_data, guess_values, save_name, save_file = False
         plt.savefig(save_name, dpi=600)   
     #return p1
 
-def plot_amplitude_vs_synchrony(save_folder, save_file, 
-                                plot_folder,plot_file, data_file, spw_groups,
-                                spw_details, ext):
+def plot_amplitude_vs_synchrony(save_folder, save_file, plot_folder,
+                                plot_file, data_file, spw_details, ext):
     
     npzfile        = np.load(save_folder + data_file)
     data = npzfile['data']

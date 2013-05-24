@@ -147,7 +147,6 @@ def update_all_plots_one_cell(filename, save_folder, ext_electrodes = [1, 2, 3, 
                                                  plot_folder = save_plot_in, 
                                                  plot_file = plot_ampl_synch, 
                                                  data_file = raw_data,
-                                                 spw_groups = group_per_isps_all, 
                                                  spw_details = equal_init_spont, ext = ext) 
                                                  
 def update_all_plots_all_cells(filename, save_folder, ext_electrodes = [1, 2, 3, 4, 5, 6, 7], intr_electrode = 1, data_part = 'all'):
@@ -169,8 +168,8 @@ if __name__=='__main__':
                         '11': (1, 2)}
     # (cell_no, between_electr, and_electr) 
     
-    update = 0
-    sum_up_all = 1
+    update = 1
+    sum_up_all = 0
     
     logging.basicConfig(level=logging.DEBUG)
     all_figures_folder = solutions_folder = 'plots/'
